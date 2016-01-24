@@ -5,7 +5,15 @@ import os
 import numpy as np
 import nibabel as nib
 import copy
+from scipy import stats
 
+
+
+
+class UserDefinedException(Exception):
+    def __init__(self, str):
+        Exception.__init__(self)
+        self._str = str
 
 
 def load_img(fimg):
@@ -32,10 +40,58 @@ def load_img(fimg):
     return img
 
 
-class UserDefinedException(Exception):
-    def __init__(self, str):
-        Exception.__init__(self)
-        self._str = str
+def extract_param(targ_img, atlas_img, roi_id, metric):
+    targ = load_img(targ_img).get_data()
+    atlas = load_img(atlas_img).get_data()
+
+    if  atlas.shape != targ.shape or atlas.shape != targ.shape[:3]:
+        raise UserDefinedException('Atlas image and target image are not match!')
+
+    if targ.ndim == 3:
+        targ = np.tile(targ, (1, 1))
+
+    if atlas.ndim == 3:
+        atlas = np.tile(atlas, (1, targ.shape[3]))
+
+    NS = targ.shape[3]
+    if metric == 'center' or metric == 'peak':
+        param = np.empty((NS,3))
+    else:
+        param = np.empty(NS)
+    param.fill(np.nan)
+
+    if metric == 'peak':
+        for s in range(NS):
+           d = targ[:,:,:,s] * atlas[:,:,:,s] == roi_id
+           param[s, :] = np.unravel_index(d.argmax(), d.shape)
+
+    elif metric == 'center':
+        for s in range(NS):
+            d = targ[:,:,:,s] * atlas[:,:,:,s] == roi_id
+            coords = np.transpose(np.nonzero(d))
+            param[s, :]  = np.mean(coords)
+    else:
+        if metric == 'sum' or metric == 'volume':
+            cpu = np.nansum
+        elif metric == 'max':
+            cpu = np.max
+        elif metric == 'min':
+            cpu = np.min
+        elif metric == 'std':
+            cpu = np.nanstd
+        elif metric == 'skewness':
+            cpu = stats.skew
+        elif metric == 'kurtosis':
+            cpu = stats.kurtosis
+        else:
+            cpu = []
+
+        for s in range(NS):
+            d = targ[:,:,:,s]
+            r =  atlas[:,:,:,s] == roi_id
+            param[s] = cpu(d[r], axis=1)
+
+    return param
 
 
 class AtlasInfo(object):
@@ -55,18 +111,15 @@ class AtlasInfo(object):
 
 
 class AtlasDB(object):
-    def __init__(self, atlas_img, basic, data={}, geo={}, act={}, rest={}, morp={}, fiber={}):
+    def __init__(self, atlas_img, basic, metric={}):
         """
 
         Parameters
         ----------
         atlas_img : Nifti1image file or Nifti1image object
         basic : basic info for atlas
-        geo   : Geo object
-        act   : Act object
-        rest  : Rest object
-        morp  : morp object
-        fiber :fiber object
+        data    : data for each roi
+
 
         Returns
         -------
@@ -75,41 +128,35 @@ class AtlasDB(object):
 
         self.atlas = load_img(atlas_img)
         self.basic = basic
-        self.data = data
-        self.geo = geo
-        self.act = act
-        self.rest = rest
-        self.morp = morp
-        self.fiber = fiber
+        self.metric = metric
+        self.data = {}
 
-    def import_data(self, targ_img, roiname=None, modal='geo', meas='volume'):
+    def import_data(self, targ_img, roiname=None, modal='geo', param='volume'):
         if roiname is None:
             roiname = self.basic.roiname
 
+        metric  = self.metric[param]
         if modal == 'geo':
-            pass
-        elif modal == 'act' or modal == 'rest' or modal == 'morp'  or modal == 'fiber':
-            self.data[modal][meas] = _extract_scalar_meas(targ_img)
+            meas = np.empty((len(self.basic.subjid), len(metric)), 3)
+        else:
+             meas = np.empty((len(self.basic.subjid), len(metric)))
+        meas.fill(np.nan)
+
+        for key in roiname:
+            for m in range(metric.shape[0]):
+               meas[:,m] =  extract_param(targ_img, self.atlas, roiname[key], metric[m])
+
+            self.data[key][modal][param] = meas
 
 
-    def export_data(self, sessid=None, roiname=None, modal='geo', meas='volume'):
-        if modal == 'geo':
-            pass
+    def export_data(self, sessid=None, roiname=None, modal='geo', param='volume'):
+
+        return self.data[roiname][modal][param]
 
 
-        elif modal == 'act' or modal == 'rest' or modal == 'morp'  or modal == 'fiber':
-            pass
+    def set(self,attr_name, attr_value):
+        pass
 
-    pass
-
-
-def _extract_scalar_meas(self, targ_img):
-    pass
-
-    return 1
-
-
-def _extract_geo_meas(self, targ_img):
-    pass
-
+    def get(self, attr_name, attr_value):
+        pass
 
