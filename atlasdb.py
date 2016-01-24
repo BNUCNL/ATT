@@ -54,7 +54,10 @@ def extract_param(targ_img, atlas_img, roi_id, metric):
         atlas = np.tile(atlas, (1, targ.shape[3]))
 
     NS = targ.shape[3]
+
+
     if metric == 'center' or metric == 'peak':
+        d = np.empty(targ.shape[:3])
         param = np.empty((NS,3))
     else:
         param = np.empty(NS)
@@ -62,14 +65,14 @@ def extract_param(targ_img, atlas_img, roi_id, metric):
 
     if metric == 'peak':
         for s in range(NS):
-           d = targ[:,:,:,s] * atlas[:,:,:,s] == roi_id
+           d[atlas[:,:,:,s] == roi_id] = targ[atlas[:,:,:,s] == roi_id]
            param[s, :] = np.unravel_index(d.argmax(), d.shape)
 
     elif metric == 'center':
         for s in range(NS):
-            d = targ[:,:,:,s] * atlas[:,:,:,s] == roi_id
+            d[atlas[:,:,:,s] == roi_id] = targ[atlas[:,:,:,s] == roi_id]
             coords = np.transpose(np.nonzero(d))
-            param[s, :]  = np.mean(coords)
+            param[s, :]  = np.mean(coords, axis=0)
     else:
         if metric == 'sum' or metric == 'volume':
             cpu = np.nansum
@@ -156,6 +159,53 @@ class AtlasDB(object):
 
     def set(self,attr_name, attr_value):
         pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def get(self, attr_name, attr_value):
         pass
