@@ -119,10 +119,8 @@ class AtlasDB(object):
         atlas_img : Nifti1image file or Nifti1image object
         basic : basic info for atlas
         data    : data for each roi
+        metric  : metric for each params
 
-
-        Returns
-        -------
 
         """
 
