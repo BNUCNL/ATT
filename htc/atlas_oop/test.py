@@ -35,6 +35,7 @@ areaname = ['rV3','lV3','rMT','lMT']
 areanum = [1,2,3,4]
 taskname = 'motion'
 contrast = 'motion-fix'
+threshold = 5.0
 
 pathsex = '/nfs/j3/userhome/huangtaicheng/workingdir/parcellation_MT/doc/dfsf/modeID'
 gender = pd.read_csv(os.path.join(pathsex, 'act_sex.csv'))['gender'].tolist()
@@ -97,35 +98,40 @@ time3 = time.time()
 print 'time of calculate index : %d' % (time3 - time2)
 
 #---------------------------calculate PM and MPM------------------------------#
-getprob = make_atlas(zstat_rawdata, sessid, sessn)
-getprob.probatlas()
-getprob.MPM(0.2)
+# getprob = make_atlas(zstat_rawdata, sessid, sessn)
+# getprob.probatlas()
+# getprob.MPM(0.2)
 
 
 time4 = time.time()
 print 'time of calculate probdata and mpmdata : %d' % (time4 - time3)
 # --------------------------calculate reliability-----------------------------#
-reliab_hz = reliability(areanum)
-reliab_hz.loadfile(htc_img_file, zgf_img_file)
-reliab_hz.cal_dice()
-reliab_hl = reliability(areanum)
-reliab_hl.loadfile(htc_img_file, lzg_img_file)
-reliab_hl.cal_dice()
-reliab_zl = reliability(areanum)
-reliab_zl.loadfile(zgf_img_file, lzg_img_file)
-reliab_zl.cal_dice()
+# reliab_hz = reliability(areanum)
+# reliab_hz.loadfile(htc_img_file, zgf_img_file)
+# reliab_hz.cal_dice()
+# reliab_hl = reliability(areanum)
+# reliab_hl.loadfile(htc_img_file, lzg_img_file)
+# reliab_hl.cal_dice()
+# reliab_zl = reliability(areanum)
+# reliab_zl.loadfile(zgf_img_file, lzg_img_file)
+# reliab_zl.cal_dice()
 
 time5 = time.time()
 print 'time of reliability : %d' % (time5 - time4)
 
 #---------------------------combine all data into one_instance-----------------#
-attrib = ['mean_zstat', 'peak_zstat', 'std_zstat', 'mean_psc', 'peak_psc', 'std_psc', 'mean_alff', 'peak_alff','std_alff', 'mean_falff', 'peak_falff','std_falff', 'mean_reho', 'peak_reho', 'std_reho', 'probdata', 'mpmdata']
+attrib = ['act_volume', 'mean_zstat', 'peak_zstat', 'std_zstat', 'mean_psc', 'peak_psc', 'std_psc', 'mean_alff', 'peak_alff','std_alff', 'mean_falff', 'peak_falff','std_falff', 'mean_reho', 'peak_reho', 'std_reho', 'probdata', 'mpmdata']
 # attrib = ['mean_zstat', 'mean_psc']
 
-attrib_repeat = ['peak_coordin', 'dice']
-instan_repeat = [['zstat_index', 'psc_index', 'alff_index', 'falff_index', 'reho_index'],['reliab_hz', 'reliab_hl', 'reliab_zl']]
+# attrib_repeat = ['peak_coordin', 'dice']
+# instan_repeat = [['zstat_index', 'psc_index', 'alff_index', 'falff_index', 'reho_index'],['reliab_hz', 'reliab_hl', 'reliab_zl']]
+attrib_repeat = ['peak_coordin']
+instan_repeat = [['zstat_index', 'psc_index', 'alff_index', 'falff_index', 'reho_index']]
+
+
 combined_instan = save_data()
 
+# combine index
 for attri in attrib:
     if hasattr(combined_instan, attri):
         continue
@@ -137,22 +143,42 @@ for attri in attrib:
         combined_instan.combinattr(falff_index, attri, attri)
         combined_instan.combinattr(reho_index, attri, attri)
         
-        combined_instan.combinattr(getprob, attri, attri)
+#       combined_instan.combinattr(getprob, attri, attri)
         
-        combined_instan.combinattr(reliab_hz, attri, attri)
-        combined_instan.combinattr(reliab_hl, attri, attri)
-        combined_instan.combinattr(reliab_zl, attri, attri)
+#       combined_instan.combinattr(reliab_hz, attri, attri)
+#       combined_instan.combinattr(reliab_hl, attri, attri)
+#       combined_instan.combinattr(reliab_zl, attri, attri)
 
 for attrep_i in range(len(attrib_repeat)):
     for instrep_i in range(len(instan_repeat[attrep_i])):
         combined_instan.combinattr(eval(instan_repeat[attrep_i][instrep_i]), attrib_repeat[attrep_i], attrib_repeat[attrep_i]+'_'+instan_repeat[attrep_i][instrep_i])
 
+# combine basic information
+combined_instan.combinattr(zstat_rawdata, 'taskname', 'task')
+combined_instan.combinattr(zstat_rawdata, 'sessid', 'subjID')
+combined_instan.combinattr(zstat_rawdata, 'gender', 'subjGender')
+combined_instan.combinattr(zstat_rawdata, 'contrast', 'contrast')
+
+setattr(combined_instan, 'roiname' , dict(zip(get_attrvalue(zstat_rawdata,'areaname'),get_attrvalue(zstat_rawdata,'areanum'))))
+setattr(combined_instan, 'threshold', threshold)
+
+
 time6 = time.time()
 
 print 'time for combine data together : %d' % (time6 - time5)
-print 'whole calculate time : %d' % (time6 - time0)
 
 
+#---------------------save data--------------------------#
+combined_instan.save_to_dict()
+combined_instan.save_to_mat('./', 'final_data.mat')
+
+time7 = time.time()
+print 'time for save data : %d' % (time7 - time6)
+
+
+
+
+print 'whole calculate time : %d' % (time7 - time0)
 
 
 

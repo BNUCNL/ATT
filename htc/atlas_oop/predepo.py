@@ -5,6 +5,9 @@ import os
 import numpy as np
 import nibabel as nib
 import copy
+import cPickle
+import scipy.io as si
+
 
 class user_defined_exception(Exception):
     def __init__(self, str):
@@ -216,7 +219,7 @@ class reliability(object):
          
 class save_data(object):
     def __init__(self): 
-        pass
+        self.atlas = []
     
     def combinattr(self, instan, attri, new_attri):
     # combined attributes from other instances into the instance of 'save_data'
@@ -226,8 +229,40 @@ class save_data(object):
             else:
                 print '%s is empty!' % attri 
 
+    def save_to_pkl(self, path, filename):
+        if hasattr(self, 'atlas'):
+            with open(os.path.join(path, filename), 'wb') as output:
+                cPickle.dump(self.atlas, output, -1)
 
+    def save_to_mat(self, path, filename):
+        if hasattr(self, 'atlas'):
+            si.savemat(os.path.join(path,filename),mdict = self.atlas)        
     
+    def save_to_dict(self):
+        attri_list = get_attrname(self)
+        atlas = {}
+        parkeys = ['Basic', 'Geo', 'Act', 'Rest', 'Morp', 'Fiber']
+        sonkeys = ([['task', 'subjID', 'subjGender', 'contrast', 'roiname','threshold'],
+                    ['peak_coordin_zstat_index', 'peak_coordin_psc_index', 'peak_coordin_alff_index', 'peak_coordin_falff_index', 'peak_coordin_reho_index', 'act_volume'],
+                    ['peak_psc', 'mean_psc', 'std_psc', 'peak_zstat', 'mean_zstat', 'std_zstat'],
+                    ['peak_alff', 'mean_alff', 'std_alff', 'peak_falff', 'mean_falff', 'std_falff', 'peak_reho', 'mean_reho', 'std_reho'],
+                    ['vbm'],
+                    ['fa']
+                   ])
+        for parkeyi in range(len(parkeys)):
+            atlas[parkeys[parkeyi]] = {}
+        if len(parkeys) != len(sonkeys):
+            raise user_defined_exception('parkeys must to have same length with sonkeys')
+        for parkeyi in range(len(parkeys)):
+            for sonkeyi in range(len(sonkeys[parkeyi])):
+                if hasattr(self, sonkeys[parkeyi][sonkeyi]):
+                    atlas[parkeys[parkeyi]][sonkeys[parkeyi][sonkeyi]] = get_attrvalue(self, sonkeys[parkeyi][sonkeyi])
+                else:
+                    atlas[parkeys[parkeyi]][sonkeys[parkeyi][sonkeyi]] = []
+        self.atlas = atlas
+
+
+ 
 
 #-------------------functions-----------------------#
 
@@ -316,4 +351,19 @@ def get_attrname(instan):
 def get_attrvalue(instan, attrname):
 # Get value of attrname in an instance
     return instan.__getattribute__(attrname)
+
+def finditem(rawlist, keywords):
+# Return items containing keywords of a list
+    return [val for val in rawlist if keywords in val]
+
+def todict(instan):
+# transform all attributes from an instance into dict
+    atlas = {}
+    attr_list = get_attrname(instan)
+    for attr in attr_list:
+        atlas[attr] = get_attrvalue(instan, attr)
+    return atlas
+
+
+
 
