@@ -41,6 +41,9 @@ pathsex = '/nfs/j3/userhome/huangtaicheng/workingdir/parcellation_MT/doc/dfsf/mo
 gender = pd.read_csv(os.path.join(pathsex, 'act_sex.csv'))['gender'].tolist()
 sessid = open('/nfs/j3/userhome/huangtaicheng/workingdir/parcellation_MT/doc/dfsf/modeID/actID','rU').read().splitlines()
 
+outpath = '/nfs/j3/userhome/huangtaicheng/workingdir/try_htc'
+
+
 time1 = time.time()
 print 'time of initial directory : %d' % (time1 - time0)
 #-----------------------------------------------------------------------------#
@@ -98,9 +101,9 @@ time3 = time.time()
 print 'time of calculate index : %d' % (time3 - time2)
 
 #---------------------------calculate PM and MPM------------------------------#
-# getprob = make_atlas(zstat_rawdata, sessid, sessn)
-# getprob.probatlas()
-# getprob.MPM(0.2)
+getprob = make_atlas(zstat_rawdata, sessid, sessn)
+getprob.probatlas(outpath)
+getprob.MPM(0.2, outpath, 'mpm_'+ str(0.2)+ '.nii.gz')
 
 
 time4 = time.time()
@@ -170,7 +173,8 @@ print 'time for combine data together : %d' % (time6 - time5)
 
 #---------------------save data--------------------------#
 combined_instan.save_to_dict()
-combined_instan.save_to_mat('./', 'final_data.mat')
+combined_instan.save_to_pkl(outpath, 'final_data.pkl')
+combined_instan.save_to_mat(outpath, 'final_data.mat')
 
 time7 = time.time()
 print 'time for save data : %d' % (time7 - time6)

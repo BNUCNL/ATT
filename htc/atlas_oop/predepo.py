@@ -178,19 +178,25 @@ class make_atlas(object):
         self.probdata = []
         self.mpmdata = []
 
-    def probatlas(self):
+    def probatlas(self, outpath):
         probdata = np.zeros([91,109,91,len(self.areanum)])
         for arean in self.areanum:
             for i in self.sessn:
                 probdata[:,:,:,arean-1][self.mask_data[:,:,:,i] == (arean)] += 1
         probdata = probdata/len(self.sessid)
+        for arean in range(len(self.areanum)):
+            img_new = nib.Nifti1Image(probdata[:,:,:,arean], None, self.header)
+            nib.save(img_new, os.path.join(outpath, self.areaname[arean]+'.nii.gz'))    
         self.probdata = probdata
     
-    def MPM(self, thr):
+    def MPM(self, thr, outpath, outname):
         probdata_new = np.zeros([91,109,91,len(self.areanum)+1])
         self.probdata[self.probdata<thr] = 0
         probdata_new[:,:,:,1:len(self.areanum)+1] = self.probdata
-        self.mpmdata = probdata_new.argmax(axis = 3)
+        mpmdata = probdata_new.argmax(axis = 3)
+        img_new = nib.Nifti1Image(mpmdata, None, self.header)
+        nib.save(img_new, os.path.join(outpath, outname))
+        self.mpmdata = mpmdata
 
 class reliability(object):
     def __init__(self, areanum):
