@@ -54,32 +54,59 @@ print 'time of initial directory : %d' % (time1 - time0)
 # Prepare data
 sessn = range(len(sessid))
 # zstat
-zstat_rawdata = Dataset(zstat_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast)
+zstat_rawdata = Dataset(zstat_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, 'zstat')
 zstat_rawdata.loadfile()
 # psc
-psc_rawdata = Dataset(psc_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast)
+psc_rawdata = Dataset(psc_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, 'psc')
 psc_rawdata.loadfile()
 # alff
-# alff_rawdata = Dataset(alff_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast)
+# alff_rawdata = Dataset(alff_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, 'alff')
 # alff_rawdata.loadfile()
 # falff
-# falff_rawdata = Dataset(falff_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast)
+# falff_rawdata = Dataset(falff_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, 'falff')
 # falff_rawdata.loadfile()
 # reho
-# reho_rawdata = Dataset(reho_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast)
+# reho_rawdata = Dataset(reho_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, 'reho')
 # reho_rawdata.loadfile()
 
 time2 = time.time()
 print 'time of loadfile : %d' % (time2 - time1)
 
 #---------------------------calculate index for whole data---------------------#
-zstat_index = cal_index(zstat_rawdata, sessid, sessn, gender)
-zstat_index.volume_index()
-zstat_index.mask_index('zstat', 'mean')
-zstat_index.peakcoord_index()
+adb = AtlasDB()
+# adb.import_data(zstat_rawdata, 'act', 'zstat')
+# adb.import_data(zstat_rawdata, 'geo', 'volume')
+adb.import_data(zstat_rawdata, 'geo', 'peakcoor')
+# adb.import_data(psc_rawdata, 'act', 'psc')
+adb.import_data(psc_rawdata, 'geo', 'peakcoor')
+# adb.import_data(alff_rawdata, 'rest', 'alff')
+# adb.import_data(alff_rawdata, 'geo', 'peakcoor')
+# adb.import_data(falff_rawdata, 'rest', 'falff')
+# adb.import_data(falff_rawdata, 'geo', 'peakcoor')
+# adb.import_data(reho_rawdata, 'rest', 'reho')
+# adb.import_data(reho_rawdata, 'geo', 'peakcoor')
 
-psc_index = cal_index(psc_rawdata, sessid, sessn, gender)
-psc_index.psc_index('mean')
+#zstat_index = cal_index(zstat_rawdata)
+#zstat_index.volume_index()
+#zstat_index.mask_index('zstat', 'mean')
+#zstat_index.mask_index('zstat', 'max')
+#zstat_index.mask_index('zstat', 'min')
+#zstat_index.mask_index('zstat', 'std')
+#zstat_index.mask_index('zstat', 'skewness')
+#zstat_index.mask_index('zstat', 'kurtosis')
+#zstat_index.peakcoord_index('zstat')
+
+#psc_index = cal_index(psc_rawdata, sessid, sessn, gender)
+#psc_index.mask_index('psc','mean')
+#psc_index.mask_index('psc','max')
+#psc_index.mask_index('psc','min')
+#psc_index.mask_index('psc','std')
+#psc_index.mask_index('psc','skewness')
+#psc_index.mask_index('psc','kurtosis')
+#psc_index.peakcoord_index('psc')
+
+
+
 # psc_index.peakcoord_index()
 
 # alff_index = cal_index(alff_rawdata, sessid, sessn, gender)
@@ -121,7 +148,6 @@ print 'time of reliability : %d' % (time5 - time4)
 
 
 
-print 'whole calculate time : %d' % (time7 - time0)
 
 
 

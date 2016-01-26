@@ -18,7 +18,7 @@ class user_defined_exception(Exception):
 
 
 class Dataset(object):
-    def __init__(self, targ_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast):
+    def __init__(self, targ_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, pictype = 'zstat'):
         self.ftarg_img = targ_img_file
         self.fmask_img = mask_img_file
         self.areaname = areaname
@@ -33,6 +33,7 @@ class Dataset(object):
         self.header = []
         self.sessid = sessid
         self.narea = len(areanum)
+        self.pictype = pictype
     def loadfile(self):
     # load targ_img_file and mask_img_file
         targ_img = nib.load(self.ftarg_img)
@@ -52,16 +53,16 @@ class Dataset(object):
         self.mask_data = mask_data
 
 class cal_index(object):
-    def __init__(self, ds, sessid, sessn, gender):
+    def __init__(self, ds):
     # nsubj is the number of subjects
     # narea is the number of areas
         self.targ_data = ds.targ_data
         self.mask_data = ds.mask_data
         self.areanum = ds.areanum
         self.affine = ds.affine
-        self.sessid = sessid
-        self.sessn = sessn
-        self.gender = gender
+        self.sessid = ds.sessid
+        self.sessn = range(len(ds.sessid))
+        self.gender = ds.gender
 
         self.index = {}
 
@@ -89,15 +90,24 @@ class cal_index(object):
             calfunc = np.min
         elif metric == 'std':
             calfunc = np.std
+        elif metric == 'skewness':
+            calfunc = stats.skew
+        elif metric == 'kurtosis':
+            calfunc = stats.kurtosis
 
+
+        if index == 'psc':
+            cal_function = cal_psc
+        else:
+            cal_function = cal_mask
 
         if len(self.mask_data.shape) == 4:
             for i in self.sessn:
-                m_value = cal_mask(self.targ_data[:,:,:,i], self.mask_data[:,:,:,i], self.areanum, calfunc)
+                m_value = cal_function(self.targ_data[:,:,:,i], self.mask_data[:,:,:,i], self.areanum, calfunc)
                 mask_value.append(m_value)
         elif len(self.mask_data.shape) == 3:
             for i in self.sessn:
-                m_value = cal_mask(self.targ_data[:,:,:,i], self.mask_data, self.areanum, calfunc)
+                m_value = cal_function(self.targ_data[:,:,:,i], self.mask_data, self.areanum, calfunc)
                 mask_value.append(m_value)
         else:
             raise user_defined_exception('mask_data need to be 3D or 4D volume!')
@@ -106,33 +116,9 @@ class cal_index(object):
         key_index = metric + '_' + index
         self.index[key_index] = mask_value
 
-    def psc_index(self, metric):
-        psc_value = []
 
-        if metric == 'mean':
-            calfunc = np.nanmean
-        elif metric == 'max':
-            calfunc = np.max
-        elif metric == 'min':
-            calfunc = np.min
-        elif metric == 'std':
-            calfunc = np.std
 
-        if len(self.mask_data.shape) == 4:
-            for i in self.sessn:
-                p_value = cal_psc(self.targ_data[:,:,:,i], self.mask_data[:,:,:,i], self.areanum, calfunc)
-                psc_value.append(p_value)
-        elif len(self.mask_data.shape) == 3:
-            for i in self.sessn:
-                p_value = cal_psc(self.targ_data[:,:,:,i], self.mask_data, self.areanum, calfunc)
-                psc_value.append(p_value)
-        else:
-            raise user_defined_exception('mask_data need to be 3D or 4D volume!')
-
-        key_index = metric + '_' + 'psc'
-        self.index[key_index] = psc_value
-
-    def peakcoord_index(self):
+    def peakcoord_index(self, index):
         peak_coordin = []
         if len(self.mask_data.shape) == 4:
             for i in self.sessn:
@@ -145,7 +131,7 @@ class cal_index(object):
         else:
             raise user_defined_exception('mask_data need to be 3D or 4D volume!')
 
-        key_index = 'peak_coordinate'
+        key_index = index + '_' + 'peak_coordinate'
         self.index[key_index] = peak_coordin
 
 class make_atlas(object):
@@ -198,49 +184,112 @@ class reliability(object):
             dice.append(temp)
         self.dice = dice
 
-class save_data(object):
+
+
+
+
+class AtlasInfo(object):
+    def __init__(self,task, contrast, threshold, roi_name, subj_id, subj_gender):
+        """
+        Parameters
+        ----------
+        task : task name, str
+        contrast : contrast name, str
+        threshold : threshold to define atlas
+        roi_name  :  roi name and id, a dict
+        subj_id : subject id, a list
+        """
+
+        self.task = task
+        self.contrast = contrast
+        self.threshold = threshold
+        self.roiname = roi_name
+        self.subjid = subj_id
+        self.gender = subj_gender
+
+    def set_attr(self,name, value):
+        """
+        Parameters
+        ----------
+        name : attribute name
+        value : attribute value
+
+        -------
+
+        """
+        if name == 'task':
+            self.task = value
+        elif name == 'contrast':
+            self.contrast = value
+        elif name == 'threshold':
+            self.threshold = value
+        elif name == 'roi':
+            self.roi = value
+        elif name == 'subj_id':
+            self.subj_id = value
+
+
+    def get_attr(self, name):
+
+        """
+
+        Parameters
+        ----------
+        name : attribute name
+
+        Returns
+        -------
+        value : attribute value
+        """
+
+        if name == 'task':
+            value = self.task
+        elif name == 'contrast':
+            value = self.contrast
+        elif name == 'threshold':
+            value = self.threhold
+        elif name == 'roi':
+            value = self.roi
+        elif name == 'subj_id':
+            value = self.subj_id
+        else:
+            raise user_defined_exception('Wrong attribute name!')
+        return value
+
+class AtlasDB(object):
     def __init__(self):
-        self.atlas = []
+        self.data = {}
 
-    def combinattr(self, instan, attri, new_attri):
-    # combined attributes from other instances into the instance of 'save_data'
-        if hasattr(instan, attri):
-            if len(get_attrvalue(instan, attri))!=0:
-                setattr(self, new_attri, get_attrvalue(instan, attri))
-            else:
-                print '%s is empty!' % attri
+    def import_data(self, ds, modal = 'geo', param = 'volume'):
+        do_index = cal_index(ds)
 
-    def save_to_pkl(self, path, filename):
-        if hasattr(self, 'atlas'):
-            with open(os.path.join(path, filename), 'wb') as output:
-                cPickle.dump(self.atlas, output, -1)
+        modal_all = ['geo','act','rest','morp','fiber']
 
-    def save_to_mat(self, path, filename):
-        if hasattr(self, 'atlas'):
-            si.savemat(os.path.join(path,filename),mdict = self.atlas)
+        param_all = [['volume', 'peakcoor'], ['zstat', 'psc'], ['alff', 'falff', 'reho'], ['vbm'], ['fa']]
 
-    def save_to_dict(self):
-        attri_list = get_attrname(self)
-        atlas = {}
-        parkeys = ['Basic', 'Geo', 'Act', 'Rest', 'Morp', 'Fiber']
-        sonkeys = ([['task', 'subjID', 'subjGender', 'contrast', 'roiname','threshold'],
-                    ['peak_coordin_zstat_index', 'peak_coordin_psc_index', 'peak_coordin_alff_index', 'peak_coordin_falff_index', 'peak_coordin_reho_index', 'act_volume'],
-                    ['peak_psc', 'mean_psc', 'std_psc', 'peak_zstat', 'mean_zstat', 'std_zstat'],
-                    ['peak_alff', 'mean_alff', 'std_alff', 'peak_falff', 'mean_falff', 'std_falff', 'peak_reho', 'mean_reho', 'std_reho'],
-                    ['vbm'],
-                    ['fa']
-                   ])
-        for parkeyi in range(len(parkeys)):
-            atlas[parkeys[parkeyi]] = {}
-        if len(parkeys) != len(sonkeys):
-            raise user_defined_exception('parkeys must to have same length with sonkeys')
-        for parkeyi in range(len(parkeys)):
-            for sonkeyi in range(len(sonkeys[parkeyi])):
-                if hasattr(self, sonkeys[parkeyi][sonkeyi]):
-                    atlas[parkeys[parkeyi]][sonkeys[parkeyi][sonkeyi]] = get_attrvalue(self, sonkeys[parkeyi][sonkeyi])
+        matric = ['mean', 'max', 'min', 'std', 'skewness', 'kurtosis']
+
+
+        if modal in modal_all:
+            item_index = modal_all.index(modal)
+            if not self.data.has_key(modal):
+                self.data[modal] = {}
+            if param in param_all[item_index]:
+                if not self.data[modal].has_key(param):
+                    self.data[modal][param] = {}
+
+                if param == 'volume':
+                    do_index.volume_index()
+                elif param == 'peakcoor':
+                    do_index.peakcoord_index(ds.pictype)
                 else:
-                    atlas[parkeys[parkeyi]][sonkeys[parkeyi][sonkeyi]] = []
-        self.atlas = atlas
+                    for matr in matric:
+                        do_index.mask_index(param, matr)
+
+        self.data[modal][param].update(do_index.index)
+
+
+
 
 
 
@@ -265,7 +314,7 @@ def cal_mask(targ_data, mask_data, areanum, calfunc):
         if len(targ_data[mask_data == areai])!=0:
             mask_ind.append(calfunc(targ_data[mask_data == areai]))
         else:
-            mask_ind.append([])
+            mask_ind.append(np.nan)
     return mask_ind
 #-------------------psc-value-------------------------#
 def cal_psc(targ_data, mask_data, areanum, calfunc):
@@ -274,7 +323,7 @@ def cal_psc(targ_data, mask_data, areanum, calfunc):
         if len(targ_data[mask_data == areai])!=0:
             psc_ind.append(calfunc(targ_data[mask_data == areai])/100)
         else:
-            psc_ind.append([])
+            psc_ind.append(np.nan)
     return psc_ind
 #--------------------MNI coordinate------------------#
 def vox2MNI(vox, affine):
@@ -297,7 +346,7 @@ def cal_coordin(targ_data, mask_data, areanum, affine):
             co_area.append(peakcor_mni)
             peakcor_mni = []
         else:
-            co_area.append([])
+            co_area.append(np.nan)
     return co_area
 
 def do_dice(maska, maskb, value):
