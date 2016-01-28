@@ -30,12 +30,14 @@ zgf_img_file = '/nfs/j3/userhome/huangtaicheng/workingdir/parcellation_MT/BAA/re
 lzg_img_file = '/nfs/j3/userhome/huangtaicheng/workingdir/parcellation_MT/BAA/results/yang_test/sub/sub_split/mergedata/lzg_z5.0.nii.gz'
 htc_img_file = '/nfs/j3/userhome/huangtaicheng/workingdir/parcellation_MT/BAA/results/yang_test/sub/sub_split/mergedata/htc_z5.0.nii.gz'
 
+output_path = '/nfs/t3/workingshop/huangtaicheng/program/ATT/data'
 
 areaname = ['rV3','lV3','rMT','lMT']
 areanum = [1,2,3,4]
 taskname = 'motion'
 contrast = 'motion-fix'
 threshold = 5.0
+roi_name = dict(zip(areaname, areanum))
 
 pathsex = '/nfs/j3/userhome/huangtaicheng/workingdir/parcellation_MT/doc/dfsf/modeID'
 gender = pd.read_csv(os.path.join(pathsex, 'act_sex.csv'))['gender'].tolist()
@@ -59,32 +61,35 @@ zstat_rawdata.loadfile()
 # psc
 psc_rawdata = Dataset(psc_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, 'psc')
 psc_rawdata.loadfile()
-# alff
-# alff_rawdata = Dataset(alff_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, 'alff')
-# alff_rawdata.loadfile()
+#alff
+alff_rawdata = Dataset(alff_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, 'alff')
+alff_rawdata.loadfile()
 # falff
-# falff_rawdata = Dataset(falff_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, 'falff')
-# falff_rawdata.loadfile()
+falff_rawdata = Dataset(falff_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, 'falff')
+falff_rawdata.loadfile()
 # reho
-# reho_rawdata = Dataset(reho_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, 'reho')
-# reho_rawdata.loadfile()
+reho_rawdata = Dataset(reho_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, 'reho')
+reho_rawdata.loadfile()
 
 time2 = time.time()
 print 'time of loadfile : %d' % (time2 - time1)
 
 #---------------------------calculate index for whole data---------------------#
 adb = AtlasDB()
-# adb.import_data(zstat_rawdata, 'act', 'zstat')
-# adb.import_data(zstat_rawdata, 'geo', 'volume')
+adb.import_data(zstat_rawdata, 'act', 'zstat')
+adb.import_data(zstat_rawdata, 'geo', 'volume')
 adb.import_data(zstat_rawdata, 'geo', 'peakcoor')
-# adb.import_data(psc_rawdata, 'act', 'psc')
+adb.import_data(psc_rawdata, 'act', 'psc')
 adb.import_data(psc_rawdata, 'geo', 'peakcoor')
-# adb.import_data(alff_rawdata, 'rest', 'alff')
-# adb.import_data(alff_rawdata, 'geo', 'peakcoor')
-# adb.import_data(falff_rawdata, 'rest', 'falff')
-# adb.import_data(falff_rawdata, 'geo', 'peakcoor')
-# adb.import_data(reho_rawdata, 'rest', 'reho')
-# adb.import_data(reho_rawdata, 'geo', 'peakcoor')
+adb.import_data(alff_rawdata, 'rest', 'alff')
+adb.import_data(alff_rawdata, 'geo', 'peakcoor')
+adb.import_data(falff_rawdata, 'rest', 'falff')
+adb.import_data(falff_rawdata, 'geo', 'peakcoor')
+adb.import_data(reho_rawdata, 'rest', 'reho')
+adb.import_data(reho_rawdata, 'geo', 'peakcoor')
+
+adb.save_to_pkl(output_path, 'index_data.pkl')
+adb.save_to_mat(output_path, 'index_data.mat')
 
 #zstat_index = cal_index(zstat_rawdata)
 #zstat_index.volume_index()

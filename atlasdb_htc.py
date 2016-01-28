@@ -203,8 +203,8 @@ class AtlasInfo(object):
         self.task = task
         self.contrast = contrast
         self.threshold = threshold
-        self.roiname = roi_name
-        self.subjid = subj_id
+        self.roi = roi_name
+        self.subj_id = subj_id
         self.gender = subj_gender
 
     def set_attr(self,name, value):
@@ -227,6 +227,8 @@ class AtlasInfo(object):
             self.roi = value
         elif name == 'subj_id':
             self.subj_id = value
+        elif name == 'gender':
+            self.gender = value
 
 
     def get_attr(self, name):
@@ -252,6 +254,8 @@ class AtlasInfo(object):
             value = self.roi
         elif name == 'subj_id':
             value = self.subj_id
+        elif name == 'gender':
+            value = self.gender
         else:
             raise user_defined_exception('Wrong attribute name!')
         return value
@@ -261,6 +265,19 @@ class AtlasDB(object):
         self.data = {}
 
     def import_data(self, ds, modal = 'geo', param = 'volume'):
+        """
+
+        Parameters
+        ----------
+        ds:  class of dataset,containing all properties that needed in index calculation
+        modal:  parent keys in self.data,which one is a dict
+        param:  sub keys in self.data,which one is a dict
+
+        Returns
+        self.data: contains whole index data
+        -------
+
+        """
         do_index = cal_index(ds)
 
         modal_all = ['geo','act','rest','morp','fiber']
@@ -287,6 +304,59 @@ class AtlasDB(object):
                         do_index.mask_index(param, matr)
 
         self.data[modal][param].update(do_index.index)
+
+    def output_data(self, modal = 'geo', param = 'volume'):
+        """
+
+        Parameters
+        ----------
+        Getting data by keys of modal and param
+        modal
+        param
+
+        Returns
+        data
+        -------
+
+        """
+        if self.data.has_key(modal):
+            if self.data[modal].has_key(param):
+                return self.data[modal][param]
+
+    def save_to_pkl(self, path, filename):
+        """
+
+        Parameters
+        ----------
+        save data in os.path.join(path, filename) with type of .pkl
+        path    parent path
+        filename    filename.pkl
+
+        Returns
+        A .pkl file,which can be loaded by cPickle
+        -------
+
+        """
+        if hasattr(self, 'data'):
+            with open(os.path.join(path, filename), 'wb') as output:
+                cPickle.dump(self.data, output, -1)
+
+    def save_to_mat(self, path, filename):
+        """
+
+        Parameters
+        ----------
+        save data in os.path.join(path, filename) with type of .mat
+        path
+        filename
+
+        Returns
+        -------
+        A .mat file,which can be loaded by matlab
+        """
+        if hasattr(self, 'data'):
+            si.savemat(os.path.join(path, filename), mdict = self.data)
+
 
 
 
