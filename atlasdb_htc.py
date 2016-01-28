@@ -76,6 +76,7 @@ class cal_index(object):
                 act_volume.append(cal_volume(self.mask_data, self.areanum, res))
         else:
             raise user_defined_exception('mask_data need to be 3D or 4D volume!')
+        act_volume = np.array(act_volume)
         self.index['act_volume'] = act_volume
 
     def mask_index(self, index, metric):
@@ -112,7 +113,7 @@ class cal_index(object):
         else:
             raise user_defined_exception('mask_data need to be 3D or 4D volume!')
 
-
+        mask_value = np.array(mask_value)
         key_index = metric + '_' + index
         self.index[key_index] = mask_value
 
@@ -131,6 +132,7 @@ class cal_index(object):
         else:
             raise user_defined_exception('mask_data need to be 3D or 4D volume!')
 
+        peak_coordin = np.array(peak_coordin)
         key_index = index + '_' + 'peak_coordinate'
         self.index[key_index] = peak_coordin
 
@@ -145,19 +147,25 @@ class make_atlas(object):
         self.probdata = []
         self.mpmdata = []
 
-    def probatlas(self):
+    def probatlas(self, outpath):
         probdata = np.zeros([91,109,91,len(self.areanum)])
         for arean in self.areanum:
             for i in self.sessn:
                 probdata[:,:,:,arean-1][self.mask_data[:,:,:,i] == (arean)] += 1
         probdata = probdata/len(self.sessid)
+        for arean in range(len(self, areanum)):
+            img_new = nib.Nifti1Image(probdata[:,:,:,arean], None, self.header)
+            nib.save(img_new, os.path.join(outpath, self.areaname[arean]+'.nii.gz'))
         self.probdata = probdata
 
-    def MPM(self, thr):
+    def MPM(self, thr, outpath, outname):
         probdata_new = np.zeros([91,109,91,len(self.areanum)+1])
         self.probdata[self.probdata<thr] = 0
         probdata_new[:,:,:,1:len(self.areanum)+1] = self.probdata
-        self.mpmdata = probdata_new.argmax(axis = 3)
+        mpmdata = probdata_new.argmax(axis = 3)
+        img_new = nib.Nifti1Image(mpmdata, None, self.header)
+        nib.save(img_new, os.path.join(outpath, outname))
+        self.mpmdata = mpmdata
 
 class reliability(object):
     def __init__(self, areanum):
@@ -305,7 +313,7 @@ class AtlasDB(object):
 
         self.data[modal][param].update(do_index.index)
 
-    def output_data(self, modal = 'geo', param = 'volume'):
+    def output_data(self, modal = 'geo', param = 'volume', roi_name = 'lMT'):
         """
 
         Parameters
@@ -441,17 +449,30 @@ def get_attrvalue(instan, attrname):
     return instan.__getattribute__(attrname)
 
 def finditem(rawlist, keywords):
-# Return items containing keywords of a list
+    # Return items containing keywords of a list
     return [val for val in rawlist if keywords in val]
 
 def todict(instan):
-# transform all attributes from an instance into dict
+    # transform all attributes from an instance into dict
     atlas = {}
     attr_list = get_attrname(instan)
     for attr in attr_list:
         atlas[attr] = get_attrvalue(instan, attr)
     return atlas
 
+def getdata_areas(data, roi, roi_name):
+    """
 
+    Parameters
+    ----------
+    data  data you want to extract
+    roi   areaname,such as 'lMT'
+    roi_name   dict of areanames,such as {'rMT':1,'lMT':2},etc.
 
+    Returns
+    -------
+    spec_data  data with specfic area
+    """
+    spec_data = data[:,roi_name[roi]-1]
+    return spec_data
 
