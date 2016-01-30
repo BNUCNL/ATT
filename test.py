@@ -75,6 +75,8 @@ time2 = time.time()
 print 'time of loadfile : %d' % (time2 - time1)
 
 #---------------------------calculate index for whole data---------------------#
+atlas_info = AtlasInfo(taskname, contrast, threshold, roi_name, sessid, gender)
+
 adb = AtlasDB()
 adb.import_data(zstat_rawdata, 'act', 'zstat')
 adb.import_data(zstat_rawdata, 'geo', 'volume')

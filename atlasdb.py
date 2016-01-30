@@ -22,7 +22,11 @@ def load_img(fimg):
 
     Parameters
     ----------
+<<<<<<< HEAD
     fimg : a file or a Nifti1Image object
+=======
+    fimg : a file or a Nifti1Image object.
+>>>>>>> upstream/master
 
     Returns
     -------
@@ -41,6 +45,23 @@ def load_img(fimg):
 
 
 def extract_param(targ_img, atlas_img, roi_id, metric):
+<<<<<<< HEAD
+=======
+    """
+
+    Parameters
+    ----------
+    targ_img    : a file or a Nifti1Image object for target image
+    atlas_img   : a file or a Nifti1Image object for atlas image
+    roi_id  : a scalar to indicate roi id
+    metric  :  metric used to summarize ROI
+
+    Returns
+    -------
+    param   : 2-d np.array
+
+    """
+>>>>>>> upstream/master
     targ = load_img(targ_img).get_data()
     atlas = load_img(atlas_img).get_data()
 
@@ -53,11 +74,16 @@ def extract_param(targ_img, atlas_img, roi_id, metric):
     if atlas.ndim == 3:
         atlas = np.tile(atlas, (1, targ.shape[3]))
 
+<<<<<<< HEAD
     NS = targ.shape[3]
 
 
     if metric == 'center' or metric == 'peak':
         d = np.empty(targ.shape[:3])
+=======
+    NS = targ.shape[3] # number of subjects
+    if metric == 'center' or metric == 'peak':
+>>>>>>> upstream/master
         param = np.empty((NS,3))
     else:
         param = np.empty(NS)
@@ -65,6 +91,7 @@ def extract_param(targ_img, atlas_img, roi_id, metric):
 
     if metric == 'peak':
         for s in range(NS):
+<<<<<<< HEAD
            d[atlas[:,:,:,s] == roi_id] = targ[atlas[:,:,:,s] == roi_id]
            param[s, :] = np.unravel_index(d.argmax(), d.shape)
 
@@ -74,6 +101,17 @@ def extract_param(targ_img, atlas_img, roi_id, metric):
             coords = np.transpose(np.nonzero(d))
             param[s, :]  = np.mean(coords, axis=0)
     else:
+=======
+            d = targ[:, :, :, s] * (atlas[:, :, :, s] == roi_id)
+            param[s, :] = np.unravel_index(d.argmax(), d.shape)
+
+    elif metric == 'center':
+        for s in range(NS):
+            d = targ[:,:,:,s] * (atlas[:,:,:,s] == roi_id)
+            param[s, :]  = np.mean(np.transpose(np.nonzero(d)))
+
+    else: # scalar metric
+>>>>>>> upstream/master
         if metric == 'sum' or metric == 'volume':
             cpu = np.nansum
         elif metric == 'max':
@@ -98,6 +136,7 @@ def extract_param(targ_img, atlas_img, roi_id, metric):
 
 
 class AtlasInfo(object):
+<<<<<<< HEAD
     def __init__(self,task, contrast, threshold, roi_name, subj_id, subj_gender):
         self.task = task
         self.contrast = contrast
@@ -112,6 +151,72 @@ class AtlasInfo(object):
     def get(self, attr_name, attr_value):
         pass
 
+=======
+    def __init__(self,task, contrast, threshold, roi, subj_id, subj_gender):
+        """
+
+        Parameters
+        ----------
+        task : task name, str
+        contrast : contrast name, str
+        threshold : threshold to define atlas
+        roi  :  roi name and id, a dict
+        subj_id : subject id, a list
+
+
+        """
+        self.task = task
+        self.contrast = contrast
+        self.threshold = threshold
+        self.roi = roi
+        self.subj_id = subj_id
+
+    def set_attr(self, name, value):
+        """
+
+        Parameters
+        ----------
+        name : attribute name
+        value : attribute value
+
+        """
+        if name == 'task':
+            self.task = value
+        elif name == 'contrast':
+            self.contrast = value
+        elif name  == 'threshold':
+            self.threshold = 'threshold'
+        elif name == 'roi':
+            self.roi = value
+        elif name == 'subj_id':
+            self.subj_id = value
+
+    def get_attr(self, name):
+        """
+
+        Parameters
+        ----------
+        name : attribute name
+
+        Returns
+        -------
+        value : attribute value
+        """
+        if name == 'task':
+            value = self.task
+        elif name == 'contrast':
+           value = self.contrast
+        elif name  == 'threshold':
+           value = self.threshold
+        elif name == 'roi':
+            value = self.roi
+        elif name == 'subj_id':
+            value = self.subj_id
+        else:
+             raise UserDefinedException('Wrong attribute name!')
+
+        return value
+>>>>>>> upstream/master
 
 class AtlasDB(object):
     def __init__(self, atlas_img, basic, metric={}):
@@ -120,12 +225,19 @@ class AtlasDB(object):
         Parameters
         ----------
         atlas_img : Nifti1image file or Nifti1image object
+<<<<<<< HEAD
         basic : basic info for atlas
         data    : data for each roi
 
 
         Returns
         -------
+=======
+        basic : basic info for atlas, AtlasInfo object
+        data    : data for each roi, dict
+        metric  : metric for each params, dict
+
+>>>>>>> upstream/master
 
         """
 
@@ -134,9 +246,25 @@ class AtlasDB(object):
         self.metric = metric
         self.data = {}
 
+<<<<<<< HEAD
     def import_data(self, targ_img, roiname=None, modal='geo', param='volume'):
         if roiname is None:
             roiname = self.basic.roiname
+=======
+    def import_data(self, targ_img, roi=None, modal='geo', param='volume'):
+        """
+
+        Parameters
+        ----------
+        targ_img :  a file or a Nifti1Image object for target image
+        roi : roi info, a (name, id) dict
+        modal : modality, str
+        param : parameter name, str
+
+        """
+        if roi is None:
+            roi = self.basic.roi
+>>>>>>> upstream/master
 
         metric  = self.metric[param]
         if modal == 'geo':
@@ -145,6 +273,7 @@ class AtlasDB(object):
              meas = np.empty((len(self.basic.subjid), len(metric)))
         meas.fill(np.nan)
 
+<<<<<<< HEAD
         for key in roiname:
             for m in range(metric.shape[0]):
                meas[:,m] =  extract_param(targ_img, self.atlas, roiname[key], metric[m])
@@ -208,5 +337,39 @@ class AtlasDB(object):
 
 
     def get(self, attr_name, attr_value):
+=======
+        for key in roi:
+            for m in range(metric.shape[0]):
+               meas[:,m] =  extract_param(targ_img, self.atlas, roi[key], metric[m])
+
+            self.data[key][modal][param] = meas
+
+    def export_data(self, sessid=None, roi=None, modal='geo', param='volume'):
+        """
+
+        Parameters
+        ----------
+        sessid : sessid, list
+        roi : roi info a (name, id) dict
+        modal : modality
+        param :  parameter name, str
+
+        Returns
+        -------
+        meas : a list
+
+        """
+
+        meas = []
+        for key in roi:
+            meas.append(self.data[key][modal][param])
+
+        return meas
+
+    def set_attr(self,name, value):
+        pass
+
+    def get_attr(self, name, value):
+>>>>>>> upstream/master
         pass
 
