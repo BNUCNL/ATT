@@ -7,6 +7,7 @@ import nibabel as nib
 import copy
 import cPickle
 import scipy.io as si
+from scipy import stats
 
 
 class user_defined_exception(Exception):
@@ -17,7 +18,7 @@ class user_defined_exception(Exception):
 
 
 class Dataset(object):
-    def __init__(self, targ_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast):
+    def __init__(self, targ_img_file, mask_img_file, areaname, areanum, gender, sessid, taskname, contrast, pictype = 'zstat'):
         self.ftarg_img = targ_img_file
         self.fmask_img = mask_img_file
         self.areaname = areaname
@@ -25,13 +26,14 @@ class Dataset(object):
         self.gender = gender
         self.taskname = taskname
         self.contrast = contrast
-        self.affine = []    
+        self.affine = []
         self.targ_data = []
         self.mask_data = []
         self.shape = []
         self.header = []
         self.sessid = sessid
         self.narea = len(areanum)
+        self.pictype = pictype
     def loadfile(self):
     # load targ_img_file and mask_img_file
         targ_img = nib.load(self.ftarg_img)
@@ -51,35 +53,19 @@ class Dataset(object):
         self.mask_data = mask_data
 
 class cal_index(object):
-    def __init__(self, ds, sessid, sessn, gender):
+    def __init__(self, ds):
     # nsubj is the number of subjects
     # narea is the number of areas
         self.targ_data = ds.targ_data
         self.mask_data = ds.mask_data
         self.areanum = ds.areanum
         self.affine = ds.affine
-        self.sessid = sessid
-        self.sessn = sessn
-        self.gender = gender
+        self.sessid = ds.sessid
+        self.sessn = range(len(ds.sessid))
+        self.gender = ds.gender
 
-        self.act_volume = []
-        self.mean_zstat = []
-        self.peak_zstat = []
-        self.std_zstat = []
-        self.mean_psc = []
-        self.peak_psc = []
-        self.std_psc = []
-        self.peak_coordin = []
-        self.mean_alff = []
-        self.peak_alff = []
-        self.std_alff = []
-        self.mean_falff = []
-        self.peak_falff = []
-        self.std_falff = []
-        self.mean_reho = []
-        self.peak_reho = []
-        self.std_reho = []
-        
+        self.index = {}
+
     def volume_index(self, res=[2,2,2]):
         act_volume = []
         if len(self.mask_data.shape) == 4:
@@ -90,70 +76,50 @@ class cal_index(object):
                 act_volume.append(cal_volume(self.mask_data, self.areanum, res))
         else:
             raise user_defined_exception('mask_data need to be 3D or 4D volume!')
-        self.act_volume = act_volume
-                               
-    def mask_index(self, index):
+        act_volume = np.array(act_volume)
+        self.index['act_volume'] = act_volume
+
+    def mask_index(self, index, metric):
 # for mean and max value of z-values,falff,alff,reho,etc.
-        mean_value = []
-        peak_value = []
-        std_value = []
+        mask_value = []
+
+        if metric == 'mean':
+            calfunc = np.nanmean
+        elif metric == 'max':
+            calfunc = np.max
+        elif metric == 'min':
+            calfunc = np.min
+        elif metric == 'std':
+            calfunc = np.std
+        elif metric == 'skewness':
+            calfunc = stats.skew
+        elif metric == 'kurtosis':
+            calfunc = stats.kurtosis
+
+
+        if index == 'psc':
+            cal_function = cal_psc
+        else:
+            cal_function = cal_mask
+
         if len(self.mask_data.shape) == 4:
             for i in self.sessn:
-                [mvalue,pvalue,stdvalue] = cal_mask(self.targ_data[:,:,:,i], self.mask_data[:,:,:,i], self.areanum)
-                mean_value.append(mvalue)
-                peak_value.append(pvalue)
-                std_value.append(stdvalue)
+                m_value = cal_function(self.targ_data[:,:,:,i], self.mask_data[:,:,:,i], self.areanum, calfunc)
+                mask_value.append(m_value)
         elif len(self.mask_data.shape) == 3:
             for i in self.sessn:
-                [mvalue,pvalue,stdvalue] = cal_mask(self.targ_data[:,:,:,i], self.mask_data, self.areanum)
-                mean_value.append(mvalue)
-                peak_value.append(pvalue)
-                std_value.append(stdvalue)
+                m_value = cal_function(self.targ_data[:,:,:,i], self.mask_data, self.areanum, calfunc)
+                mask_value.append(m_value)
         else:
             raise user_defined_exception('mask_data need to be 3D or 4D volume!')
 
-        if index == 'zstat':
-            self.mean_zstat = mean_value
-            self.peak_zstat = peak_value
-            self.std_zstat = std_value
-        elif index == 'alff':
-            self.mean_alff = mean_value
-            self.peak_alff = peak_value
-            self.std_alff = std_value
-        elif index == 'falff':
-            self.mean_falff = mean_value
-            self.peak_falff = peak_value
-            self.std_falff = std_value
-        elif index == 'reho':
-            self.mean_reho = mean_value
-            self.peak_reho = peak_value
-            self.std_reho = std_value
-        else:
-            raise user_defined_exception("please input index as 'zstat' or 'alff' or 'falff' or 'reho'!")
-        
-    def psc_index(self):
-        mean_psc = []
-        peak_psc = []
-        std_psc = []
-        if len(self.mask_data.shape) == 4:
-            for i in self.sessn:
-                [mpsc,ppsc,stdpsc] = cal_psc(self.targ_data[:,:,:,i], self.mask_data[:,:,:,i], self.areanum)
-                mean_psc.append(mpsc)
-                peak_psc.append(ppsc)
-                std_psc.append(stdpsc)
-        elif len(self.mask_data.shape) == 3:
-            for i in self.sessn:
-                [mpsc,ppsc,stdpsc] = cal_psc(self.targ_data[:,:,:,i], self.mask_data, self.areanum)
-                mean_psc.append(mpsc)
-                peak_psc.append(ppsc)
-                std_psc.append(stdpsc)
-        else:
-            raise user_defined_exception('mask_data need to be 3D or 4D volume!')
-        self.mean_psc = mean_psc
-        self.peak_psc = peak_psc
-        self.std_psc = std_psc
+        mask_value = np.array(mask_value)
+        key_index = metric + '_' + index
+        self.index[key_index] = mask_value
 
-    def peakcoord_index(self):
+
+
+    def peakcoord_index(self, index):
         peak_coordin = []
         if len(self.mask_data.shape) == 4:
             for i in self.sessn:
@@ -165,7 +131,10 @@ class cal_index(object):
                 peak_coordin.append(pcor)
         else:
             raise user_defined_exception('mask_data need to be 3D or 4D volume!')
-        self.peak_coordin = peak_coordin
+
+        peak_coordin = np.array(peak_coordin)
+        key_index = index + '_' + 'peak_coordinate'
+        self.index[key_index] = peak_coordin
 
 class make_atlas(object):
     def __init__(self, ds, sessid, sessn):
@@ -184,11 +153,11 @@ class make_atlas(object):
             for i in self.sessn:
                 probdata[:,:,:,arean-1][self.mask_data[:,:,:,i] == (arean)] += 1
         probdata = probdata/len(self.sessid)
-        for arean in range(len(self.areanum)):
+        for arean in range(len(self, areanum)):
             img_new = nib.Nifti1Image(probdata[:,:,:,arean], None, self.header)
-            nib.save(img_new, os.path.join(outpath, self.areaname[arean]+'.nii.gz'))    
+            nib.save(img_new, os.path.join(outpath, self.areaname[arean]+'.nii.gz'))
         self.probdata = probdata
-    
+
     def MPM(self, thr, outpath, outname):
         probdata_new = np.zeros([91,109,91,len(self.areanum)+1])
         self.probdata[self.probdata<thr] = 0
@@ -204,7 +173,7 @@ class reliability(object):
         self.maskb = []
         self.areanum = areanum
         self.dice = []
-    
+
     def loadfile(self, maska_imag, maskb_imag):
         maska = nib.load(maska_imag).get_data()
         maskb = nib.load(maskb_imag).get_data()
@@ -222,53 +191,186 @@ class reliability(object):
                 temp.append(dice_value)
             dice.append(temp)
         self.dice = dice
-         
-class save_data(object):
-    def __init__(self): 
-        self.atlas = []
-    
-    def combinattr(self, instan, attri, new_attri):
-    # combined attributes from other instances into the instance of 'save_data'
-        if hasattr(instan, attri): 
-            if len(get_attrvalue(instan, attri))!=0:
-                setattr(self, new_attri, get_attrvalue(instan, attri))
-            else:
-                print '%s is empty!' % attri 
+
+
+
+
+
+class AtlasInfo(object):
+    def __init__(self,task, contrast, threshold, roi_name, subj_id, subj_gender):
+        """
+        Parameters
+        ----------
+        task : task name, str
+        contrast : contrast name, str
+        threshold : threshold to define atlas
+        roi_name  :  roi name and id, a dict
+        subj_id : subject id, a list
+        """
+
+        self.task = task
+        self.contrast = contrast
+        self.threshold = threshold
+        self.roi = roi_name
+        self.subj_id = subj_id
+        self.gender = subj_gender
+
+    def set_attr(self,name, value):
+        """
+        Parameters
+        ----------
+        name : attribute name
+        value : attribute value
+
+        -------
+
+        """
+        if name == 'task':
+            self.task = value
+        elif name == 'contrast':
+            self.contrast = value
+        elif name == 'threshold':
+            self.threshold = value
+        elif name == 'roi':
+            self.roi = value
+        elif name == 'subj_id':
+            self.subj_id = value
+        elif name == 'gender':
+            self.gender = value
+
+
+    def get_attr(self, name):
+
+        """
+
+        Parameters
+        ----------
+        name : attribute name
+
+        Returns
+        -------
+        value : attribute value
+        """
+
+        if name == 'task':
+            value = self.task
+        elif name == 'contrast':
+            value = self.contrast
+        elif name == 'threshold':
+            value = self.threhold
+        elif name == 'roi':
+            value = self.roi
+        elif name == 'subj_id':
+            value = self.subj_id
+        elif name == 'gender':
+            value = self.gender
+        else:
+            raise user_defined_exception('Wrong attribute name!')
+        return value
+
+class AtlasDB(object):
+    def __init__(self):
+        self.data = {}
+
+    def import_data(self, ds, modal = 'geo', param = 'volume'):
+        """
+
+        Parameters
+        ----------
+        ds:  class of dataset,containing all properties that needed in index calculation
+        modal:  parent keys in self.data,which one is a dict
+        param:  sub keys in self.data,which one is a dict
+
+        Returns
+        self.data: contains whole index data
+        -------
+
+        """
+        do_index = cal_index(ds)
+
+        modal_all = ['geo','act','rest','morp','fiber']
+
+        param_all = [['volume', 'peakcoor'], ['zstat', 'psc'], ['alff', 'falff', 'reho'], ['vbm'], ['fa']]
+
+        matric = ['mean', 'max', 'min', 'std', 'skewness', 'kurtosis']
+
+
+        if modal in modal_all:
+            item_index = modal_all.index(modal)
+            if not self.data.has_key(modal):
+                self.data[modal] = {}
+            if param in param_all[item_index]:
+                if not self.data[modal].has_key(param):
+                    self.data[modal][param] = {}
+
+                if param == 'volume':
+                    do_index.volume_index()
+                elif param == 'peakcoor':
+                    do_index.peakcoord_index(ds.pictype)
+                else:
+                    for matr in matric:
+                        do_index.mask_index(param, matr)
+
+        self.data[modal][param].update(do_index.index)
+
+    def output_data(self, modal = 'geo', param = 'volume', roi_name = 'lMT'):
+        """
+
+        Parameters
+        ----------
+        Getting data by keys of modal and param
+        modal
+        param
+
+        Returns
+        data
+        -------
+
+        """
+        if self.data.has_key(modal):
+            if self.data[modal].has_key(param):
+                return self.data[modal][param]
 
     def save_to_pkl(self, path, filename):
-        if hasattr(self, 'atlas'):
+        """
+
+        Parameters
+        ----------
+        save data in os.path.join(path, filename) with type of .pkl
+        path    parent path
+        filename    filename.pkl
+
+        Returns
+        A .pkl file,which can be loaded by cPickle
+        -------
+
+        """
+        if hasattr(self, 'data'):
             with open(os.path.join(path, filename), 'wb') as output:
-                cPickle.dump(self.atlas, output, -1)
+                cPickle.dump(self.data, output, -1)
 
     def save_to_mat(self, path, filename):
-        if hasattr(self, 'atlas'):
-            si.savemat(os.path.join(path,filename),mdict = self.atlas)        
-    
-    def save_to_dict(self):
-        attri_list = get_attrname(self)
-        atlas = {}
-        parkeys = ['Basic', 'Geo', 'Act', 'Rest', 'Morp', 'Fiber']
-        sonkeys = ([['task', 'subjID', 'subjGender', 'contrast', 'roiname','threshold'],
-                    ['peak_coordin_zstat_index', 'peak_coordin_psc_index', 'peak_coordin_alff_index', 'peak_coordin_falff_index', 'peak_coordin_reho_index', 'act_volume'],
-                    ['peak_psc', 'mean_psc', 'std_psc', 'peak_zstat', 'mean_zstat', 'std_zstat'],
-                    ['peak_alff', 'mean_alff', 'std_alff', 'peak_falff', 'mean_falff', 'std_falff', 'peak_reho', 'mean_reho', 'std_reho'],
-                    ['vbm'],
-                    ['fa']
-                   ])
-        for parkeyi in range(len(parkeys)):
-            atlas[parkeys[parkeyi]] = {}
-        if len(parkeys) != len(sonkeys):
-            raise user_defined_exception('parkeys must to have same length with sonkeys')
-        for parkeyi in range(len(parkeys)):
-            for sonkeyi in range(len(sonkeys[parkeyi])):
-                if hasattr(self, sonkeys[parkeyi][sonkeyi]):
-                    atlas[parkeys[parkeyi]][sonkeys[parkeyi][sonkeyi]] = get_attrvalue(self, sonkeys[parkeyi][sonkeyi])
-                else:
-                    atlas[parkeys[parkeyi]][sonkeys[parkeyi][sonkeyi]] = []
-        self.atlas = atlas
+        """
+
+        Parameters
+        ----------
+        save data in os.path.join(path, filename) with type of .mat
+        path
+        filename
+
+        Returns
+        -------
+        A .mat file,which can be loaded by matlab
+        """
+        if hasattr(self, 'data'):
+            si.savemat(os.path.join(path, filename), mdict = self.data)
 
 
- 
+
+
+
+
+
 
 #-------------------functions-----------------------#
 
@@ -282,37 +384,25 @@ def cal_volume(mask_data, areanum, resolu):
     volume = []
     for areai in areanum:
         volume.append(np.sum(mask_data == (areai))*listinmul(resolu))
-    return volume       
+    return volume
 #-------------------z-value--------------------------#
-def cal_mask(targ_data, mask_data, areanum):
-    mzstat = []
-    pzstat = []
-    stdzstat = []
+def cal_mask(targ_data, mask_data, areanum, calfunc):
+    mask_ind = []
     for areai in areanum:
         if len(targ_data[mask_data == areai])!=0:
-            mzstat.append(np.nanmean(targ_data[mask_data == areai]))
-            pzstat.append(np.nanmax(targ_data[mask_data == areai]))
-            stdzstat.append(np.std(targ_data[mask_data == areai]))
-        else: 
-            mzstat.append(0)
-            pzstat.append(0)
-            stdzstat.append(0)
-    return mzstat,pzstat,stdzstat
-#-------------------psc-value-------------------------#
-def cal_psc(targ_data, mask_data, areanum):
-    mpsc = []
-    ppsc = []
-    stdpsc = []
-    for areai in areanum:
-        if len(targ_data[mask_data == areai])!=0:
-            mpsc.append(np.nanmean(targ_data[mask_data == areai])/100)
-            ppsc.append(np.nanmax(targ_data[mask_data == areai])/100)
-            stdpsc.append(np.std(targ_data[mask_data == areai])/100)
+            mask_ind.append(calfunc(targ_data[mask_data == areai]))
         else:
-            mpsc.append(0)
-            ppsc.append(0)
-            stdpsc.append(0)
-    return mpsc,ppsc,stdpsc
+            mask_ind.append(np.nan)
+    return mask_ind
+#-------------------psc-value-------------------------#
+def cal_psc(targ_data, mask_data, areanum, calfunc):
+    psc_ind = []
+    for areai in areanum:
+        if len(targ_data[mask_data == areai])!=0:
+            psc_ind.append(calfunc(targ_data[mask_data == areai])/100)
+        else:
+            psc_ind.append(np.nan)
+    return psc_ind
 #--------------------MNI coordinate------------------#
 def vox2MNI(vox, affine):
     vox_new = np.ones([4,1])
@@ -329,14 +419,14 @@ def cal_coordin(targ_data, mask_data, areanum, affine):
             temp = np.zeros([91,109,91])
             temp[mask_data == areai] = targ_data[mask_data == areai]
             peakcor_vox = np.unravel_index(temp.argmax(), temp.shape)
-            peakv = temp.argmax()        
+            peakv = temp.argmax()
             peakcor_mni = list(vox2MNI(peakcor_vox ,affine))
             co_area.append(peakcor_mni)
             peakcor_mni = []
         else:
-            co_area.append([])
+            co_area.append(np.nan)
     return co_area
-       
+
 def do_dice(maska, maskb, value):
 # value here is aim to filter areas so that we can get dice in every brain areas
     maska_bin = copy.deepcopy(maska)
@@ -359,17 +449,30 @@ def get_attrvalue(instan, attrname):
     return instan.__getattribute__(attrname)
 
 def finditem(rawlist, keywords):
-# Return items containing keywords of a list
+    # Return items containing keywords of a list
     return [val for val in rawlist if keywords in val]
 
 def todict(instan):
-# transform all attributes from an instance into dict
+    # transform all attributes from an instance into dict
     atlas = {}
     attr_list = get_attrname(instan)
     for attr in attr_list:
         atlas[attr] = get_attrvalue(instan, attr)
     return atlas
 
+def getdata_areas(data, roi, roi_name):
+    """
 
+    Parameters
+    ----------
+    data  data you want to extract
+    roi   areaname,such as 'lMT'
+    roi_name   dict of areanames,such as {'rMT':1,'lMT':2},etc.
 
+    Returns
+    -------
+    spec_data  data with specfic area
+    """
+    spec_data = data[:,roi_name[roi]-1]
+    return spec_data
 
