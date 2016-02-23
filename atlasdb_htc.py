@@ -133,7 +133,7 @@ class cal_index(object):
             raise user_defined_exception('mask_data need to be 3D or 4D volume!')
 
         peak_coordin = np.array(peak_coordin)
-        key_index = index + '_' + 'peak_coordinate'
+        key_index = index + '_' + 'peakcoor'
         self.index[key_index] = peak_coordin
 
 class make_atlas(object):
