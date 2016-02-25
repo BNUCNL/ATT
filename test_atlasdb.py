@@ -82,7 +82,7 @@ print 'time of loadfile : %d' % (time2 - time1)
 #---------------------------calculate index for whole data---------------------#
 atlas_info = AtlasInfo(taskname, contrast, threshold, roi_name, sessid, gender)
 
-adb = AtlasDB()
+adb = AtlasDB(atlas_info.bas)
 adb.import_data(zstat_rawdata, 'act', 'zstat')
 adb.import_data(zstat_rawdata, 'geo', 'volume')
 adb.import_data(zstat_rawdata, 'geo', 'peakcoor')
@@ -95,8 +95,8 @@ adb.import_data(falff_rawdata, 'geo', 'peakcoor')
 adb.import_data(reho_rawdata, 'rest', 'reho')
 adb.import_data(reho_rawdata, 'geo', 'peakcoor')
 
-adb.save_to_pkl(output_path, 'index_data.pkl')
-adb.save_to_mat(output_path, 'index_data.mat')
+#adb.save_to_pkl(output_path, 'index_data.pkl')
+#adb.save_to_mat(output_path, 'index_data.mat')
 
 #zstat_index = cal_index(zstat_rawdata)
 #zstat_index.volume_index()
