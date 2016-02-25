@@ -8,7 +8,7 @@ import copy
 import cPickle
 import scipy.io as si
 from scipy import stats
-
+from __future__ import division
 
 class user_defined_exception(Exception):
     def __init__(self, str):
@@ -84,13 +84,17 @@ class cal_index(object):
         mask_value = []
 
         if metric == 'mean':
-            calfunc = np.nanmean
+            calfunc = np.mean
         elif metric == 'max':
             calfunc = np.max
         elif metric == 'min':
             calfunc = np.min
         elif metric == 'std':
             calfunc = np.std
+        elif metric == 'median':
+            calfunc = np.median
+        elif metric == 'cv':
+            calfunc = calcv
         elif metric == 'skewness':
             calfunc = stats.skew
         elif metric == 'kurtosis':
@@ -376,6 +380,10 @@ class AtlasDB(object):
 
 #--------------functions for index------------------#
 #-------------------volume--------------------------#
+
+def calcv(data):
+    return np.std(data)/np.mean(data)
+
 def listinmul(mul_list):
     outnum = reduce(lambda x,y:x*y,mul_list)
     return outnum
