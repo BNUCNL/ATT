@@ -5,6 +5,7 @@
 
 import cPickle
 import os
+import numpy as np
 
 fpath = os.path.join
   
@@ -55,7 +56,70 @@ class AtlasDB(object):
             if self.data[modal].has_key(param):
                 return self.data[modal][param][stem+'_'+param]
 
+class AtlasDescribe(object):
+    def __init__(self, data, areaname):
+        self.data = data
+        self.areaname = areaname
+        self.datamean = []
+        self.datastd = []
+    def subjexist(self, area):
+        """
+
+        Parameters
+        ------------
+        find num of exist data of each areas
+        please use the result that the inputting data is volume
+
+
+        Returns
+        existnum: existed subject numbers
+        existperc: existed subject percentage
+        -------
+
+        """
+        totalsubj = self.data.shape[0]
+        existnum = sum(self.data[:,self.areaname.index(area)] != 0 )
+        existperc = existnum/float(totalsubj)
+
+        self.existnum = existnum
+        self.existperc = existperc
+
+    def paradescrib(self, area):
+        """
+
+        Parameters
+        -----------
+        calculate mean and std from raw data
+
+
+        Returns
+        datamean
+        datastd
+        ------------
+
+        """
+        dataarea = self.data[:,self.areaname.index(area)]
+
+        # datacal is the data removed nan and zeros
+        datacal = [i for i in dataarea if (str(i)!='nan')&(i!=0)]
+        datacal = np.array(datacal)
+        self.datamean = datacal.mean(axis=0)
+        self.datastd = datacal.std(axis=0)
 
 
 
 	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
