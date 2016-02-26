@@ -18,10 +18,15 @@ volume = atlas.output_data('geo', 'volume')
 mean_alff = atlas.output_data('rest', 'alff', 'mean')
 zstat_peakcoor = atlas.output_data('geo', 'peakcoor', 'zstat')
 
-atlasdes = AtlasDescribe(volume, areaname)
+atlasdes_v = AtlasDescribe(volume, areaname)
+atlasdes_v.subjexist('lMT')
+atlasdes_v.paradescrib('lMT')
+atlasdes_v.calhemLi('MT')
+
+atlasdes = AtlasDescribe(mean_alff, areaname)
 atlasdes.subjexist('lMT')
 atlasdes.paradescrib('lMT')
-
+atlasdes.calhemLi('V3')
 
 
 
