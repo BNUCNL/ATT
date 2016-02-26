@@ -131,8 +131,22 @@ class AtlasDescribe(object):
 class DataFigure(object):
     def __init__(self, areaname):
         self.areaname = areaname
+
     def plotcorr(self, data1, data2, area):
-        pass
+        x = data1[:, self.areaname.index(area)]
+        y = data2[:, self.areaname.index(area)]
+
+        x_deloutlier = []
+        y_deloutlier = []
+
+        for i in range(len(x)):
+            if (str(x[i]) != 'nan') & (str(y[i]) != 'nan'):
+                x_deloutlier.append(x[i])
+                y_deloutlier.append(y[i])
+        x_deloutlier = np.array(x_deloutlier)
+        y_deloutlier = np.array(y_deloutlier)
+        w = sns.jointplot(x = x_deloutlier, y = y_deloutlier, kind = 'reg')
+        plt.show(w)
 
     def plotbar(self):
         pass
