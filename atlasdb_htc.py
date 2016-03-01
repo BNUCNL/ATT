@@ -1,6 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode:nil -*-
 # vi: set ft=python sts=4 sw=4 et:
-
+from __future__ import division
 import os
 import numpy as np
 import nibabel as nib
@@ -84,13 +84,17 @@ class cal_index(object):
         mask_value = []
 
         if metric == 'mean':
-            calfunc = np.nanmean
+            calfunc = np.mean
         elif metric == 'max':
             calfunc = np.max
         elif metric == 'min':
             calfunc = np.min
         elif metric == 'std':
             calfunc = np.std
+        elif metric == 'median':
+            calfunc = np.median
+        elif metric == 'cv':
+            calfunc = calcv
         elif metric == 'skewness':
             calfunc = stats.skew
         elif metric == 'kurtosis':
@@ -133,7 +137,7 @@ class cal_index(object):
             raise user_defined_exception('mask_data need to be 3D or 4D volume!')
 
         peak_coordin = np.array(peak_coordin)
-        key_index = index + '_' + 'peak_coordinate'
+        key_index = index + '_' + 'peakcoor'
         self.index[key_index] = peak_coordin
 
 class make_atlas(object):
@@ -207,13 +211,21 @@ class AtlasInfo(object):
         roi_name  :  roi name and id, a dict
         subj_id : subject id, a list
         """
-
+        self.bas = {}
         self.task = task
         self.contrast = contrast
         self.threshold = threshold
         self.roi = roi_name
         self.subj_id = subj_id
         self.gender = subj_gender
+
+        self.bas['task'] = task
+        self.bas['contrast'] = contrast
+        self.bas['threshold'] = threshold
+        self.bas['roi'] = roi_name
+        self.bas['subjid'] = subj_id
+        self.bas['gender'] = subj_gender
+
 
     def set_attr(self,name, value):
         """
@@ -269,8 +281,9 @@ class AtlasInfo(object):
         return value
 
 class AtlasDB(object):
-    def __init__(self):
+    def __init__(self, basicinfo):
         self.data = {}
+        self.data['basic'] = basicinfo
 
     def import_data(self, ds, modal = 'geo', param = 'volume'):
         """
@@ -292,7 +305,7 @@ class AtlasDB(object):
 
         param_all = [['volume', 'peakcoor'], ['zstat', 'psc'], ['alff', 'falff', 'reho'], ['vbm'], ['fa']]
 
-        matric = ['mean', 'max', 'min', 'std', 'skewness', 'kurtosis']
+        matric = ['mean', 'max', 'min', 'std', 'median', 'cv', 'skewness', 'kurtosis']
 
 
         if modal in modal_all:
@@ -376,6 +389,10 @@ class AtlasDB(object):
 
 #--------------functions for index------------------#
 #-------------------volume--------------------------#
+
+def calcv(data):
+    return np.std(data)/np.mean(data)
+
 def listinmul(mul_list):
     outnum = reduce(lambda x,y:x*y,mul_list)
     return outnum
