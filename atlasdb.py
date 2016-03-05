@@ -4,13 +4,6 @@
 import os
 import numpy as np
 import nibabel as nib
-import copy
-from scipy import stats
-
-from __future__ import division
-import copy
-import cPickle
-import scipy.io as si
 from scipy import stats
 
 
@@ -19,9 +12,10 @@ class UserDefinedException(Exception):
         Exception.__init__(self)
         self._str = str
 
+
 def load_img(fimg):
     """
-    Load Nifti1Image
+    Load nifti image
     Parameters
     ----------
     fimg : a file or a Nifti1Image object.
@@ -42,30 +36,29 @@ def load_img(fimg):
 
 
 class Atlas(object):
-    def __init__(self, atlas_img, roi_id, roi_name, task, contrast, threshold, subj_id,subj_gender):
-        self.atlas_img = loadimg(atlas_img)
+    def __init__(self, atlas_img, roi_id, roi_name, task, contrast, threshold, subj_id, subj_gender):
+        self.atlas_img = load_img(atlas_img)
         self.roi_name = roi_name
         self.roi_id = roi_id
         self.task = task
         self.contrast = contrast
+        self.threshold = threshold
         self.subj_id = subj_id
         self.subj_gender = subj_gender
+        self.volume = self.volume_meas()
 
-        self.data = {}
-        self.data['geo'] = {}
-        self.data['geo']['volume'] = self.volume_meas()
-
-    def collect_meas(self, targ_img, metric = 'mean'):
+    def collect_meas(self, targ_img, metric='mean'):
         """
         Collect measures for atlas
 
         Parameters
         ----------
-        targ_img
-        metric
+        targ_img: target image
+        metric: metric to summarize  ROI info
 
         Returns
         -------
+        param:  nSubj x nRoi array
 
         """
 
@@ -76,9 +69,10 @@ class Atlas(object):
         targ = load_img(targ_img).get_data()
         mask = self.atlas_img.get_data()
 
-        if  mask.shape != targ.shape or mask.shape != targ.shape[:3]:
+        if mask.shape != targ.shape and mask.shape != targ.shape[:3]:
             raise UserDefinedException('Atlas image and target image are not match!')
 
+        # reshape 3d volume to 4d
         if targ.ndim == 3:
             targ = np.tile(targ, (1, 1))
 
@@ -89,35 +83,36 @@ class Atlas(object):
         nRoi = len(self.roi_id)
         affine = self.atlas_img.get_affine()
 
-
         if metric == 'center' or metric == 'peak':
-            param = np.empty((nSubj,nRoi,3))
+            param = np.empty((nSubj, nRoi, 3))
         else:
-            param = np.empty(nSubj,nRoi)
+            param = np.empty((nSubj, nRoi))
 
         param.fill(np.nan)
 
         if metric == 'peak':
             for s in np.arange(nSubj):
-                ijk = np.ones(nRoi,4)
+                ijk = np.ones((nRoi, 4))
                 for r in np.arange(nRoi):
                     d = targ[:, :, :, s] * (mask[:, :, :, s] == self.roi_id[r])
-                    ijk[r,0:3] = np.unravel_index(d.argmax(), d.shape)
-
-                 param[s,:,:] = np.dot(affine,ijk.T)[0:3,:].T
+                    ijk[r, 0:3] = np.unravel_index(d.argmax(), d.shape)
+                # ijk to coords
+                param[s, :, :] = np.dot(affine, ijk.T)[0:3, :].T
 
         elif metric == 'center':
             for s in np.arange(nSubj):
-                ijk = np.ones(nRoi,4)
+                ijk = np.ones((nRoi, 4))
                 for r in np.arange(nRoi):
-                    d = targ[:,:,:,s] * (mask[:,:,:,s] == self.roi_id[r])
-                    ijk[r,0:3] = np.mean(np.transpose(np.nonzero(d)))
-
-                param[s,:,:]  = np.dot(affine, ijk.T)[0:3,:].T
+                    d = targ[:, :, :, s] * (mask[:, :, :, s] == self.roi_id[r])
+                    ijk[r, 0:3] = np.mean(np.transpose(np.nonzero(d)))
+                # ijk to coords
+                param[s, :, :]  = np.dot(affine, ijk.T)[0:3, :].T
 
         else: # scalar metric
             if metric == 'sum':
                 meter = np.nansum
+            elif metric == 'mean':
+                meter = np.nanmean
             elif metric == 'max':
                 meter = np.max
             elif metric == 'min':
@@ -133,9 +128,9 @@ class Atlas(object):
 
             for s in np.arange(nSubj):
                 for r in np.arange(nRoi):
-                    d = targ[:,:,:,s]
-                    r = mask[:,:,:,s] == self.roi_id[r]
-                    param[s,r] = meter(d[r], axis=1)
+                    d = targ[:, :, :, s]
+                    m = mask[:, :, :, s] == self.roi_id[r]
+                    param[s, r] = meter(d[m])
 
         return param
 
@@ -154,37 +149,7 @@ class Atlas(object):
         # iterate for subject and roi
         for s in np.arange(nSubj):
                 for r in np.arange(nRoi):
-                    vol[s,r] = np.sum(mask[:,:,:,s] == self.roi_id[r])
+                    vol[s, r] = np.sum(mask[:, :, :, s] == self.roi_id[r])
 
         res = self.atlas_img.header.get_zooms()
         return vol*np.prod(res)
-
-    def save_to_pkl(self, path, filename):
-        """
-        Parameters
-        ----------
-        save data in os.path.join(path, filename) with type of .pkl
-        path    parent path
-        filename    filename .pkl
-        Returns
-        A .pkl file,which can be loaded by cPickle
-        -------
-        """
-        if hasattr(self, 'data'):
-            with open(os.path.join(path, filename), 'wb') as output:
-                cPickle.dump(self.data, output, -1)
-
-    def save_to_mat(self, path, filename):
-        """
-        Parameters
-        ----------
-        save data in os.path.join(path, filename) with type of .mat
-        path
-        filename
-        Returns
-        -------
-        A .mat file,which can be loaded by matlab
-        """
-        if hasattr(self, 'data'):
-            si.savemat(os.path.join(path, filename), mdict = self.data)
-
