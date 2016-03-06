@@ -49,7 +49,7 @@ class Atlas(object):
         self.subj_gender = subj_gender
         self.volume = self.__volume_meas()
     
-    def collect_meas(self, targ_img, index = None, metric = 'mean', isnorm = False):
+    def collect_meas(self, targ_img, metric = 'mean', index = None, isnorm = False):
         """
         Collect measures for atlas
 
