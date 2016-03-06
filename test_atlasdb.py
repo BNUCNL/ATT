@@ -65,7 +65,7 @@ for met in metric_sca:
     dataDB['act']['zstat'][met + '_zstat'] = mt_atlas.collect_meas(zstat_img, met)
     if not dataDB['act'].has_key('psc'):
         dataDB['act']['psc'] = {}
-    dataDB['act']['psc'][met + '_psc'] = mt_atlas.collect_meas(psc_img, met)
+    dataDB['act']['psc'][met + '_psc'] = mt_atlas.collect_meas(psc_img, 'psc', met)
     
     if not dataDB.has_key('rest'):
         dataDB['rest'] = {}
@@ -84,7 +84,7 @@ for met in metric_mtr:
     if not dataDB['geo'].has_key(met + 'coor'):
         dataDB['geo'][met+'coor'] = {}
     dataDB['geo'][met+'coor']['zstat_'+met+'coor'] = mt_atlas.collect_meas(zstat_img, met)
-    dataDB['geo'][met+'coor']['psc_'+met+'coor'] = mt_atlas.collect_meas(psc_img, met)
+    dataDB['geo'][met+'coor']['psc_'+met+'coor'] = mt_atlas.collect_meas(psc_img, 'psc', met)
     dataDB['geo'][met+'coor']['alff_'+met+'coor'] = mt_atlas.collect_meas(alff_img, met)
     dataDB['geo'][met+'coor']['falff_'+met+'coor'] = mt_atlas.collect_meas(falff_img, met)
     dataDB['geo'][met+'coor']['reho_'+met+'coor'] = mt_atlas.collect_meas(reho_img, met)

@@ -47,9 +47,9 @@ class Atlas(object):
         self.threshold = threshold
         self.subj_id = subj_id
         self.subj_gender = subj_gender
-        self.volume = self.volume_meas()
-
-    def collect_meas(self, targ_img, metric='mean', isnorm = False):
+        self.volume = self.__volume_meas()
+    
+    def collect_meas(self, targ_img, index = None, metric = 'mean', isnorm = False):
         """
         Collect measures for atlas
 
@@ -69,8 +69,10 @@ class Atlas(object):
             raise UserDefinedException('Metric is not supported!')
 
         targ = load_img(targ_img).get_data()
+        if index == 'psc':
+            targ = targ/100
         if isnorm:
-            targ = __norm_targdata(targ, 1e-5)
+            targ = self.__norm_targdata(targ, 1e-5)
         mask = self.atlas_img.get_data()
 
         if mask.shape != targ.shape and mask.shape != targ.shape[:3]:
@@ -144,7 +146,7 @@ class Atlas(object):
                         param[s, r] = np.nan
         return param
 
-    def volume_meas(self):
+    def __volume_meas(self):
         mask = self.atlas_img.get_data()
 
         # extend 3d mask to 4d
@@ -164,6 +166,14 @@ class Atlas(object):
         res = self.atlas_img.header.get_zooms()
         return vol*np.prod(res)
 
+    def __norm_targdata(self, data, thresh):
+        normdata = np.zeros(data.shape)
+        gnorm = lambda x:(x - x.mean())/x.std()
+        subjnum = data.shape[3]
+        for i in range(subjnum):
+            normdata[:,:,:,i][abs(data[:,:,:,i]) - thresh>0] = gnorm(data[:,:,:,i][abs(data[:,:,:,i]) - thresh>0])
+        return normdata
+
 def save_to_pkl(data, path, filename):
     """
     save data with .pkl
@@ -177,12 +187,5 @@ def save_to_mat(data, path, filename):
     """    
     si.savemat(os.path.join(path, filename), mdict = data)
 
-def __norm_targdata(data, thresh):
-    normdata = np.zeros(data.shape)
-    gnorm = lambda x:(x - x.mean())/x.std()
-    subjnum = data.shape[3]
-    for i in range(subjnum):
-        normdata[:,:,:,i][abs(data[:,:,:,i]) - thresh>0] = gnorm(data[:,:,:,i][abs(data[:,:,:,i]) - thresh>0])
-    return normdata
 
 
