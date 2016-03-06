@@ -49,7 +49,7 @@ class Atlas(object):
         self.subj_gender = subj_gender
         self.volume = self.volume_meas()
 
-    def collect_meas(self, targ_img, metric='mean'):
+    def collect_meas(self, targ_img, metric='mean', isnorm = False):
         """
         Collect measures for atlas
 
@@ -69,6 +69,8 @@ class Atlas(object):
             raise UserDefinedException('Metric is not supported!')
 
         targ = load_img(targ_img).get_data()
+        if isnorm:
+            targ = norm_targdata(targ, 1e-5)
         mask = self.atlas_img.get_data()
 
         if mask.shape != targ.shape and mask.shape != targ.shape[:3]:
@@ -175,6 +177,12 @@ def save_to_mat(data, path, filename):
     """    
     si.savemat(os.path.join(path, filename), mdict = self.data)
 
-
+def norm_targdata(data, thresh):
+    normdata = np.zeros(data.shape)
+    gnorm = lambda x:(x - x.mean())/x.std()
+    subjnum = data.shape[3]
+    for i in range(subjnum):
+        normdata[:,:,:,i][abs(data[:,:,:,i]) - thresh>0] = gnorm(data[:,:,:,i][abs(data[:,:,:,i]) - thresh>0])
+    return normdata
 
 
