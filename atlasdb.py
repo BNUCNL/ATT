@@ -70,7 +70,7 @@ class Atlas(object):
 
         targ = load_img(targ_img).get_data()
         if isnorm:
-            targ = norm_targdata(targ, 1e-5)
+            targ = __norm_targdata(targ, 1e-5)
         mask = self.atlas_img.get_data()
 
         if mask.shape != targ.shape and mask.shape != targ.shape[:3]:
@@ -169,15 +169,15 @@ def save_to_pkl(data, path, filename):
     save data with .pkl
     """
     with open(os.path.join(path, filename), 'wb') as output:
-        cPickle.dump(self.data, output, -1)    
+        cPickle.dump(data, output, -1)    
 
 def save_to_mat(data, path, filename):
     """
     save data with .mat
     """    
-    si.savemat(os.path.join(path, filename), mdict = self.data)
+    si.savemat(os.path.join(path, filename), mdict = data)
 
-def norm_targdata(data, thresh):
+def __norm_targdata(data, thresh):
     normdata = np.zeros(data.shape)
     gnorm = lambda x:(x - x.mean())/x.std()
     subjnum = data.shape[3]
