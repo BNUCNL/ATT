@@ -5,6 +5,8 @@ import os
 import numpy as np
 import nibabel as nib
 from scipy import stats
+import cPickle
+import scipy.io as si
 
 
 class UserDefinedException(Exception):
@@ -159,3 +161,20 @@ class Atlas(object):
 
         res = self.atlas_img.header.get_zooms()
         return vol*np.prod(res)
+
+def save_to_pkl(data, path, filename):
+    """
+    save data with .pkl
+    """
+    with open(os.path.join(path, filename), 'wb') as output:
+        cPickle.dump(self.data, output, -1)    
+
+def save_to_mat(data, path, filename):
+    """
+    save data with .mat
+    """    
+    si.savemat(os.path.join(path, filename), mdict = self.data)
+
+
+
+

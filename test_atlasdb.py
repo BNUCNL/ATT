@@ -26,6 +26,8 @@ reho_img = nib.load(reho_img_path)
 
 mask_img_file =  os.path.join(data_path, 'mt_z5.0.nii.gz')
 
+outpath = '/nfs/j3/userhome/huangtaicheng/workingdir/program/ATT/data/'
+
 roi_name = ['rV3', 'lV3', 'rMT', 'lMT']
 roi_id = [1,2,3,4]
 task = 'motion'
@@ -88,13 +90,8 @@ for met in metric_mtr:
     dataDB['geo'][met+'coor']['reho_'+met+'coor'] = mt_atlas.collect_meas(reho_img, met)
 
 
-
-
-
-
-
-# atlas.save_to_pkl(outpath, 'data_v3.pkl')
-# atlas.save_to_mat(outpath, 'data_v3.mat')
+save_to_pkl(dataDB, outpath, 'mt_data.pkl')
+save_to_mat(dataDB, outpath, 'mt_data.mat')
 
 
 
