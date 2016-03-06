@@ -88,8 +88,6 @@ class Atlas(object):
         else:
             param = np.empty((nSubj, nRoi))
 
-        param.fill(np.nan)
-
         if metric == 'peak':
             for s in np.arange(nSubj):
                 ijk = np.ones((nRoi, 4))
@@ -97,7 +95,11 @@ class Atlas(object):
                     d = targ[:, :, :, s] * (mask[:, :, :, s] == self.roi_id[r])
                     ijk[r, 0:3] = np.unravel_index(d.argmax(), d.shape)
                 # ijk to coords
-                param[s, :, :] = np.dot(affine, ijk.T)[0:3, :].T
+                mni = np.dot(affine, ijk.T)[0:3, :].T
+                for r in np.arange(nRoi):
+                    if ([90, -126, -72] == mni[r, :]).all():
+                        mni[r, :] = np.nan
+                param[s, :, :] = mni
 
         elif metric == 'center':
             for s in np.arange(nSubj):
@@ -114,11 +116,13 @@ class Atlas(object):
             elif metric == 'mean':
                 meter = np.nanmean
             elif metric == 'max':
-                meter = np.max
+                meter = np.nanmax
             elif metric == 'min':
-                meter = np.min
+                meter = np.nanmin
             elif metric == 'std':
                 meter = np.nanstd
+            elif metric == 'median':
+                meter = np.median
             elif metric == 'skewness':
                 meter = stats.skew
             elif metric == 'kurtosis':
@@ -130,8 +134,10 @@ class Atlas(object):
                 for r in np.arange(nRoi):
                     d = targ[:, :, :, s]
                     m = mask[:, :, :, s] == self.roi_id[r]
-                    param[s, r] = meter(d[m])
-
+                    try:
+                        param[s, r] = meter(d[m])
+                    except ValueError:
+                        param[s, r] = np.nan
         return param
 
     def volume_meas(self):
