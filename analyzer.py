@@ -19,10 +19,13 @@ class Analyzer(object):
         feature description and plot
         Parameters
         ----------
-        figure
+        feat_sel: feature selection, index for feature of interest, a np.array
+        figure :  to indicate whether to plot figures, True or False
 
         Returns
         -------
+        fmean: feature mean, a np.array
+        fstd:  feature std, a np.array
 
         """
 
@@ -51,14 +54,15 @@ class Analyzer(object):
 
     def feature_relation(self, feat_sel=None, figure=True):
         """
-
+        relations among features
         Parameters
         ----------
-        meth
-        figure
+        feat_sel: feature selection, index for feature of interest, a np.array
+        figure :  to indicate whether to plot figures, True or False
 
         Returns
         -------
+        feat_corr: correlation matrix of features, nFeat x nFeat np.array
 
         """
         nFeat = len(self.feature_name) # number of feature
@@ -76,16 +80,17 @@ class Analyzer(object):
         return feat_corr
 
 
-    def behavior_predict1(self, feat_sel, behavior):
+    def behavior_predict1(self, beh_meas, feat_sel=False, figure=True):
         """
         Univariate predict
         Parameters
         ----------
-        meth
-        behavior
+        beh_meas: behavior measures, nSubj x nBeh np.array
+        feat_sel: feature selection, index for feature of interest, a np.array
 
         Returns
         -------
+        feat_beh_corr: correlation matrix between brain measurements and behavior measurements, nFeat x nBeh
 
         """
 
@@ -93,19 +98,19 @@ class Analyzer(object):
         if feat_sel is None:
             feat_sel = np.arange(nFeat)
 
-        feat_beh_corr = 1 - cdist(self.meas[:, feat_sel], behavior)
+        feat_beh_corr = 1 - cdist(self.meas[:, feat_sel], beh_meas)
 
-
+        # plt.plot(x, numpy.poly1d(numpy.polyfit(x, y, 1))(x))
         if figure:
             fig, ax = plt.subplots()
-            heatmap = ax.pcolor(feat_beh_corr])
+            heatmap = ax.pcolor(feat_beh_corr)
             plt.show()
 
         return feat_beh_corr
 
 
 
-    def behavior_predict2(self, meth, behavior):
+    def behavior_predict2(self,  beh_meas):
         """
         Multivariate predict
         Parameters
@@ -120,8 +125,6 @@ class Analyzer(object):
         pass
 
 
-
-
     def topymvpa(self):
         """
         Generate pymvpa dataset
@@ -130,8 +133,6 @@ class Analyzer(object):
 
         """
         pass
-
-
 
     def outlier_remove(self, outlier_sel):
         """
@@ -142,6 +143,7 @@ class Analyzer(object):
 
         Returns
         -------
+        self.meas: de-outlierd measurements
 
         """
         nSubj = self.meas.shape[0] # number of subjects
