@@ -189,3 +189,4 @@ class Atlas(object):
 
         res = self.atlas_img.header.get_zooms()
         return vol*np.prod(res)
+
