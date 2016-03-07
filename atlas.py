@@ -5,6 +5,8 @@ import os
 import numpy as np
 import nibabel as nib
 from scipy import stats
+import cPickle
+import scipy.io as si
 
 
 class UserDefinedException(Exception):
@@ -13,22 +15,22 @@ class UserDefinedException(Exception):
         self._str = str
 
 
-def load_img(target_img):
+def load_img(fimg):
     """
     Load nifti image
     Parameters
     ----------
-    target_img : target image to load, a str(file path) or a Nifti1Image object.
+    fimg : a file or a Nifti1Image object.
     Returns
     -------
     img : a Nifti1Image object
     """
-    if isinstance(target_img, nib.Nifti1Image):
-        img = target_img
+    if isinstance(fimg, nib.Nifti1Image):
+        img = fimg
 
     # load nifti image with nibabel
-    elif os.path.isfile(target_img):
-        img = nib.load(target_img)
+    elif os.path.isfile(fimg):
+        img = nib.load(fimg)
     else:
         raise UserDefinedException('Wrong Image!')
 
@@ -46,21 +48,18 @@ class Atlas(object):
         self.subj_id = subj_id
         self.subj_gender = subj_gender
         self.volume = self.volume_meas()
-
+    
     def collect_scalar_meas(self, meas_img, metric='mean'):
 
         """
         Collect scalar measures for atlas
-
         Parameters
         ----------
         meas_img: measures image, str(nii file path) or a nii object
         metric: metric to summarize  ROI info, str
-
         Returns
         -------
         meas : collected scalar measures,  nSubj x nRoi np.array
-
         """
 
         scalar_metric = ['mean', 'max', 'min', 'std', 'median', 'skewness', 'kurtosis']
@@ -109,20 +108,17 @@ class Atlas(object):
                 meas[s, r] = meter(d[m])
 
         return meas
-
-    def collect_geometry_meas(self, meas_img, metric='mean'):
+	
+	def collect_geometry_meas(self, meas_img, metric='mean'):
         """
         Collect geometry measures for atlas
-
         Parameters
         ----------
         meas_img: target measure image, str(a nii file path) or a nii object
         metric: metric to summarize ROI info
-
         Returns
         -------
         meas:  collected geometry measures, nSubj x nRoi x 3, np.array
-
         """
 
         geometry_metric = ['center', 'peak']
@@ -156,7 +152,11 @@ class Atlas(object):
                     ijk[r, 0:3] = np.unravel_index(d.argmax(), d.shape)
 
                 # ijk to coordinates
-                meas[s, :, :] = np.dot(affine, ijk.T)[0:3, :].T
+				mni = np.dot(affine, ijk.T)[0:3, :].T
+                for r in np.arange(nRoi):
+                    if ([90, -126, -72] == mni[r, :]).all():
+                        mni[r, :] = np.nan
+                meas[s, :, :] = mni
 
         elif metric == 'center':
             for s in np.arange(nSubj):
@@ -169,6 +169,7 @@ class Atlas(object):
                 meas[s, :, :] = np.dot(affine, ijk.T)[0:3, :].T
 
         return meas
+	
 
     def volume_meas(self):
         mask = self.atlas_img.get_data()
@@ -184,9 +185,12 @@ class Atlas(object):
         vol = np.zeros((nSubj,nRoi))
         # iterate for subject and roi
         for s in np.arange(nSubj):
-            for r in np.arange(nRoi):
-                vol[s, r] = np.sum(mask[:, :, :, s] == self.roi_id[r])
+                for r in np.arange(nRoi):
+                    vol[s, r] = np.sum(mask[:, :, :, s] == self.roi_id[r])
 
         res = self.atlas_img.header.get_zooms()
         return vol*np.prod(res)
+
+
+
 
