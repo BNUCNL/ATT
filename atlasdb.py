@@ -48,6 +48,7 @@ class Atlas(object):
         self.volume = self.volume_meas()
 
     def collect_scalar_meas(self, meas_img, metric='mean'):
+
         """
         Collect scalar measures for atlas
 
@@ -153,6 +154,7 @@ class Atlas(object):
                 for r in np.arange(nRoi):
                     d = targ[:, :, :, s] * (mask[:, :, :, s] == self.roi_id[r])
                     ijk[r, 0:3] = np.unravel_index(d.argmax(), d.shape)
+
                 # ijk to coordinates
                 meas[s, :, :] = np.dot(affine, ijk.T)[0:3, :].T
 
@@ -162,6 +164,7 @@ class Atlas(object):
                 for r in np.arange(nRoi):
                     d = targ[:, :, :, s] * (mask[:, :, :, s] == self.roi_id[r])
                     ijk[r, 0:3] = np.mean(np.transpose(np.nonzero(d)))
+
                 # ijk to coordinates
                 meas[s, :, :] = np.dot(affine, ijk.T)[0:3, :].T
 
