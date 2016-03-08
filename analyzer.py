@@ -35,6 +35,7 @@ class Analyzer(object):
         feat_std = np.nanstd(self.meas[:, feat_sel])
 
         if figure:
+            plt.close('all')
             nRoi = len(self.roi_name)  # number of ROI
             for f in feat_sel:
                 feat_name = self.feat_name[np.floor(np.divide(f, nRoi)).astype(int)]
@@ -66,14 +67,14 @@ class Analyzer(object):
 
         samp_sel = ~np.isnan(np.prod(self.meas, axis=1))
         feat_corr = np.corrcoef(self.meas[np.ix_(samp_sel, feat_sel)].T)
-        print feat_corr
 
         # plot feat_corr
         if figure:
+            plt.close('all')
             fig, ax = plt.subplots()
-            heatmap = ax.pcolor(feat_corr)
-            plt.show()
+            ax.pcolor(feat_corr)
             plt.title('Feature relation')
+            plt.show()
 
         return feat_corr
 
@@ -102,6 +103,7 @@ class Analyzer(object):
         feat_beh_corr = 1 - distance.cdist(self.meas[np.ix_(samp_sel, feat_sel)].T,  beh_meas[:, samp_sel])
 
         if figure:
+            plt.close('all')
             fig, ax = plt.subplots()
             heatmap = ax.pcolor(feat_beh_corr)
             plt.title('Brain-behavior relation')
@@ -124,9 +126,7 @@ class Analyzer(object):
 
         return feat_beh_corr
 
-
-
-    def behavior_predict2(self,  beh_meas):
+    def behavior_predict2(self, beh_meas):
         """
         Multivariate predict
         Parameters
@@ -139,7 +139,6 @@ class Analyzer(object):
 
         """
         pass
-
 
     def topymvpa(self):
         """
