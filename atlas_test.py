@@ -16,18 +16,16 @@ threshold = 5.0
 
 
 data_path = './data'
-
-subj_gender = pd.read_csv(os.path.join(data_path, 'act_sex.csv'))['gender'].tolist()
-subj_id = open(os.path.join(data_path, 'actID'), 'rU').read().splitlines()
-
+subj = pd.read_csv(os.path.join(data_path, 'subj_info.csv'))
+subj_gender = subj['gender'].tolist()
+subj_id = subj['NSPID'].tolist()
 
 mask_img_file = os.path.join(data_path, 'mt.nii.gz')
 mt_atlas = Atlas(mask_img_file, roi_id, roi_name, task, contrast, threshold, subj_id, subj_gender)
 
-
 meas_name = ['zstat.nii.gz', 'falff.nii.gz']
-meas_mean = np.array([]).reshape(len(subj_id), len(roi_id))
-meas_peak_coords = np.array([]).reshape(len(subj_id), len(roi_id), 3)
+meas_mean = np.array([]).reshape((len(subj_id), 0))
+meas_peak_coords = np.array([]).reshape((len(subj_id), len(roi_id), 0))
 for m in meas_name:
     meas_img_path = os.path.join(data_path, m)
     meas_img = nib.load(meas_img_path)
@@ -36,21 +34,15 @@ for m in meas_name:
     meas_mean = np.hstack((meas_mean, mean_value))
 
     peak_coords = mt_atlas.collect_geometry_meas(meas_img, 'peak')
-    meas_peak_coords = np.hstack((meas_peak_coords, peak_coords))
-    print m
+    meas_peak_coords = np.concatenate((meas_peak_coords, peak_coords), axis=2)
 
-data = dict.fromkeys(['meas', 'subj_id', 'roi_name', 'feat_name'], None)
-data['meas'] = meas_mean
+data = dict.fromkeys(['meas_mean', 'meas_peak_coords', 'subj_id', 'roi_name', 'feat_name'], None)
+data['meas_mean'] = meas_mean
+data['meas_peak_coords'] = meas_peak_coords
 data['subj_id'] = subj_id
-data['roi_name'] = roi_id
+data['roi_name'] = roi_name
 data['feat_name'] = ['act-mean', 'fallf-mean']
 
-
-with open(os.path.join(data_path, 'zstat-falff'), 'wb') as out_file:
+file_name = 'mt-zstat-falff'
+with open(os.path.join(data_path, file_name+'.pkl'), 'wb') as out_file:
         cPickle.dump(data, out_file, -1)
-
-
-
-
-
-
