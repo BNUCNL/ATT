@@ -2,17 +2,16 @@
 # vi: set ft=python sts=4 ts=4 et:
 
 import numpy as np
-import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
-import scipy.spatial.distance.cdist as cdist
+from scipy.spatial import distance
 
 
 class Analyzer(object):
-    def __init__(self, meas, subj_id, roi_name, feature_name):
+    def __init__(self, meas, subj_id, roi_name, feat_name):
         self.meas = meas
         self.subj_id = subj_id
         self.roi_name = roi_name
-        self.feature_name  = feature_name
+        self.feat_name = feat_name
 
     def feature_description(self, feat_sel=None, figure=True):
         """
@@ -24,33 +23,30 @@ class Analyzer(object):
 
         Returns
         -------
-        fmean: feature mean, a np.array
-        fstd:  feature std, a np.array
+        feat_mean: feature mean, a np.array
+        feat_std:  feature std, a np.array
 
         """
 
-        nFeat = len(self.feature_name) # number of feature
         if feat_sel is None:
-            feat_sel = np.arange(nFeat)
+            feat_sel = np.arange(self.meas.shape[1])
 
-        fmean = np.nanmean(self.meas[:, feat_sel])
-        fstd  = np.nanstd(self.meas[:, feat_sel])
+        feat_mean = np.nanmean(self.meas[:, feat_sel])
+        feat_std = np.nanstd(self.meas[:, feat_sel])
 
         if figure:
-            nRoi = len(self.roi_id) # number of ROI
+            nRoi = len(self.roi_name)  # number of ROI
             for f in feat_sel:
-                roi_name = self.feature_name[np.floor(np.divide(f, nRoi))]
-                feat_name = self.roi_name[np.mod(f, nRoi)]
+                feat_name = self.feat_name[np.floor(np.divide(f, nRoi)).astype(int)]
+                roi_name = self.roi_name[np.mod(f, nRoi).astype(int)]
 
-                plt.hist(np.isnan(self.meas[:, f]))
+                plt.hist(self.meas[~np.isnan(self.meas[:, f]), f], normed=True)
                 plt.xlabel(roi_name+'-'+feat_name)
                 plt.ylabel('Probability')
-                plt.title('Histogram for ROI feature')
+                plt.title('Histogram')
                 plt.show()
 
-        return fmean, fstd
-
-
+        return feat_mean, feat_std
 
     def feature_relation(self, feat_sel=None, figure=True):
         """
@@ -65,22 +61,24 @@ class Analyzer(object):
         feat_corr: correlation matrix of features, nFeat x nFeat np.array
 
         """
-        nFeat = len(self.feature_name) # number of feature
         if feat_sel is None:
-            feat_sel = np.arange(nFeat)
+            feat_sel = np.arange(self.meas.shape[1])
 
-        feat_corr = np.corrcoef(self.meas[:, feat_sel])
+        samp_sel = ~np.isnan(np.prod(self.meas, axis=1))
+        feat_corr = np.corrcoef(self.meas[np.ix_(samp_sel, feat_sel)].T)
+        print feat_corr
 
         # plot feat_corr
         if figure:
             fig, ax = plt.subplots()
             heatmap = ax.pcolor(feat_corr)
             plt.show()
+            plt.title('Feature relation')
 
         return feat_corr
 
 
-    def behavior_predict1(self, beh_meas, feat_sel=False, figure=True):
+    def behavior_predict1(self, beh_meas, feat_sel=None, figure=True):
         """
         Univariate predict
         Parameters
@@ -94,17 +92,35 @@ class Analyzer(object):
 
         """
 
-        nFeat = len(self.feature_name) # number of feature
         if feat_sel is None:
-            feat_sel = np.arange(nFeat)
+            feat_sel = np.arange(self.meas.shape[1])
 
-        feat_beh_corr = 1 - cdist(self.meas[:, feat_sel], beh_meas)
+        if beh_meas.ndim == 1:
+            beh_meas = np.tile(beh_meas, (1, 1))
 
-        # plt.plot(x, numpy.poly1d(numpy.polyfit(x, y, 1))(x))
+        samp_sel = ~np.isnan(np.prod(self.meas, axis=1))
+        feat_beh_corr = 1 - distance.cdist(self.meas[np.ix_(samp_sel, feat_sel)].T,  beh_meas[:, samp_sel])
+
         if figure:
             fig, ax = plt.subplots()
             heatmap = ax.pcolor(feat_beh_corr)
+            plt.title('Brain-behavior relation')
             plt.show()
+
+            nRoi = len(self.roi_name)  # number of ROI
+            for f in feat_sel:
+                feat_name = self.feat_name[np.floor(np.divide(f, nRoi)).astype(int)]
+                roi_name = self.roi_name[np.mod(f, nRoi).astype(int)]
+
+                x = self.meas[samp_sel, f]
+                y = np.squeeze(beh_meas[:, samp_sel])
+                plt.scatter(x, y)
+                plt.plot(x, np.poly1d(np.polyfit(x, y, 1))(x))
+
+                plt.xlabel(roi_name+'-'+feat_name)
+                plt.ylabel('Behavior Score')
+                plt.title('Behavior predict')
+                plt.show()
 
         return feat_beh_corr
 
@@ -146,10 +162,10 @@ class Analyzer(object):
         self.meas: de-outlierd measurements
 
         """
-        nSubj = self.meas.shape[0] # number of subjects
-        good_subj = np.ones(nSubj, dtype=bool)
-        good_subj[outlier_sel] = False
-        self.meas = self.meas[good_subj, :]
+        nSamp = self.meas.shape[0]  # number of sample
+        good_samp = np.ones(nSamp, dtype=bool)
+        good_samp[outlier_sel] = False
+        self.meas = self.meas[good_samp, :]
 
 
         return self.meas
