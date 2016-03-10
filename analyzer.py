@@ -142,8 +142,27 @@ class Analyzer(object):
         feat_corr = feat_corr - np.identity(feat_corr.shape[0])
 
         if figure:
-            labels = self.feat_name[feat_sel]
+            labels = [self.feat_name[i] for i in feat_sel]
             plot_mat(feat_corr, 'Feature correlation', labels, labels)
+
+            # plot for each feature
+            for i in np.arange(feat_sel.shape[0]):
+                for j in np.arange(i+1, feat_sel.shape[0], 1):
+                    meas1 = self.meas[:, feat_sel[i]]
+                    meas2 = self.meas[:, feat_sel[j]]
+                    samp_sel = ~np.isnan(meas1 * meas2)
+                    x = meas1[samp_sel]
+                    y = meas2[samp_sel]
+                    fig, ax = plt.subplots()
+                    plt.scatter(x, y)
+                    plt.plot(x, np.poly1d(np.polyfit(x, y, 1))(x))
+                    x0, x1 = ax.get_xlim()
+                    y0, y1 = ax.get_ylim()
+                    ax.set_aspect((x1-x0)/(y1-y0))
+                    plt.xlabel(labels[i])
+                    plt.ylabel(labels[j])
+                    plt.title('Feature correlation')
+                    plt.show()
 
         return feat_corr, n_sample
 
