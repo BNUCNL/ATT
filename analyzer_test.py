@@ -16,19 +16,23 @@ mt_file.close()
 meas = data['meas_mean']
 subj_id = data['subj_id']
 roi_name = data['roi_name']
-feat_name = data['feat_name']
+meas_name = data['meas_name']
+subj_gender = data['subj_gender']
 
-mt_analyzer = Analyzer(meas, subj_id, roi_name, feat_name)
+mt_analyzer = Analyzer(meas, meas_name, roi_name, subj_id, subj_gender)
 
-mt_analyzer.feature_description()
+plt.close('all')
+# feat_stats = mt_analyzer.feature_description()
 
-mt_analyzer.feature_relation()
+# feat_corr = mt_analyzer.feature_relation()
 
 # fake behavior use mean brain meas
-beh_meas = np.mean(meas, axis=1)
-mt_analyzer.behavior_predict1(beh_meas)
+#beh_meas = np.mean(meas, axis=1)
+#beh_corr, beh_pval, beh_nsamp = mt_analyzer.behavior_predict1(beh_meas, ['fakeBeh'])
 
+beh_meas = np.random.randn(meas.shape[0], 1)
+reg_stats = mt_analyzer.behavior_predict2(beh_meas, ['RandBeh'])
 
+# li_stats = mt_analyzer.hemi_asymmetry()
 
-
-
+# gd_stats = mt_analyzer.gender_diff()
