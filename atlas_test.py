@@ -36,12 +36,13 @@ for m in meas_name:
     peak_coords = mt_atlas.collect_geometry_meas(meas_img, 'peak')
     meas_peak_coords = np.concatenate((meas_peak_coords, peak_coords), axis=2)
 
-data = dict.fromkeys(['meas_mean', 'meas_peak_coords', 'subj_id', 'roi_name', 'feat_name'], None)
+data = dict.fromkeys(['meas_mean', 'meas_name', 'meas_peak_coords', 'roi_name', 'subj_id', 'subj_gender'], None)
 data['meas_mean'] = meas_mean
 data['meas_peak_coords'] = meas_peak_coords
 data['subj_id'] = subj_id
 data['roi_name'] = roi_name
-data['feat_name'] = ['act-mean', 'fallf-mean']
+data['subj_gender'] = subj_gender
+data['meas_name'] = ['act-mean', 'fallf-mean']
 
 file_name = 'mt-zstat-falff'
 with open(os.path.join(data_path, file_name+'.pkl'), 'wb') as out_file:
