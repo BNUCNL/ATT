@@ -5,8 +5,6 @@ import os
 import numpy as np
 import nibabel as nib
 from scipy import stats
-import cPickle
-import scipy.io as si
 
 
 class UserDefinedException(Exception):
@@ -47,8 +45,10 @@ class Atlas(object):
         self.threshold = threshold
         self.subj_id = subj_id
         self.subj_gender = subj_gender
-        self.volume = self.volume_meas()
-    
+        self.vol = None
+        self.pm = None
+        self.mpm = None
+
     def collect_scalar_meas(self, meas_img, metric='mean'):
 
         """
@@ -59,7 +59,7 @@ class Atlas(object):
         metric: metric to summarize  ROI info, str
         Returns
         -------
-        meas : collected scalar measures,  nSubj x nRoi np.array
+        meas : collected scalar measures,  n_subj x n_roi np.array
         """
 
         scalar_metric = ['mean', 'max', 'min', 'std', 'median', 'skewness', 'kurtosis']
@@ -74,14 +74,14 @@ class Atlas(object):
 
         # reshape 3d volume to 4d
         if targ.ndim == 3:
-            targ = np.tile(targ, (1, 1))
+            targ = np.expand_dims(targ, axis=1)
 
         if mask.ndim == 3:
             mask = np.tile(mask, (1, targ.shape[3]))
 
-        nSubj = targ.shape[3] # number of subjects
-        nRoi = len(self.roi_id) # number of ROI
-        meas = np.empty((nSubj, nRoi))
+        n_subj = targ.shape[3] # number of subjects
+        n_roi = len(self.roi_id) # number of ROI
+        meas = np.empty((n_subj, n_roi))
         meas.fill(np.nan)
 
         if metric == 'sum':
@@ -101,15 +101,18 @@ class Atlas(object):
         else:
             meter = []
 
-        for s in np.arange(nSubj):
-            for r in np.arange(nRoi):
+        for s in np.arange(n_subj):
+            for r in np.arange(n_roi):
                 d = targ[:, :, :, s]
                 m = mask[:, :, :, s] == self.roi_id[r]
                 meas[s, r] = meter(d[m])
+
+        # assign meas 0 as nan as no measure are zeros, besides out of mask
         meas[meas == 0] = np.nan
+
         return meas
-	
-	def collect_geometry_meas(self, meas_img, metric='mean'):
+
+    def collect_geometry_meas(self, meas_img, metric='mean'):
         """
         Collect geometry measures for atlas
         Parameters
@@ -118,7 +121,7 @@ class Atlas(object):
         metric: metric to summarize ROI info
         Returns
         -------
-        meas:  collected geometry measures, nSubj x nRoi x 3, np.array
+        meas:  collected geometry measures, n_subj x n_roi x 3, np.array
         """
 
         geometry_metric = ['center', 'peak']
@@ -133,64 +136,126 @@ class Atlas(object):
 
         # reshape 3d volume to 4d
         if targ.ndim == 3:
-            targ = np.tile(targ, (1, 1))
+            targ = np.expand_dims(targ, axis=1)
 
         if mask.ndim == 3:
             mask = np.tile(mask, (1, targ.shape[3]))
 
-        nSubj = targ.shape[3] # number of subjects
-        nRoi = len(self.roi_id) # number of ROI
+        n_subj = targ.shape[3] # number of subjects
+        n_roi = len(self.roi_id) # number of ROI
         affine = self.atlas_img.get_affine()
-        meas = np.empty((nSubj, nRoi, 3))
+        meas = np.empty((n_subj, n_roi, 3))
         meas.fill(np.nan)
 
         if metric == 'peak':
-            for s in np.arange(nSubj):
-                ijk = np.ones((nRoi, 4))
-                for r in np.arange(nRoi):
+            for s in np.arange(n_subj):
+                ijk = np.ones((n_roi, 4))
+                for r in np.arange(n_roi):
                     d = targ[:, :, :, s] * (mask[:, :, :, s] == self.roi_id[r])
-                    ijk[r, 0:3] = np.unravel_index(d.argmax(), d.shape)
-
+                    if np.any(d):
+                        ijk[r, 0:3] = np.unravel_index(d.argmax(), d.shape)
+                    else:
+                        ijk[r, 0:3] = np.nan
                 # ijk to coordinates
-				mni = np.dot(affine, ijk.T)[0:3, :].T
-                for r in np.arange(nRoi):
-                    if ([90, -126, -72] == mni[r, :]).all():
-                        mni[r, :] = np.nan
-                meas[s, :, :] = mni
+                meas[s, :, :] = np.dot(affine, ijk.T)[0:3, :].T
 
         elif metric == 'center':
-            for s in np.arange(nSubj):
-                ijk = np.ones((nRoi, 4))
-                for r in np.arange(nRoi):
+            for s in np.arange(n_subj):
+                ijk = np.ones((n_roi, 4))
+                for r in np.arange(n_roi):
                     d = targ[:, :, :, s] * (mask[:, :, :, s] == self.roi_id[r])
-                    ijk[r, 0:3] = np.mean(np.transpose(np.nonzero(d)))
-
+                    if np.any(d):
+                        ijk[r, 0:3] = np.mean(np.transpose(np.nonzero(d)))
+                    else:
+                        ijk[r, 0:3] = np.nan
                 # ijk to coordinates
                 meas[s, :, :] = np.dot(affine, ijk.T)[0:3, :].T
 
         return meas
-	
 
-    def volume_meas(self):
+    def volume(self):
+        """
+
+        Parameters
+        ----------
+        self
+
+        Returns
+        -------
+        vol: volume of the rois
+
+        """
         mask = self.atlas_img.get_data()
-
         # extend 3d mask to 4d
         if mask.ndim == 3:
-            mask = np.tile(mask, (1, 1))
+            mask = np.expand_dims(mask, axis=1)
 
         # number of subjects
-        nSubj = mask.shape[3]
-        nRoi = len(self.roi_id)
+        n_subj = mask.shape[3]
+        n_roi = len(self.roi_id)
+        vol = np.zeros((n_subj, n_roi))
 
-        vol = np.zeros((nSubj,nRoi))
         # iterate for subject and roi
-        for s in np.arange(nSubj):
-                for r in np.arange(nRoi):
-                    vol[s, r] = np.sum(mask[:, :, :, s] == self.roi_id[r])
+        for s in np.arange(n_subj):
+            for r in np.arange(n_roi):
+                vol[s, r] = np.sum(mask[:, :, :, s] == self.roi_id[r])
 
         res = self.atlas_img.header.get_zooms()
-        return vol*np.prod(res)
+        vol = vol*np.prod(res)
+        self.vol = vol
 
+        return vol
 
+    def make_pm(self, meth='all'):
+        """
+        make probabilistic map(pm)from 4D atlas image
+        Parameters
+        ----------
+        meth : 'all' or 'part'. all, all subjects are taken into account; part, only
+        part of subjects who have roi are taken into account.
 
+        Returns
+        -------
+        pm: array for pm
+        """
+        mask = self.atlas_img.get_data()
+        n_roi = len(self.roi_id)
+        pm = np.zeros((mask.shape[0], mask.shape[1], mask.shape[2], n_roi))
+        if meth is 'all':
+            for r in np.arange(n_roi):
+                pm[:, :, :, r] = np.mean(mask == self.roi_id[r], axis=3)
+        elif meth is 'part':
+            for r in np.arange(n_roi):
+                mask_r = mask == self.roi_id[r]
+                subj = np.any(mask_r, axis=(0, 1, 2))
+                pm[:, :, :, r] = np.mean(mask_r[:, :, :, subj], axis=3)
+        else:
+            raise UserDefinedException('meth is not supported!')
+
+        self.pm = pm
+        return self.pm
+
+    def make_mpm(self, threshold):
+        """
+        make maximum probabilistic map(mpm) from 4D probabilistic maps
+        Parameters
+        ----------
+        threshold : threshold to mask probabilistic maps
+
+        Returns
+        -------
+        mpm: array for mpm
+
+        """
+        if self.pm is None:
+            raise UserDefinedException('pm is empty! You should make pm first')
+
+        pms = self.pm.shape
+        pm = np.zeros((pms[0], pms[1], pms[2], pms[3]+1))
+        pm[:, :, :, np.arange(1, pms[3]+1)] = self.pm
+        pm[pm < threshold] = 0
+        mpm = np.argmax(pm, axis=3)
+        self.mpm = mpm
+
+        return mpm
 

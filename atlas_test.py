@@ -23,7 +23,15 @@ subj_id = subj['NSPID'].tolist()
 mask_img_file = os.path.join(data_path, 'mt.nii.gz')
 mt_atlas = Atlas(mask_img_file, roi_id, roi_name, task, contrast, threshold, subj_id, subj_gender)
 
-meas_name = ['zstat.nii.gz', 'falff.nii.gz']
+pm = mt_atlas.make_pm(meth='part')
+pm_img = nib.Nifti1Image(pm, None, mt_atlas.atlas_img.header)
+nib.save(pm_img, os.path.join(data_path, 'pm.nii.gz'))
+
+mpm = mt_atlas.make_mpm(0.1)
+mpm_img = nib.Nifti1Image(mpm, None, mt_atlas.atlas_img.header)
+nib.save(mpm_img, os.path.join(data_path, 'mpm.nii.gz'))
+
+"""meas_name = ['zstat.nii.gz', 'falff.nii.gz']
 meas_mean = np.array([]).reshape((len(subj_id), 0))
 meas_peak_coords = np.array([]).reshape((len(subj_id), len(roi_id), 0))
 for m in meas_name:
@@ -47,3 +55,5 @@ data['meas_name'] = ['act-mean', 'fallf-mean']
 file_name = 'mt-zstat-falff'
 with open(os.path.join(data_path, file_name+'.pkl'), 'wb') as out_file:
         cPickle.dump(data, out_file, -1)
+
+"""
