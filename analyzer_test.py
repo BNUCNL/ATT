@@ -24,15 +24,15 @@ mt_analyzer = Analyzer(meas, meas_name, roi_name, subj_id, subj_gender)
 plt.close('all')
 # feat_stats = mt_analyzer.feature_description()
 
-feat_corr = mt_analyzer.feature_relation()
+# feat_corr, feat_pval, n_sample = mt_analyzer.feature_relation(figure=True)
 
 # fake behavior use mean brain meas
 #beh_meas = np.mean(meas, axis=1)
 #beh_corr, beh_pval, beh_nsamp = mt_analyzer.behavior_predict1(beh_meas, ['fakeBeh'])
 
 #beh_meas = np.random.randn(meas.shape[0], 1)
-# reg_stats = mt_analyzer.behavior_predict2(beh_meas, ['RandBeh'])
+#reg_stats = mt_analyzer.behavior_predict2(beh_meas, ['RandBeh'], figure=True)
 
-# li_stats = mt_analyzer.hemi_asymmetry()
+li_stats = mt_analyzer.hemi_asymmetry(figure=True)
 
-# gd_stats = mt_analyzer.gender_diff()
+# gd_stats = mt_analyzer.gender_diff(figure=True)
