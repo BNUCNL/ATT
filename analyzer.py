@@ -13,7 +13,7 @@ def plot_mat(mat, title, xlabels, ylabels):
 
     Parameters
     ----------
-    mat : matrix to be ploted, a 2d np.array
+    mat : matrix to be plotted, a 2d np.array
     title : title for the fig
     xlabels: labels for x axis
     ylabels: labels for y axis
@@ -24,7 +24,6 @@ def plot_mat(mat, title, xlabels, ylabels):
     """
     fig, ax = plt.subplots()
     heatmap = ax.pcolor(mat)
-    print mat.shape
     ax.set_xticks(np.arange(mat.shape[1]) + 0.5, minor=False)
     ax.set_yticks(np.arange(mat.shape[0]) + 0.5, minor=False)
 
@@ -53,6 +52,39 @@ def plot_mat(mat, title, xlabels, ylabels):
     plt.show()
 
 
+def plot_bar(data, title, xlabels, ylabels, err=None):
+    """
+
+    Parameters
+    ----------
+    data : data to be plotted, a 1d np.array
+    err : error for data, same shape as data
+    title
+    xlabels
+    ylabels
+
+    Returns
+    -------
+
+    """
+    ind = np.arange(data.shape[0])
+    width = 0.35
+    fig, ax = plt.subplots()
+    if err is None:
+        rects1 = ax.bar(ind, data, width, color='r')
+    else:
+        rects1 = ax.bar(ind, data, width, color='r', yerr=err)
+    x0, x1 = ax.get_xlim()
+    y0, y1 = ax.get_ylim()
+    ax.set_aspect((x1-x0)/(y1-y0))
+    ax.set_ylabel(ylabels)
+    ax.set_xticks(ind + width)
+    plt.xticks(rotation=45)
+    ax.set_xticklabels(xlabels)
+    ax.set_title(title)
+    plt.show()
+
+
 def cohen_d(x, y):
     nx, ny = x.shape[0], y.shape[0]
     dof = nx + ny - 2
@@ -77,7 +109,7 @@ class Analyzer(object):
             roi_name = self.roi_name[np.mod(f, n_roi).astype(int)]
             self.feat_name.append(roi_name + '-' + meas_name)
 
-    def feature_description(self, feat_sel=None, figure=True):
+    def feature_description(self, feat_sel=None, figure=False):
         """
         feature description and plot
         Parameters
@@ -119,7 +151,7 @@ class Analyzer(object):
 
         return feat_stats
 
-    def feature_relation(self, feat_sel=None, figure=True):
+    def feature_relation(self, feat_sel=None, figure=False):
         """
         relations among features
         Parameters
@@ -136,15 +168,24 @@ class Analyzer(object):
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
 
-        samp_sel = ~np.isnan(np.prod(self.meas, axis=1))
-        n_sample = np.count_nonzero(samp_sel)
-        feat_corr = np.corrcoef(self.meas[np.ix_(samp_sel, feat_sel)].T)
-        feat_corr = feat_corr - np.identity(feat_corr.shape[0])
+        corr = np.zeros((feat_sel.shape[0], feat_sel.shape[0]))
+        pval = np.copy(corr)
+        n_sample = np.copy(corr)
+        for i in np.arange(feat_sel.shape[0]):
+            for j in np.arange(i+1, feat_sel.shape[0], 1):
+                meas1 = self.meas[:, feat_sel[i]]
+                meas2 = self.meas[:, feat_sel[j]]
+                samp_sel = ~np.isnan(meas1 * meas2)
+                n_sample[i, j] = np.count_nonzero(samp_sel)
+                x = meas1[samp_sel]
+                y = meas2[samp_sel]
+                [c, p] = stats.pearsonr(x, y)
+                corr[i, j] = c
+                pval[i, j] = p
 
         if figure:
             labels = [self.feat_name[i] for i in feat_sel]
-            plot_mat(feat_corr, 'Feature correlation', labels, labels)
-
+            plot_mat(corr, 'Feature correlation', labels, labels)
             # plot for each feature
             for i in np.arange(feat_sel.shape[0]):
                 for j in np.arange(i+1, feat_sel.shape[0], 1):
@@ -164,9 +205,9 @@ class Analyzer(object):
                     plt.title('Feature correlation')
                     plt.show()
 
-        return feat_corr, n_sample
+        return corr, pval, n_sample
 
-    def behavior_predict1(self, beh_meas, beh_name, feat_sel=None, figure=True):
+    def behavior_predict1(self, beh_meas, beh_name, feat_sel=None, figure=False):
         """
         Univariate feature-wise predict for behavior
         Parameters
@@ -174,6 +215,7 @@ class Analyzer(object):
         beh_meas: behavior measures, nSubj x nBeh np.array
         beh_name: behavior name, a list
         feat_sel: feature selection, index for feature of interest, a np.array
+        figure: true or false
 
         Returns
         -------
@@ -193,7 +235,6 @@ class Analyzer(object):
         corr = np.zeros((feat_sel.shape[0], beh_meas.shape[1]))
         pval = np.copy(corr)
         n_sample = np.copy(corr)
-        print corr.shape
         for f in np.arange(feat_sel.shape[0]):
             for b in np.arange(beh_meas.shape[1]):
                 meas = self.meas[:, feat_sel[f]]
@@ -230,7 +271,7 @@ class Analyzer(object):
 
         return corr, pval, n_sample
 
-    def behavior_predict2(self, beh_meas, beh_name, feat_sel=None, figure=True):
+    def behavior_predict2(self, beh_meas, beh_name, feat_sel=None, figure=False):
         """
 
         Parameters
@@ -266,22 +307,9 @@ class Analyzer(object):
         if figure:
             labels = [self.feat_name[i] for i in feat_sel]
             for b in np.arange(slope.shape[0]):
-                ind = np.arange(slope.shape[1])
-                width = 0.35
-                fig, ax = plt.subplots()
-                rects1 = ax.bar(ind, slope[b, :], width, color='r')
-                x0, x1 = ax.get_xlim()
-                y0, y1 = ax.get_ylim()
-                ax.set_aspect((x1-x0)/(y1-y0))
-                ax.set_ylabel('Slope')
-                ax.set_xticks(ind + width)
-                plt.xticks(rotation=45)
-                ax.set_xticklabels(labels)
-                ax.set_title('Behavior predict for %s' % beh_name[b])
-                plt.show()
+                plot_bar(slope[b, :], 'Behavior predict for %s' % beh_name[b], labels, 'Slope')
 
         return slope
-
 
     def outlier_remove(self, outlier_sel):
         """
@@ -302,7 +330,7 @@ class Analyzer(object):
 
         return self.meas
 
-    def hemi_asymmetry(self, feat_sel=None, figure=True):
+    def hemi_asymmetry(self, feat_sel=None, figure=False):
         """
 
         Parameters
@@ -328,26 +356,15 @@ class Analyzer(object):
             meas = meas[~np.isnan(np.prod(meas, axis=1)), :]
             li = (meas[:, 0] - meas[:, 1])/(meas[:, 0] + meas[:, 1])
             [t, p] = stats.ttest_1samp(li, 0)
-            li_stats[:, f/2] = [np.mean(li), np.std(li), li.shape[0], t, p]
+            li_stats[:, f/2] = [np.nanmean(li), np.nanstd(li), li.shape[0], t, p]
 
         if figure:
             feat_labels = [self.feat_name[i] for i in feat_sel[::2]]
-            ind = np.arange(li_stats.shape[1])
-            width = 0.35
-            fig, ax = plt.subplots()
-            rects1 = ax.bar(ind, li_stats[0, :], width, color='r', yerr=li_stats[1, :])
-            x0, x1 = ax.get_xlim()
-            y0, y1 = ax.get_ylim()
-            ax.set_aspect((x1-x0)/(y1-y0))
-            ax.set_ylabel('LI score')
-            ax.set_xticks(ind + width)
-            ax.set_xticklabels(feat_labels)
-            ax.set_title('Laterality index')
-            plt.show()
+            plot_bar(li_stats[0, :], 'Laterality index', feat_labels, 'LI score', li_stats[1, :])
 
         return li_stats
 
-    def gender_diff(self, feat_sel=None, figure=True):
+    def gender_diff(self, feat_sel=None, figure=False):
         """
 
         Parameters
@@ -383,19 +400,7 @@ class Analyzer(object):
             gd_stats[:, f] = [d, n_male, n_female, t, p]
 
         if figure:
-            ind = np.arange(gd_stats.shape[1])
-            width = 0.35
-            fig, ax = plt.subplots()
-            rects1 = ax.bar(ind, gd_stats[0, :], width, color='r')
-            x0, x1 = ax.get_xlim()
-            y0, y1 = ax.get_ylim()
-            ax.set_aspect((x1-x0)/(y1-y0))
-            ax.set_ylabel('Cohen d')
-            ax.set_xticks(ind + width)
-            plt.xticks(rotation=45)
-            labels = [self.feat_name[i] for i in feat_sel]
-            ax.set_xticklabels(labels)
-            ax.set_title('Gender differences')
-            plt.show()
+            xlabels = [self.feat_name[i] for i in feat_sel]
+            plot_bar(gd_stats[0, :], 'Gender differences', xlabels, 'Cohen d')
 
         return gd_stats

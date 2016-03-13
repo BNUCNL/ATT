@@ -106,7 +106,7 @@ class Atlas(object):
                 d = targ[:, :, :, s]
                 m = mask[:, :, :, s] == self.roi_id[r]
                 meas[s, r] = meter(d[m])
-
+        meas[meas == 0] = np.nan
         return meas
 	
 	def collect_geometry_meas(self, meas_img, metric='mean'):
