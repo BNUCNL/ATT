@@ -77,7 +77,7 @@ class Atlas(object):
             targ = np.expand_dims(targ, axis=1)
 
         if mask.ndim == 3:
-            mask = np.tile(mask, (1, targ.shape[3]))
+            mask = np.tile(mask[..., np.newaxis], (1, targ.shape[3]))
 
         n_subj = targ.shape[3] # number of subjects
         n_roi = len(self.roi_id) # number of ROI
@@ -139,7 +139,7 @@ class Atlas(object):
             targ = np.expand_dims(targ, axis=1)
 
         if mask.ndim == 3:
-            mask = np.tile(mask, (1, targ.shape[3]))
+            mask = np.tile(mask[..., np.newaxis], (1, targ.shape[3]))
 
         n_subj = targ.shape[3] # number of subjects
         n_roi = len(self.roi_id) # number of ROI
@@ -258,4 +258,3 @@ class Atlas(object):
         self.mpm = mpm
 
         return mpm
-
