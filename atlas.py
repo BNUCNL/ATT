@@ -26,8 +26,6 @@ def load_img(fimg):
     """
     if isinstance(fimg, nib.Nifti1Image):
         img = fimg
-
-    # load nifti image with nibabel
     elif os.path.isfile(fimg):
         img = nib.load(fimg)
     else:
@@ -36,47 +34,41 @@ def load_img(fimg):
     return img
 
 
-   def split_half_data(data, keys, dl=None):
-       """
+def split_half_data(data, keys, dl=None):
+    """
 
-       Parameters
-       ----------
-       data: a dict
-       keys: keys which will be spilt
-       dl: dependent labels. The spilt will be even for each labels in each split
-
-
-       Returns
-       -------
-       sph_data: a list to store the first and second half data(2x1)
-       """
-       n_sample = data[keys[0]].shape[0]
-       if dl is None:
-           dl = np.ones(n_sample)
-
-       fold = 2
-       skf = StratifiedKFold(dl, n_folds=fold)
-       index = []
-       for train, test in skf:
-           index.append(train)
-           index.append(test)
-           break
-
-       sph_data = []
-       for f in np.arange(fold):
-           f_data = data.copy()
-           for k in keys:
-               f_data[k] = f_data[k][index[f],:]
-
-           sph_data.append(f_data)
-
-       return sph_data
+    Parameters
+    ----------
+    data: a dict
+    keys: keys which will be spilt
+    dl: dependent labels. The spilt will be even for each labels in each split
 
 
+    Returns
+    -------
+    sph_data: a list to store the first and second half data(2x1)
+    """
+    n_sample = data[keys[0]].shape[0]
+    if dl is None:
+        dl = np.ones(n_sample)
 
+    fold = 2
+    skf = StratifiedKFold(dl, n_folds=fold)
+    index = []
+    for train, test in skf:
+        index.append(train)
+        index.append(test)
+        break
 
+    sph_data = []
+    for f in np.arange(fold):
+        f_data = data.copy()
+        for k in keys:
+            f_data[k] = f_data[k][index[f],:]
 
+        sph_data.append(f_data)
 
+    return sph_data
 
 
 class Atlas(object):

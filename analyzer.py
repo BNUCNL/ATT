@@ -145,7 +145,6 @@ class Analyzer(object):
         odd_meas = self.meas[:, odd_f] * weight[:, odd_f]
         even_meas = self.meas[:, odd_f+1] * weight[:, odd_f+1]
         self.meas = (odd_meas + even_meas)/(weight[:, odd_f] + weight[:, odd_f+1])
-        print self.meas.shape
 
     def feature_description(self, feat_sel=None, figure=False):
         """
@@ -211,6 +210,8 @@ class Analyzer(object):
         """
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
+        elif isinstance(feat_sel, basestring):
+            feat_sel = np.array(feat_sel)
 
         corr = np.zeros((feat_sel.shape[0], feat_sel.shape[0]))
         pval = np.copy(corr)
@@ -272,6 +273,8 @@ class Analyzer(object):
 
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
+        elif isinstance(feat_sel, basestring):
+            feat_sel = np.array(feat_sel)
 
         if beh_meas.ndim == 1:
             beh_meas = np.tile(beh_meas, (1, 1)).T
@@ -333,6 +336,8 @@ class Analyzer(object):
         """
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
+        elif isinstance(feat_sel, basestring):
+            feat_sel = np.array(feat_sel)
 
         if beh_meas.ndim == 1:
             beh_meas = np.tile(beh_meas, (1, 1)).T
@@ -390,6 +395,8 @@ class Analyzer(object):
 
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
+        elif isinstance(feat_sel, basestring):
+            feat_sel = np.array(feat_sel)
 
         if (feat_sel.shape[0] % 2) != 0:
             raise UserDefinedException('The number of feature should be even and paired next each other')
@@ -424,6 +431,8 @@ class Analyzer(object):
 
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
+        elif isinstance(feat_sel, basestring):
+            feat_sel = np.array(feat_sel)
 
         subj_gender = np.ones(len(self.subj_gender), dtype=bool)
         f_idx = [i for i, g in enumerate(self.subj_gender) if g == 'f']
