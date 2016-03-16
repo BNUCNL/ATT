@@ -24,24 +24,25 @@ subj_gender = data['subj_gender']
 mt_analyzer = Analyzer(meas, meas_name, roi_name, subj_id, subj_gender)
 
 # merge data from two hemisphere
-mt_analyzer.hemi_merge()
+#mt_analyzer.hemi_merge()
 
+feat_sel = [2,3]
 # description for each features
-feat_stats = mt_analyzer.feature_description()
+feat_stats = mt_analyzer.feature_description(feat_sel, figure=True)
 
 # description for the relation among each pair of feature
-feat_corr, feat_pval, n_sample = mt_analyzer.feature_relation(figure=True)
+feat_corr, feat_pval, n_sample = mt_analyzer.feature_relation(feat_sel, figure=True)
 
 # uni-variate  behavior predict
 beh_meas = np.mean(meas, axis=1) # fake behavior use mean brain meas
-beh_corr, beh_pval, beh_nsamp = mt_analyzer.behavior_predict1(beh_meas, ['fakeBeh'])
+beh_corr, beh_pval, beh_nsamp = mt_analyzer.behavior_predict1(beh_meas, ['fakeBeh'], feat_sel, figure=True)
 
 # multivariate behavior predict
 beh_meas = np.random.randn(meas.shape[0], 1)
-reg_stats = mt_analyzer.behavior_predict2(beh_meas, ['RandBeh'], figure=True)
+reg_stats = mt_analyzer.behavior_predict2(beh_meas, ['RandBeh'], feat_sel, figure=True)
 
 # calculate hemisphere asymmetry
-li_stats = mt_analyzer.hemi_asymmetry(figure=True)
+li_stats = mt_analyzer.hemi_asymmetry(feat_sel, figure=True)
 
-# calculate gender differnce
-gd_stats = mt_analyzer.gender_diff(figure=True)
+# calculate gender difference
+gd_stats = mt_analyzer.gender_diff(feat_sel, figure=True)

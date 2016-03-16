@@ -134,7 +134,7 @@ class Analyzer(object):
 
         if meth is 'single':
             for f in odd_f:
-                meas = self.meas[:, (f, f+1)]
+                meas = self.meas[:, f:f+2]
                 bool_nan = np.isnan(self.meas)
                 index = np.logical_xor(bool_nan[:, 0], bool_nan[:, 1])
                 value = np.where(np.isnan(meas[index, 0]), meas[index, 1], meas[index, 0])
@@ -163,12 +163,12 @@ class Analyzer(object):
 
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
-        elif isinstance(feat_sel, basestring):
+        elif isinstance(feat_sel, list):
             feat_sel = np.array(feat_sel)
 
         feat_stats = np.zeros((5, feat_sel.shape[0]))
-        for f in feat_sel:
-            meas = self.meas[:, f]
+        for f in np.arange(feat_sel.shape[0]):
+            meas = self.meas[:, feat_sel[f]]
             meas = meas[~np.isnan(meas)]
             [t, p] = stats.ttest_1samp(meas, 0)
             feat_stats[:, f] = [np.mean(meas), np.std(meas), meas.shape[0], t, p]
@@ -210,7 +210,7 @@ class Analyzer(object):
         """
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
-        elif isinstance(feat_sel, basestring):
+        elif isinstance(feat_sel, list):
             feat_sel = np.array(feat_sel)
 
         corr = np.zeros((feat_sel.shape[0], feat_sel.shape[0]))
@@ -230,7 +230,7 @@ class Analyzer(object):
 
         if figure:
             labels = [self.feat_name[i] for i in feat_sel]
-            plot_mat(corr, 'Feature correlation', labels, labels)
+            plot_mat(corr.T, 'Feature correlation', labels, labels)
             # plot for each feature
             for i in np.arange(feat_sel.shape[0]):
                 for j in np.arange(i+1, feat_sel.shape[0], 1):
@@ -273,11 +273,11 @@ class Analyzer(object):
 
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
-        elif isinstance(feat_sel, basestring):
+        elif isinstance(feat_sel, list):
             feat_sel = np.array(feat_sel)
 
         if beh_meas.ndim == 1:
-            beh_meas = np.tile(beh_meas, (1, 1)).T
+            beh_meas = np.expand_dims(beh_meas, axis=1)
 
         corr = np.zeros((feat_sel.shape[0], beh_meas.shape[1]))
         pval = np.copy(corr)
@@ -300,7 +300,7 @@ class Analyzer(object):
             # plot for each feature
             for f in feat_sel:
                 for b in np.arange(beh_meas.shape[1]):
-                    meas = self.meas[:, feat_sel[f]]
+                    meas = self.meas[:, f]
                     beh = beh_meas[:, b]
                     samp_sel = ~np.isnan(meas * beh)
                     x = meas[samp_sel]
@@ -336,19 +336,19 @@ class Analyzer(object):
         """
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
-        elif isinstance(feat_sel, basestring):
+        elif isinstance(feat_sel, list):
             feat_sel = np.array(feat_sel)
 
         if beh_meas.ndim == 1:
-            beh_meas = np.tile(beh_meas, (1, 1)).T
+            beh_meas = np.expand_dims(beh_meas, axis=1)
 
         samp_sel = ~np.isnan(np.prod(self.meas, axis=1))
         slope = np.zeros((beh_meas.shape[1], feat_sel.shape[0]))
         for b in np.arange(beh_meas.shape[1]):
             beh_sel = ~np.isnan(beh_meas[:, b])
             sel = np.logical_and(samp_sel, beh_sel)
-            x = self.meas[sel, :]
-            y = np.tile(beh_meas[sel, b], (1, 1)).T
+            x = self.meas[np.ix_(sel, feat_sel)]
+            y = np.expand_dims(beh_meas[sel, b], axis=1)
             glm = LinearRegression(copy_X=True, fit_intercept=True, normalize=True)
             glm.fit(x, y)
             slope[b, :] = glm.coef_
@@ -395,7 +395,7 @@ class Analyzer(object):
 
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
-        elif isinstance(feat_sel, basestring):
+        elif isinstance(feat_sel, list):
             feat_sel = np.array(feat_sel)
 
         if (feat_sel.shape[0] % 2) != 0:
@@ -431,7 +431,7 @@ class Analyzer(object):
 
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
-        elif isinstance(feat_sel, basestring):
+        elif isinstance(feat_sel, list):
             feat_sel = np.array(feat_sel)
 
         subj_gender = np.ones(len(self.subj_gender), dtype=bool)
@@ -439,8 +439,8 @@ class Analyzer(object):
         subj_gender[f_idx] = False
 
         gd_stats = np.zeros((5, feat_sel.shape[0]))
-        for f in feat_sel:
-            meas = self.meas[:, f]
+        for f in np.arange(feat_sel.shape[0]):
+            meas = self.meas[:, feat_sel[f]]
             idx = ~np.isnan(meas)
             meas = meas[idx]
             gender = subj_gender[idx]
