@@ -21,6 +21,8 @@ subj_gender = data['subj_gender']
 
 mt_analyzer = Analyzer(meas, meas_name, roi_name, subj_id, subj_gender)
 
+mt_analyzer.hemi_merge()
+
 plt.close('all')
 # feat_stats = mt_analyzer.feature_description()
 
@@ -33,6 +35,6 @@ plt.close('all')
 #beh_meas = np.random.randn(meas.shape[0], 1)
 #reg_stats = mt_analyzer.behavior_predict2(beh_meas, ['RandBeh'], figure=True)
 
-li_stats = mt_analyzer.hemi_asymmetry(figure=True)
+#li_stats = mt_analyzer.hemi_asymmetry(figure=True)
 
 # gd_stats = mt_analyzer.gender_diff(figure=True)
