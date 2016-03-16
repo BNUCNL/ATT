@@ -109,13 +109,14 @@ class Analyzer(object):
             roi_name = self.roi_name[np.mod(f, n_roi).astype(int)]
             self.feat_name.append(roi_name + '-' + meas_name)
 
-    def hemi_merge(self, meth='both'):
+    def hemi_merge(self, meth='single', weight=None):
         """
 
         Parameters
         ----------
         meth : 'single' or 'both'.single, keep roi which appear in a single hemisphere;
         both, only keep roi which appear in both hemisphere
+        weight: weight for each roi, n_subj x n_roi np.array
 
         Returns
         -------
@@ -125,17 +126,26 @@ class Analyzer(object):
         odd_f = np.arange(0, len(self.feat_name), 2)
         self.feat_name = [self.feat_name[i] for i in odd_f]
 
+        if weight is None:
+            weight = np.ones(self.meas.shape)
+            weight[np.isnan(self.meas)] = 0
+        else:
+            weight = np.repeat(weight, self.meas.shape[1]/weight.shape[1], axis=1)
+
         if meth is 'single':
             for f in odd_f:
                 meas = self.meas[:, (f, f+1)]
-                bool_nan = np.isnan(meas)
+                bool_nan = np.isnan(self.meas)
                 index = np.logical_xor(bool_nan[:, 0], bool_nan[:, 1])
                 value = np.where(np.isnan(meas[index, 0]), meas[index, 1], meas[index, 0])
                 meas[index, :] = np.repeat(value[..., np.newaxis], 2, axis=1)
         elif meth is 'both':
-            pass
+                pass
 
-        self.meas = (self.meas[:, odd_f] + self.meas[:, (odd_f + 1)])/2
+        odd_meas = self.meas[:, odd_f] * weight[:, odd_f]
+        even_meas = self.meas[:, odd_f+1] * weight[:, odd_f+1]
+        self.meas = (odd_meas + even_meas)/(weight[:, odd_f] + weight[:, odd_f+1])
+        print self.meas.shape
 
     def feature_description(self, feat_sel=None, figure=False):
         """
@@ -154,6 +164,8 @@ class Analyzer(object):
 
         if feat_sel is None:
             feat_sel = np.arange(self.meas.shape[1])
+        elif isinstance(feat_sel, basestring):
+            feat_sel = np.array(feat_sel)
 
         feat_stats = np.zeros((5, feat_sel.shape[0]))
         for f in feat_sel:
