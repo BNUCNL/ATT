@@ -109,21 +109,33 @@ class Analyzer(object):
             roi_name = self.roi_name[np.mod(f, n_roi).astype(int)]
             self.feat_name.append(roi_name + '-' + meas_name)
 
-    def hemi_merge(self):
+    def hemi_merge(self, meth='both'):
+        """
 
+        Parameters
+        ----------
+        meth : 'single' or 'both'.single, keep roi which appear in a single hemisphere;
+        both, only keep roi which appear in both hemisphere
+
+        Returns
+        -------
+
+        """
         self.roi_name = [self.roi_name[i] for i in np.arange(0, len(self.roi_name), 2)]
         odd_f = np.arange(0, len(self.feat_name), 2)
         self.feat_name = [self.feat_name[i] for i in odd_f]
-        for f in odd_f:
-            meas = self.meas[:, (f, f+1)]
-            bool_nan = np.isnan(meas)
-            index = np.logical_xor(bool_nan[:, 0], bool_nan[:, 1])
-            value = np.where(np.isnan(meas[index, 0]), meas[index, 1], meas[index, 0])
-            print value.shape
-            meas[index, :] = np.repeat(value[..., np.newaxis], 2, axis=1)
+
+        if meth is 'single':
+            for f in odd_f:
+                meas = self.meas[:, (f, f+1)]
+                bool_nan = np.isnan(meas)
+                index = np.logical_xor(bool_nan[:, 0], bool_nan[:, 1])
+                value = np.where(np.isnan(meas[index, 0]), meas[index, 1], meas[index, 0])
+                meas[index, :] = np.repeat(value[..., np.newaxis], 2, axis=1)
+        elif meth is 'both':
+            pass
 
         self.meas = (self.meas[:, odd_f] + self.meas[:, (odd_f + 1)])/2
-        print self.meas.shape, self.feat_name, self.roi_name
 
     def feature_description(self, feat_sel=None, figure=False):
         """
