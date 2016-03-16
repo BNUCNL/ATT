@@ -1,7 +1,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 et:1
 
-
 import os
 import pandas as pd
 from atlas import *
@@ -31,7 +30,7 @@ mpm = mt_atlas.make_mpm(0.1)
 mpm_img = nib.Nifti1Image(mpm, None, mt_atlas.atlas_img.header)
 nib.save(mpm_img, os.path.join(data_path, 'mpm.nii.gz'))
 
-"""meas_name = ['zstat.nii.gz', 'falff.nii.gz']
+meas_name = ['zstat.nii.gz', 'falff.nii.gz']
 meas_mean = np.array([]).reshape((len(subj_id), 0))
 meas_peak_coords = np.array([]).reshape((len(subj_id), len(roi_id), 0))
 for m in meas_name:
@@ -52,8 +51,8 @@ data['roi_name'] = roi_name
 data['subj_gender'] = subj_gender
 data['meas_name'] = ['act-mean', 'fallf-mean']
 
+sph_data = split_half_data(data, ['meas_mean'])
 file_name = 'mt-zstat-falff'
-with open(os.path.join(data_path, file_name+'.pkl'), 'wb') as out_file:
-        cPickle.dump(data, out_file, -1)
-
-"""
+for f in range(2):
+    with open(os.path.join(data_path, file_name+'%d.pkl' % f), 'wb') as out_file:
+        cPickle.dump(sph_data[f], out_file, -1)
