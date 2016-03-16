@@ -24,11 +24,12 @@ subj_gender = data['subj_gender']
 mt_analyzer = Analyzer(meas, meas_name, roi_name, subj_id, subj_gender)
 
 # merge data from two hemisphere
-#mt_analyzer.hemi_merge()
+mt_analyzer.hemi_merge()
 
-feat_sel = [2,3]
-# description for each features
+feat_sel = [0,1,2,3]
+# description for each features, and save stats
 feat_stats = mt_analyzer.feature_description(feat_sel, figure=True)
+np.savetxt(os.path.join(data_path, 'feat_stats.txt'), feat_stats, fmt='%.4f')
 
 # description for the relation among each pair of feature
 feat_corr, feat_pval, n_sample = mt_analyzer.feature_relation(feat_sel, figure=True)
