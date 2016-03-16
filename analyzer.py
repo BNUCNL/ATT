@@ -109,6 +109,22 @@ class Analyzer(object):
             roi_name = self.roi_name[np.mod(f, n_roi).astype(int)]
             self.feat_name.append(roi_name + '-' + meas_name)
 
+    def hemi_merge(self):
+
+        self.roi_name = [self.roi_name[i] for i in np.arange(0, len(self.roi_name), 2)]
+        odd_f = np.arange(0, len(self.feat_name), 2)
+        self.feat_name = [self.feat_name[i] for i in odd_f]
+        for f in odd_f:
+            meas = self.meas[:, (f, f+1)]
+            bool_nan = np.isnan(meas)
+            index = np.logical_xor(bool_nan[:, 0], bool_nan[:, 1])
+            value = np.where(np.isnan(meas[index, 0]), meas[index, 1], meas[index, 0])
+            print value.shape
+            meas[index, :] = np.repeat(value[..., np.newaxis], 2, axis=1)
+
+        self.meas = (self.meas[:, odd_f] + self.meas[:, (odd_f + 1)])/2
+        print self.meas.shape, self.feat_name, self.roi_name
+
     def feature_description(self, feat_sel=None, figure=False):
         """
         feature description and plot
@@ -139,10 +155,14 @@ class Analyzer(object):
                 feat_name = self.feat_name[f]
                 meas = self.meas[:, f]
                 meas = meas[~np.isnan(meas)]
+                if meas.shape[0] < 100:
+                    n_bin = 10
+                else:
+                    n_bin = np.fix(meas.shape[0]/10)
                 fig, ax = plt.subplots()
-                plt.hist(meas, normed=True)
+                plt.hist(meas, bins=n_bin)
                 plt.xlabel(feat_name)
-                plt.ylabel('Probability')
+                plt.ylabel('Frequency counts')
                 plt.title('Histogram')
                 x0, x1 = ax.get_xlim()
                 y0, y1 = ax.get_ylim()
