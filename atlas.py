@@ -207,7 +207,7 @@ class Atlas(object):
                 # ijk to coordinates
                 meas[s, :, :] = np.dot(affine, ijk.T)[0:3, :].T
 
-        return meas
+        return np.reshape(meas, (n_subj, n_roi*3))
 
     def volume(self):
         """
