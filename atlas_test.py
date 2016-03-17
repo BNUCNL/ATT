@@ -37,7 +37,7 @@ nib.save(mpm_img, os.path.join(data_path, 'mpm.nii.gz'))
 # extract meas
 meas_name = ['zstat.nii.gz', 'falff.nii.gz']
 meas_mean = np.array([]).reshape((len(subj_id), 0)) # store the data as 2d array
-meas_peak_coords = np.array([]).reshape((len(subj_id), len(roi_id), 0))
+meas_peak_coords = np.array([]).reshape((len(subj_id), 0))
 for m in meas_name:
     meas_img_path = os.path.join(data_path, m)
     meas_img = nib.load(meas_img_path)
@@ -46,7 +46,7 @@ for m in meas_name:
     meas_mean = np.hstack((meas_mean, mean_value))
 
     peak_coords = mt_atlas.collect_geometry_meas(meas_img, 'peak')
-    meas_peak_coords = np.concatenate((meas_peak_coords, peak_coords), axis=2)
+    meas_peak_coords = np.hstack((meas_peak_coords, peak_coords))
 
 # reorganize data as a dict
 data = dict.fromkeys(['meas_mean', 'meas_name', 'meas_peak_coords', 'roi_name', 'subj_id', 'subj_gender'], None)
