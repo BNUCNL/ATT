@@ -58,8 +58,8 @@ data['subj_gender'] = subj_gender
 data['meas_name'] = ['act-mean', 'fallf-mean']
 
 # split data in two half and save it
-sph_data = split_half_data(data, ['meas_mean'])
+sph_data = split_half_data(data, ['meas_mean', 'meas_peak_coords'])
 file_name = 'mt-zstat-falff'
 for f in range(2):
-    with open(os.path.join(data_path, file_name+'sph%d.pkl' % f), 'wb') as out_file:
+    with open(os.path.join(data_path, file_name+'-sph%d.pkl' % f), 'wb') as out_file:
         cPickle.dump(sph_data[f], out_file, -1)

@@ -95,8 +95,24 @@ def cohen_d(x, y):
 
 
 class Analyzer(object):
-    def __init__(self, meas, meas_name, roi_name, subj_id, subj_gender):
+    def __init__(self, meas, meas_type, meas_name, roi_name, subj_id, subj_gender):
+        """
+
+        Parameters
+        ----------
+        meas :  n_subj x n_feature 2d array
+        meas_type: scalar or geometry
+        meas_name: list which keep measures name
+        roi_name: list which keep roi name
+        subj_id: list which keep subject id
+        subj_gender: list which keep subject gender
+
+        Returns
+        -------
+
+        """
         self.meas = meas
+        self.type = meas_type
         self.subj_id = subj_id
         self.roi_name = roi_name
         self.meas_name = meas_name
@@ -104,10 +120,20 @@ class Analyzer(object):
 
         self.feat_name = []
         n_roi = len(self.roi_name)  # number of ROI
-        for f in np.arange(meas.shape[1]):
-            meas_name = self.meas_name[np.floor(np.divide(f, n_roi)).astype(int)]
-            roi_name = self.roi_name[np.mod(f, n_roi).astype(int)]
-            self.feat_name.append(roi_name + '-' + meas_name)
+        if self.type is 'scalar':
+            for f in np.arange(meas.shape[1]):
+                meas_name = self.meas_name[np.floor(np.divide(f, n_roi)).astype(int)]
+                roi_name = self.roi_name[np.mod(f, n_roi).astype(int)]
+                self.feat_name.append(roi_name + '-' + meas_name)
+        elif self.type is 'geometry':
+            geo = ['x', 'y', 'z']
+            for f in np.arange(meas.shape[1]):
+                meas_name = self.meas_name[np.floor(np.divide(f, n_roi*3)).astype(int)]
+                roi_name = self.roi_name[np.mod(np.floor(f/3), n_roi).astype(int)]
+                geo_name = geo[np.mod(f, 3)]
+                self.feat_name.append(roi_name + '-' + meas_name + '-' + geo_name)
+        else:
+            raise UserDefinedException('Measure type is error!')
 
     def hemi_merge(self, meth='single', weight=None):
         """
@@ -122,29 +148,53 @@ class Analyzer(object):
         -------
 
         """
-        self.roi_name = [self.roi_name[i] for i in np.arange(0, len(self.roi_name), 2)]
-        odd_f = np.arange(0, len(self.feat_name), 2)
-        self.feat_name = [self.feat_name[i] for i in odd_f]
+        if self.type is 'scalar':
+            self.roi_name = [self.roi_name[i] for i in np.arange(0, len(self.roi_name), 2)]
+            odd_f = np.arange(0, len(self.feat_name), 2)
+            self.feat_name = [self.feat_name[i] for i in odd_f]
 
-        if weight is None:
-            weight = np.ones(self.meas.shape)
-            weight[np.isnan(self.meas)] = 0
+            if weight is None:
+                weight = np.ones(self.meas.shape)
+                weight[np.isnan(self.meas)] = 0
+            else:
+                weight = np.repeat(weight, self.meas.shape[1]/weight.shape[1], axis=1)
+
+            if meth is 'single':
+                for f in odd_f:
+                    meas = self.meas[:, f:f+2]
+                    bool_nan = np.isnan(self.meas)
+                    index = np.logical_xor(bool_nan[:, 0], bool_nan[:, 1])
+                    value = np.where(np.isnan(meas[index, 0]), meas[index, 1], meas[index, 0])
+                    meas[index, :] = np.repeat(value[..., np.newaxis], 2, axis=1)
+            elif meth is 'both':
+                    pass
+
+            odd_meas = self.meas[:, odd_f] * weight[:, odd_f]
+            even_meas = self.meas[:, odd_f+1] * weight[:, odd_f+1]
+            self.meas = (odd_meas + even_meas)/(weight[:, odd_f] + weight[:, odd_f+1])
         else:
-            weight = np.repeat(weight, self.meas.shape[1]/weight.shape[1], axis=1)
+            self.roi_name = [self.roi_name[i] for i in np.arange(0, len(self.roi_name), 2)]
+            n_subj, n_feat = self.meas.shape
+            meas = np.reshape(self.meas, (n_subj, -1, 3))
+            odd_f = np.arange(0, meas.shape[1], 2)
+            f_index = []
+            for i in np.arange(0, meas.shape[1], 2):
+                for j in [0, 1, 2]:
+                    f_index.append(i*3+j)
+            self.feat_name = [self.feat_name[i] for i in f_index]
 
-        if meth is 'single':
-            for f in odd_f:
-                meas = self.meas[:, f:f+2]
-                bool_nan = np.isnan(self.meas)
-                index = np.logical_xor(bool_nan[:, 0], bool_nan[:, 1])
-                value = np.where(np.isnan(meas[index, 0]), meas[index, 1], meas[index, 0])
-                meas[index, :] = np.repeat(value[..., np.newaxis], 2, axis=1)
-        elif meth is 'both':
-                pass
+            if meth is 'single':
+                for f in odd_f:
+                    f_meas = meas[:, f:f+2, :]
+                    bool_nan = np.isnan(np.prod(f_meas, axis=2))
+                    index = np.logical_xor(bool_nan[:, 0], bool_nan[:, 1])
+                    value = np.where(np.isnan(f_meas[index, 0, :]), f_meas[index, 1, :], f_meas[index, 0, :])
+                    meas[index, f:f+2, :] = np.repeat(value[:, np.newaxis, :], 2, axis=1)
+            elif meth is 'both':
+                    pass
 
-        odd_meas = self.meas[:, odd_f] * weight[:, odd_f]
-        even_meas = self.meas[:, odd_f+1] * weight[:, odd_f+1]
-        self.meas = (odd_meas + even_meas)/(weight[:, odd_f] + weight[:, odd_f+1])
+            self.meas = np.reshape((meas[:, odd_f, :] + meas[:, odd_f+1, :])/2, (n_subj, -1))
+
 
     def feature_description(self, feat_sel=None, figure=False):
         """
@@ -176,6 +226,7 @@ class Analyzer(object):
         if figure:
             for f in feat_sel:
                 feat_name = self.feat_name[f]
+                print feat_name, f
                 meas = self.meas[:, f]
                 meas = meas[~np.isnan(meas)]
                 if meas.shape[0] < 100:
@@ -384,7 +435,10 @@ class Analyzer(object):
 
         Parameters
         ----------
-        feat_sel
+        feat_sel: feature selection which hold the feature index of interest.
+        when meas type is scalar, selection index should be paired; when meas
+        type is geometry, selection index should be triple paired, and ordered
+        as x, y, z in each triple group
         figure
 
         Returns
@@ -398,19 +452,43 @@ class Analyzer(object):
         elif isinstance(feat_sel, list):
             feat_sel = np.array(feat_sel)
 
-        if (feat_sel.shape[0] % 2) != 0:
-            raise UserDefinedException('The number of feature should be even and paired next each other')
+        if self.type is 'scalar':
+            if (feat_sel.shape[0] % 2) != 0:
+                raise UserDefinedException('Feature index should be paired')
 
-        li_stats = np.zeros((5, feat_sel.shape[0]/2))
-        for f in np.arange(0, feat_sel.shape[0], 2):
-            meas = self.meas[:, feat_sel[f:f+2]]
-            meas = meas[~np.isnan(np.prod(meas, axis=1)), :]
-            li = (meas[:, 0] - meas[:, 1])/(meas[:, 0] + meas[:, 1])
-            [t, p] = stats.ttest_1samp(li, 0)
-            li_stats[:, f/2] = [np.nanmean(li), np.nanstd(li), li.shape[0], t, p]
+            li_stats = np.zeros((5, feat_sel.shape[0]/2))
+            for f in np.arange(0, feat_sel.shape[0], 2):
+                meas = self.meas[:, feat_sel[f:f+2]]
+                meas = meas[~np.isnan(np.prod(meas, axis=1)), :]
+                li = (meas[:, 0] - meas[:, 1])/(meas[:, 0] + meas[:, 1])
+                [t, p] = stats.ttest_1samp(li, 0)
+                li_stats[:, f/2] = [np.mean(li), np.std(li), li.shape[0], t, p]
+        else:
+            if (feat_sel.shape[0] % 2) != 0 and (feat_sel.shape[0] % 3) != 0:
+                raise UserDefinedException('Feature index should triple paired')
+            li_stats = np.zeros((5, feat_sel.shape[0]/2))
+            n_subj, n_feat = self.meas.shape
+            meas = self.meas[:, feat_sel]
+            meas = np.reshape(meas, (n_subj, -1, 3))
+            for f in np.arange(0, meas.shape[1], 2):
+                f_meas = meas[:, feat_sel[f:f+2], :]
+                f_meas = f_meas[~np.isnan(np.prod(f_meas, axis=(1, 2))), :, :]
+                f_meas[:, :, 0] = np.absolute(f_meas[:, :, 0])
+                li = np.squeeze(f_meas[:, 0, :] - f_meas[:, 1, :])
+                [t, p] = stats.ttest_1samp(li, 0)
+                f_stats = np.vstack((np.mean(li, axis=0), np.std(li, axis=0), np.repeat(li.shape[0], 3), t, p))
+                print np.arange((f/2)*3, ((f/2)+1)*3)
+                li_stats[:, np.arange((f/2)*3, ((f/2)+1)*3)] = f_stats
 
         if figure:
-            feat_labels = [self.feat_name[i] for i in feat_sel[::2]]
+            if self.type is 'scalar':
+                feat_labels = [self.feat_name[i] for i in feat_sel[::2]]
+            else:
+                feat_labels = []
+                for i in np.arange(0, feat_sel.shape[0]/3, 2):
+                    for j in [0, 1, 2]:
+                        feat_labels.append(self.feat_name[i*3+j])
+
             plot_bar(li_stats[0, :], 'Laterality index', feat_labels, 'LI score', li_stats[1, :])
 
         return li_stats
