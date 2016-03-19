@@ -369,20 +369,25 @@ class Analyzer(object):
 
         return corr, pval, n_sample
 
-    def behavior_predict2(self, beh_meas, beh_name, feat_sel=None, figure=False):
+    def behavior_predict2(self, beh_meas, beh_name, contrast=None, feat_sel=None, figure=False):
         """
 
         Parameters
         ----------
-        beh_meas
-        beh_name
+        beh_meas: matrix for behavior measurements, n_subj x n_feat
+        beh_name: name for behavior measurements
+        contrast: contrast matrix, each row is a contrast, n_contrast x n_feat.
+        if contrast is set as None, we will contrast each feature to zero
         feat_sel
         figure
 
         Returns
         -------
-        slope: slope for regression,nBeh x nFeat np.array,
+        stats: stats for the regression,(n_beh*3) x n_contrast np.array,
+        for each behavior, 1st row is slope, 2nd is t, 3rd is p
         rows are behaviors, columns are features
+        dof: degree of freedom, n_beh x 1
+        r2 : r square of the fit, n_beh x 1
 
         """
         if feat_sel is None:
@@ -390,26 +395,45 @@ class Analyzer(object):
         elif isinstance(feat_sel, list):
             feat_sel = np.array(feat_sel)
 
+        if contrast is None:
+            contrast = np.identity(feat_sel.shape[0])
+
         if beh_meas.ndim == 1:
             beh_meas = np.expand_dims(beh_meas, axis=1)
 
         samp_sel = ~np.isnan(np.prod(self.meas, axis=1))
-        slope = np.zeros((beh_meas.shape[1], feat_sel.shape[0]))
+        slope_stats = np.zeros((beh_meas.shape[1]*3, feat_sel.shape[0]))
         for b in np.arange(beh_meas.shape[1]):
             beh_sel = ~np.isnan(beh_meas[:, b])
             sel = np.logical_and(samp_sel, beh_sel)
+            dof = np.count_nonzero(sel)
             x = self.meas[np.ix_(sel, feat_sel)]
             y = np.expand_dims(beh_meas[sel, b], axis=1)
-            glm = LinearRegression(copy_X=True, fit_intercept=True, normalize=True)
+            glm = LinearRegression(copy_X=True, fit_intercept=True, normalize=False)
             glm.fit(x, y)
-            slope[b, :] = glm.coef_
+            y_pred = glm.predict(x)
+            # total sum of squares
+            sst = ((y - y.mean())**2).sum()
+            # sum of squares of error
+            sse = ((y - y_pred)**2).sum()
+            r2 = 1 - sse/sst
+
+            beta = glm.coef_
+            slope_stats[b*3, :] = beta
+            t = np.zeros(beta.shape[1])
+            for i in np.arange(contrast.shape[0]):
+                c = np.expand_dims(contrast[i, :], axis=0)
+                t[i] = np.dot(c, beta.T)/np.sqrt((sse * np.dot(np.dot(c, np.linalg.inv(np.dot(x.T, x))), c.T)))
+
+            slope_stats[b*3+1, :] = t
+            slope_stats[b*3+2, :] = stats.t.sf(np.abs(t), dof)*2
 
         if figure:
             labels = [self.feat_name[i] for i in feat_sel]
-            for b in np.arange(slope.shape[0]):
-                plot_bar(slope[b, :], 'Behavior predict for %s' % beh_name[b], labels, 'Slope')
+            for b in np.arange(0, slope_stats.shape[0], 3):
+                plot_bar(slope_stats[b, :], 'Behavior predict for %s' % beh_name[b], labels, 'Slope')
 
-        return slope
+        return slope_stats, r2, dof
 
     def outlier_remove(self, outlier_sel):
         """
@@ -477,7 +501,6 @@ class Analyzer(object):
                 li = np.squeeze(f_meas[:, 0, :] - f_meas[:, 1, :])
                 [t, p] = stats.ttest_1samp(li, 0)
                 f_stats = np.vstack((np.mean(li, axis=0), np.std(li, axis=0), np.repeat(li.shape[0], 3), t, p))
-                print np.arange((f/2)*3, ((f/2)+1)*3)
                 li_stats[:, np.arange((f/2)*3, ((f/2)+1)*3)] = f_stats
 
         if figure:
