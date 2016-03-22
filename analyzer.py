@@ -296,6 +296,8 @@ class Analyzer(object):
                     x0, x1 = ax.get_xlim()
                     y0, y1 = ax.get_ylim()
                     ax.set_aspect((x1-x0)/(y1-y0))
+		    ax.text(x0+0.1*(x1-x0),y0+0.9*(y1-y0),'r = %f,p = %f'\
+		            % (corr[i, j], pval[i, j]))
                     plt.xlabel(labels[i])
                     plt.ylabel(labels[j])
                     plt.title('Feature correlation')
@@ -362,6 +364,8 @@ class Analyzer(object):
                     x0, x1 = ax.get_xlim()
                     y0, y1 = ax.get_ylim()
                     ax.set_aspect((x1-x0)/(y1-y0))
+		    ax.text(x0+0.1*(x1-x0),y0+0.9*(y1-y0),'r = %f,p = %f')\
+			    % (corr[f, b], pval[f, b])
                     plt.xlabel(self.feat_name[f])
                     plt.ylabel(beh_name[b])
                     plt.title('Behavior predict')
