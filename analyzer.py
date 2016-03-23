@@ -190,11 +190,11 @@ class Analyzer(object):
                     index = np.logical_xor(bool_nan[:, 0], bool_nan[:, 1])
                     value = np.where(np.isnan(f_meas[index, 0, :]), f_meas[index, 1, :], f_meas[index, 0, :])
                     meas[index, f:f+2, :] = np.repeat(value[:, np.newaxis, :], 2, axis=1)
+                meas[:, odd_f+1, 0] = -meas[:, odd_f+1, 0]
             elif meth is 'both':
-                    pass
+                meas[:, odd_f+1, 0] = -meas[:, odd_f+1, 0]
 
             self.meas = np.reshape((meas[:, odd_f, :] + meas[:, odd_f+1, :])/2, (n_subj, -1))
-
 
     def feature_description(self, feat_sel=None, figure=False):
         """
@@ -226,7 +226,6 @@ class Analyzer(object):
         if figure:
             for f in feat_sel:
                 feat_name = self.feat_name[f]
-                print feat_name, f
                 meas = self.meas[:, f]
                 meas = meas[~np.isnan(meas)]
                 if meas.shape[0] < 100:
@@ -296,8 +295,7 @@ class Analyzer(object):
                     x0, x1 = ax.get_xlim()
                     y0, y1 = ax.get_ylim()
                     ax.set_aspect((x1-x0)/(y1-y0))
-		    ax.text(x0+0.1*(x1-x0),y0+0.9*(y1-y0),'r = %f,p = %f'\
-		            % (corr[i, j], pval[i, j]))
+                    ax.text(x0+0.1*(x1-x0), y0+0.9*(y1-y0), 'r = %.3f, p = %.3f' % (corr[i, j], pval[i, j]))
                     plt.xlabel(labels[i])
                     plt.ylabel(labels[j])
                     plt.title('Feature correlation')
@@ -364,8 +362,7 @@ class Analyzer(object):
                     x0, x1 = ax.get_xlim()
                     y0, y1 = ax.get_ylim()
                     ax.set_aspect((x1-x0)/(y1-y0))
-		    ax.text(x0+0.1*(x1-x0),y0+0.9*(y1-y0),'r = %f,p = %f')\
-			    % (corr[f, b], pval[f, b])
+                    ax.text(x0+0.1*(x1-x0), y0+0.9*(y1-y0),'r = %.3f, p = %.3f') % (corr[f, b], pval[f, b])
                     plt.xlabel(self.feat_name[f])
                     plt.ylabel(beh_name[b])
                     plt.title('Behavior predict')

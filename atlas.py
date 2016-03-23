@@ -39,21 +39,22 @@ def split_half_data(data, keys, dl=None):
 
     Parameters
     ----------
-    data: a dict
+    data: a dict, the data in the dict to be split should be 1d or 2d nd.array,
+    and all data should have the same number of rows(samples)
     keys: keys which will be spilt
     dl: dependent labels. The spilt will be even for each labels in each split
-
 
     Returns
     -------
     sph_data: a list to store the first and second half data(2x1)
+
     """
     n_sample = data[keys[0]].shape[0]
     if dl is None:
         dl = np.ones(n_sample)
 
     fold = 2
-    skf = StratifiedKFold(dl, n_folds=fold, shuffle = True)
+    skf = StratifiedKFold(dl, n_folds=fold, shuffle=True)
     index = []
     for train, test in skf:
         index.append(train)
@@ -64,13 +65,13 @@ def split_half_data(data, keys, dl=None):
     for f in np.arange(fold):
         f_data = data.copy()
         for k in keys:
-			if len(f_data[k].shape) == 1:
-				f_data[k] = f_data[k][index[f]]
-			elif len(f_data[k].shape) == 2:
-				f_data[k] = f_data[k][index[f],:]
+            if f_data[k].ndim == 1:
+                f_data[k] = f_data[k][index[f]]
             else:
-				raise Exception('data may contains multi-dimensional data')
+                f_data[k] = f_data[k][index[f], :]
+
         sph_data.append(f_data)
+
     return sph_data
 
 
