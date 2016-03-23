@@ -53,7 +53,7 @@ def split_half_data(data, keys, dl=None):
         dl = np.ones(n_sample)
 
     fold = 2
-    skf = StratifiedKFold(dl, n_folds=fold)
+    skf = StratifiedKFold(dl, n_folds=fold, shuffle = True)
     index = []
     for train, test in skf:
         index.append(train)
@@ -64,10 +64,13 @@ def split_half_data(data, keys, dl=None):
     for f in np.arange(fold):
         f_data = data.copy()
         for k in keys:
-            f_data[k] = f_data[k][index[f],:]
-
+			if len(f_data[k].shape) == 1:
+				f_data[k] = f_data[k][index[f]]
+			elif len(f_data[k].shape) == 2:
+				f_data[k] = f_data[k][index[f],:]
+            else:
+				raise Exception('data may contains multi-dimensional data')
         sph_data.append(f_data)
-
     return sph_data
 
 
