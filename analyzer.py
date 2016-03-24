@@ -408,7 +408,7 @@ class Analyzer(object):
             beh_sel = ~np.isnan(beh_meas[:, b])
             sel = np.logical_and(samp_sel, beh_sel)
             dof = np.count_nonzero(sel)
-            x = self.meas[np.ix_(sel, feat_sel)]
+            x = stats.zscore(self.meas[np.ix_(sel, feat_sel)], axis=0)
             y = np.expand_dims(beh_meas[sel, b], axis=1)
             glm = LinearRegression(copy_X=True, fit_intercept=True, normalize=False)
             glm.fit(x, y)
