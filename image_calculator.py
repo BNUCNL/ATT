@@ -39,7 +39,7 @@ class ImageCalculator(object):
 
         if im is None:
             if self.ndim == 4:
-                im = np.logical_and(np.prod(ia, axis=3), np.prod(ib, axis=3))
+                im = np.logical_and(np.all(ia, axis=3), np.all(ib, axis=3))
             else:
                 im = np.logical_and(ia, ib)
 
@@ -62,7 +62,7 @@ class ImageCalculator(object):
 
         if im is None:
             if self.ndim == 4:
-                im = np.logical_and(np.prod(ia, axis=3), np.prod(ib, axis=3))
+                im = np.logical_and(np.all(ia, axis=3), np.all(ib, axis=3))
             else:
                 im = np.logical_and(ia, ib)
 
@@ -86,7 +86,7 @@ class ImageCalculator(object):
 
         if im is None:
             if self.ndim == 4:
-                im = np.logical_and(np.prod(ia, axis=3), np.prod(ib, axis=3))
+                im = np.logical_and(np.all(ia, axis=3), np.all(ib, axis=3))
             else:
                 im = np.logical_and(ia, ib)
 
@@ -110,7 +110,7 @@ class ImageCalculator(object):
 
         if im is None:
             if self.ndim == 4:
-                im = np.logical_and(np.prod(ia, axis=3), np.prod(ib, axis=3))
+                im = np.logical_and(np.all(ia, axis=3), np.all(ib, axis=3))
             else:
                 im = np.logical_and(ia, ib)
 
@@ -135,7 +135,7 @@ class ImageCalculator(object):
 
         if im is None:
             if self.ndim == 4:
-                im = np.logical_and(np.prod(ia, axis=3), np.prod(ib, axis=3))
+                im = np.logical_and(np.all(ia, axis=3), np.all(ib, axis=3))
             else:
                 im = np.logical_and(ia, ib)
 
