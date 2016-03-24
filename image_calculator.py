@@ -1,5 +1,6 @@
 import numpy as np
 import nibabel as nib
+from scipy.stats import zscore
 from atlas import UserDefinedException
 
 
@@ -124,7 +125,6 @@ class ImageCalculator(object):
         return nib.Nifti1Image(ia, None, hdr)
 
     def pearsonr(self, ia, ib, im=None):
-        from scipy.stats import zscore
 
         if ia.shape != ib.shape:
             raise UserDefinedException('image shapes are not match!')

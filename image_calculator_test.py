@@ -1,5 +1,5 @@
 
-from image_calculator import  *
+from image_calculator import *
 import os
 
 data_path = './data'
