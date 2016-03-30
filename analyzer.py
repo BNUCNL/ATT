@@ -135,6 +135,50 @@ class Analyzer(object):
         else:
             raise UserDefinedException('Measure type is error!')
 
+    def outlier_remove(self, meth='std', interval=[-2, 2], feat_sel=None, figure=False):
+        """
+
+        Parameters
+        ----------
+        meth
+        interval
+        feat_sel
+        figure
+
+        Returns
+        -------
+
+        """
+        if feat_sel is None:
+            feat_sel = np.arange(self.meas.shape[1])
+        elif isinstance(feat_sel, list):
+            feat_sel = np.array(feat_sel)
+
+        n_outlier = np.zeros(feat_sel.shape[0])
+        if meth is 'std':
+            for f in np.arange(feat_sel.shape[0]):
+                meas = self.meas[:, feat_sel[f]]
+                f_std = np.nanstd(meas)
+                outlier = np.logical_or(meas < (interval[0] * f_std), meas >= (interval[1] * f_std))
+                n_outlier[f] = np.count_nonzero(outlier)
+                meas[outlier] = np.nan
+        elif meth is 'iqr':
+            for f in np.arange(feat_sel.shape[0]):
+                meas = self.meas[:, feat_sel[f]]
+                percentile = np.nanpercentile(meas, [75, 25])
+                f_iqr = percentile[0] - percentile[1]
+                outlier = np.logical_or(meas < interval[0] * f_iqr, meas >= interval[1] * f_iqr)
+                n_outlier[f] = np.count_nonzero(outlier)
+                meas[outlier] = np.nan
+        else:
+            raise UserDefinedException('Wrong method!')
+
+        if figure:
+            labels = [self.feat_name[i] for i in feat_sel]
+            plot_bar(n_outlier, 'Number of outlier', labels, 'Count')
+
+        return n_outlier
+
     def hemi_merge(self, meth='single', weight=None):
         """
 
@@ -436,24 +480,6 @@ class Analyzer(object):
 
         return slope_stats, r2, dof
 
-    def outlier_remove(self, outlier_sel):
-        """
-        remove outlier
-        Parameters
-        ----------
-        outlier_sel: outlier index, 1-d np.array
-
-        Returns
-        -------
-        self.meas: de-outlierd measurements
-
-        """
-        nSamp = self.meas.shape[0]  # number of sample
-        good_samp = np.ones(nSamp, dtype=bool)
-        good_samp[outlier_sel] = False
-        self.meas = self.meas[good_samp, :]
-
-        return self.meas
 
     def hemi_asymmetry(self, feat_sel=None, figure=False):
         """
