@@ -14,16 +14,21 @@ mt_file.close()
 
 
 # prep inputs
-meas = data['meas_peak_coords'][:100, :]
+meas = data['meas_mean'][:100, :]
 subj_id = data['subj_id']
 roi_name = data['roi_name']
 meas_name = data['meas_name']
 subj_gender = data['subj_gender']
-meas_type = 'geometry'
+# meas_type = 'geometry'
+meas_type = 'scalar'
 
 # generate an analyzer
 mt_analyzer = Analyzer(meas, meas_type, meas_name, roi_name, subj_id, subj_gender)
 
+# remove outlier
+mt_analyzer.outlier_remove(figure=True)
+
+"""
 # merge data from two hemisphere
 mt_analyzer.hemi_merge()
 
@@ -51,3 +56,4 @@ li_stats = mt_analyzer.hemi_asymmetry(feat_sel=sel, figure=False)
 
 # calculate gender difference
 gd_stats = mt_analyzer.gender_diff(feat_sel=sel, figure=False)
+"""
