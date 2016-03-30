@@ -26,7 +26,7 @@ meas_type = 'scalar'
 mt_analyzer = Analyzer(meas, meas_type, meas_name, roi_name, subj_id, subj_gender)
 
 # remove outlier
-mt_analyzer.outlier_remove(figure=True)
+mt_analyzer.outlier_remove(meth='std', figure=True)
 
 """
 # merge data from two hemisphere
