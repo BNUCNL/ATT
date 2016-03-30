@@ -159,15 +159,18 @@ class Analyzer(object):
             for f in np.arange(feat_sel.shape[0]):
                 meas = self.meas[:, feat_sel[f]]
                 f_std = np.nanstd(meas)
-                outlier = np.logical_or(meas < (interval[0] * f_std), meas >= (interval[1] * f_std))
+                f_mean = np.nanmean(meas)
+                outlier = np.logical_or(meas < f_mean + interval[0] * f_std,
+                                        meas >= f_mean + interval[1] * f_std)
                 n_outlier[f] = np.count_nonzero(outlier)
                 meas[outlier] = np.nan
         elif meth is 'iqr':
             for f in np.arange(feat_sel.shape[0]):
                 meas = self.meas[:, feat_sel[f]]
-                percentile = np.nanpercentile(meas, [75, 25])
-                f_iqr = percentile[0] - percentile[1]
-                outlier = np.logical_or(meas < interval[0] * f_iqr, meas >= interval[1] * f_iqr)
+                percentile = np.nanpercentile(meas, [25, 75])
+                f_iqr = percentile[1] - percentile[0]
+                outlier = np.logical_or(meas < percentile[0] + interval[0] * f_iqr,
+                                        meas >= percentile[1] + interval[1] * f_iqr)
                 n_outlier[f] = np.count_nonzero(outlier)
                 meas[outlier] = np.nan
         else:
