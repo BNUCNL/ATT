@@ -454,7 +454,7 @@ class Analyzer(object):
         for b in np.arange(beh_meas.shape[1]):
             beh_sel = ~np.isnan(beh_meas[:, b])
             sel = np.logical_and(samp_sel, beh_sel)
-            dof = np.count_nonzero(sel)
+            dof = np.count_nonzero(sel) - contrast.shape[0]
             x = stats.zscore(self.meas[np.ix_(sel, feat_sel)], axis=0)
             y = np.expand_dims(beh_meas[sel, b], axis=1)
             glm = LinearRegression(copy_X=True, fit_intercept=True, normalize=False)
@@ -471,7 +471,7 @@ class Analyzer(object):
             t = np.zeros(beta.shape[1])
             for i in np.arange(contrast.shape[0]):
                 c = np.expand_dims(contrast[i, :], axis=0)
-                t[i] = np.dot(c, beta.T)/np.sqrt((sse * np.dot(np.dot(c, np.linalg.inv(np.dot(x.T, x))), c.T)))
+                t[i] = np.dot(c, beta.T)/np.sqrt(((sse/dof) * np.dot(np.dot(c, np.linalg.inv(np.dot(x.T, x))), c.T)))
 
             slope_stats[b*3+1, :] = t
             slope_stats[b*3+2, :] = stats.t.sf(np.abs(t), dof)*2
