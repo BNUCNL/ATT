@@ -71,9 +71,49 @@ def split_half_data(data, keys, dl=None):
                 f_data[k] = f_data[k][index[f], :]
 
         sph_data.append(f_data)
-
     return sph_data
 
+class SubjIdOperator(object):
+    def list_subjid(parpath, stem):
+    """
+        List sessid when data exists
+        Parameters:
+            parpath: parent path, can list raw sessid in this parent path
+            stem: stem directory
+        Output:
+            sessid (list) 
+    """
+        sessid = []
+        sid_raw = os.listdir(parpath)
+        for i in sid_raw:
+            if os.path.exists(os.path.join(parpath, i, stem)):
+                sessid.append(i)
+        return sessid 
+       
+    def pool_subjid(id_list_1, id_list_2, operator = 'int'):
+    """
+        Do operation for combining two list of id
+        Parameters:
+            id_list_1, id_list_2: two id list you want to combined with together
+            operator: method. 'int' for intersection. 'union' for union. 
+                      'sub' for substrate.
+                      Default as intersection
+        Output:
+            sessid: combined sessid
+    """
+        if isinstance(id_list_1, str):
+            id_list_1 = open(id_list_1, 'rb').read().splitlines()
+        if isinstance(id_list_2, str):
+            id_list_2 = open(id_list_2, 'rb').read().splitlines()
+        if operator == 'int':
+            sessid = [sid for sid in id_list_1 if sid in id_list_2]
+        elif operator == 'union':
+            sessid = list(set(id_list_1 + id_list_2))
+        elif operator == 'sub':
+            sessid = [sid for sid in id_list_1 if sid not in id_list_2]
+        else:
+            raise Exception('please note parameters as int, union or sub')
+        return sessid
 
 class Atlas(object):
     def __init__(self, atlas_img, roi_id, roi_name, task, contrast, threshold, subj_id, subj_gender):
