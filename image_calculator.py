@@ -16,6 +16,31 @@ class ImageCalculator(object):
         else:
             raise UserDefinedException('type is error: it should be spatial or temporal')
 
+    def merge4D(self, parpath, sessid, stem, dataname, header, outpath = None):
+    """
+        Merge files
+        Parameters:
+            parpath: parent path
+            sessid: subject id
+            stem: stem path
+            dataname: dataname
+            header: niftidata header
+            outpath: output path. Default means current path 
+    """ 
+        outdata = np.zeros([91,109,91, len(sessid)])
+        fullpath = [os.path.join(parpath, sid, stem, dataname) for sid in sessid]
+        for i, e in enumerate(fullpath):
+            if os.path.exist(e):
+                outdata[...,i] = nib.load(e).get_data()
+            else:
+                raise Exception('File may not exist in %s' % e)
+        img = nib.Nifti1Image(outdata, None, header)
+        if outpath is None:
+            outpath = dataname
+        nib.save(img, outpath)
+        print 'merge is over!'
+        return outdata
+
     def add(self, ia, ib, im=None):
         """
 
