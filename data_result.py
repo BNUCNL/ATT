@@ -83,7 +83,6 @@ data_parpath = '/nfs/j3/userhome/huangtaicheng/hworkingshop/parcellation_MT/Summ
 # feature prediction 1, simple linear correlation analysis
 data_stem = 'data_spec/measuredata/MT'
 # data_dist_stem = 'data_spec/measuredata'
-# data_dist = iofiles.load_pkl(pjoin(data_parpath, data_dist_stem, 'dist_point_minkp1.pkl'))
 data_pd = pd.read_csv(pjoin(data_parpath, data_stem, 'sum_data.csv'))
 data_pd['mtsys_bnc_same'] = data_pd['mtsys_bnc'].values
 # data_pd['dist_all0_lMT'] = data_dist[:,3]

@@ -126,7 +126,10 @@ class MakeMasks(object):
         pm = roimethod.make_pm(atlas, meth)
         self.pm = pm
         if self.issave is True:
-            iofiles.save_nifti(pm, self.header, maskname, self.savepath)
+            iofactory = iofiles.IOFactory()
+            factory = iofactory.createfactory(self.savepath, maskname)
+            if maskname.endswith('gz') | maskname.endswith('nii'):
+                factory.save_nifti(pm, self.header)
         return pm
 
     def makempm(self, threshold, maskname = 'mpm.nii.gz'):
@@ -142,7 +145,10 @@ class MakeMasks(object):
         mpm = roimethod.make_mpm(self.pm, threshold)
         self.mpm = mpm
         if self.issave is True:
-            iofiles.save_nifti(mpm, self.header, maskname, self.savepath)
+            iofactory = iofiles.IOFactory()
+            factory = iofactory.createfactory(self.savepath, maskname)
+            if maskname.endswith('gz') | maskname.endswith('nii'):
+                factory.save_nifti(mpm, self.header)
         return mpm       
     
     def makemask_sphere(self, voxloc, radius, atlasshape = [91,109,91], maskname = 'spheremask.nii.gz'):
@@ -161,7 +167,10 @@ class MakeMasks(object):
             spheremask = roimethod.sphere_roi(spheremask, e, radius, i+1)
         self.spheremask = spheremask
         if self.issave is True:
-            iofiles.save_nifti(spheremask, self.header, maskname, self.savepath)
+            iofactory = iofiles.IOFactory()
+            factory = iofactory.createfactory(self.savepath, maskname)
+            if maskname.endswith('gz') | maskname.endswith('nii'):
+                factory.save_nifti(spheremask, self.header)
         return spheremask
 
     def makemas_rgrowth(self):

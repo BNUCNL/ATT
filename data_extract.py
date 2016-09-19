@@ -24,13 +24,13 @@ actvalues = nib.load(pjoin(nifti_parpath, 'zstat1.nii.gz')).get_data()
 
 signal_roi_spec = atlasbase.ExtractSignals(atlas_spec, region_spec)
 signals_spec = signal_roi_spec.getsignals(actvalues)
-iofiles.nparray2csv(signals_spec, ['rV3','lV3', 'rMT', 'lMT'], 'zstatavg.csv')
+
+iofactory = iofiles.IOFactory()
+factory = iofactory.createfactory('.', 'zstatavg.csv')
+factory.nparray2csv(signals_spec, ['rV3','lV3', 'rMT', 'lMT'])
 # coordinate_spec = signal_roi_spec.getcoordinate(actvalues)
 # dist_point_spec = signal_roi_spec.getdistance_array2point(actvalues, [[34, -88, -4], [-32, -90, -4], [46, -66, 4], [-46, -72, 4]], distmeth = 'minkowski')
 # dist_point_spec = signal_roi_spec.getdistance_array2point(actvalues, [[0,0,0]], distmeth = 'minkowski')
-
-# iofiles.save_pkl(signals_spec, 'psc_spec.pkl', pjoin(out_parpath, 'data_spec/measuredata'))
-# iofiles.save_pkl(coordinate_spec, 'coordinate_spec.pkl', 'data')
 
 # makemask_spec = atlasbase.MakeMasks(header, issave = True, savepath = 'data')
 # makemask_spec.makepm(atlas_spec)
@@ -57,11 +57,9 @@ iofiles.nparray2csv(signals_spec, ['rV3','lV3', 'rMT', 'lMT'], 'zstatavg.csv')
 #    print('%s' % sessid[i])
 #    restdata = nib.load(rp).get_data()
 #     rest_signals_rg[...,i] = signal_rg.getsignals(restdata)
-# iofiles.save_pkl(rest_signals_rg, 'restsignal_rg.pkl', 'data')
      
 # actdata = nib.load('/nfs/h1/workingshop/huangtaicheng/parcellation_MT/BAA/mergedata/mergedata_mt/modecomb_beh_noout/zstat1.nii.gz').get_data()
 # act_signals_rg = signal_rg.getsignals(actdata)
-# iofiles.save_pkl(act_signals_rg, 'actsignal_rg.pkl', 'data')
 
 # --dice----------------------------------------------------------------
 # outstem = 'data_spec/dice'

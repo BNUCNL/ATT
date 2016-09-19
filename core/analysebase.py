@@ -343,7 +343,12 @@ class EvaluateMap(object):
                 else:
                     dice[i, j] = 2.0*np.sum(data_mul)/(np.sum(data1[...,i] == (j+1)) + np.sum(data2[...,i] == (j+1)))
         if self.issave:
-            iofiles.save_pkl(dice, filename, self.savepath) 
+            iofactory = iofiles.IOFactory()
+            factory = iofactory.createfactory(self.savepath, filename)
+            if filename.endswith('pkl'):
+                factory.save_pkl(dice)
+            else:
+                raise Exception('Please save .pkl') 
         return dice
 
 
