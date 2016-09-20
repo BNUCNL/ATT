@@ -5,8 +5,8 @@ import nibabel as nib
 import os
 import numpy as np
 import pandas as pd
-from ATT.core import atlasbase, analysebase
-from ATT.io import iofiles
+from ATT.corefunc import atlasbase, analysebase
+from ATT.iofunc import iofiles
 
 pjoin = os.path.join
 

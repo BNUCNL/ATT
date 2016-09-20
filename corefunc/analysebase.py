@@ -8,8 +8,8 @@ from sklearn import preprocessing
 from scipy.spatial.distance import pdist
 
 from ATT.algorithm import tools
-from ATT.util import plotfig
-from ATT.interface import iofiles
+from ATT.utilfunc import plotfig
+from ATT.iofunc import iofiles
 
 pjoin = os.path.join
 

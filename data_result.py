@@ -5,9 +5,9 @@ import os
 import numpy as np
 import pandas as pd
 from sklearn import linear_model
-from ATT.core import analysebase
-from ATT.util import plotfig
-from ATT.io import iofiles
+from ATT.corefunc import analysebase
+from ATT.utilfunc import plotfig
+from ATT.iofunc import iofiles
 
 pjoin = os.path.join
 
