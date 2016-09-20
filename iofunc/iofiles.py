@@ -5,7 +5,8 @@ import numpy as np
 import nibabel as nib
 import os
 import cPickle
-from scipy.io import savemat
+from scipy.io import savemat, loadmat
+import pandas as pd
 
 pjoin = os.path.join
 class IOFactory(object):
@@ -95,6 +96,18 @@ class _CSV(object):
         else:
             raise ValueError, 'Input must be a numpy array.'
 
+    def readcsv(self):
+        """
+        Read data from .csv
+        ----------------------------------
+        Parameters:
+            outdata: a directory, with key and its data
+        """
+        pddata = pd.read_csv(self._comp_file)
+        outdata = {}
+        for key in pddata.keys():
+            outdata[key] = pddata[key].get_values()
+        return outdata
 
 class _PKL(object):
     def __init__(self, _comp_file):
@@ -140,6 +153,14 @@ class _MAT(object):
         """
         savemat(self._comp_file, data)     
 
+    def load_mat(self):
+        """
+        Load data from .mat
+        ---------------------------------------
+        Parameters:
+            outdata: output data
+        """
+        return loadmat(self._comp_file)
 
 class _NIFTI(object):
     def __init__(self, _comp_file):
@@ -153,6 +174,34 @@ class _NIFTI(object):
         """
         img = nib.Nifti1Image(data, None, header)
         nib.save(img, self._comp_file)
+
+    def load_nifti(self, datatype = 'data'):
+        """
+        Load nifti data.
+        Parameters:
+        -----------------------------------
+        datatype: data type to load.
+                  By default, 'data', nifti image values
+                  'affine', affine matrix
+                  'header', header
+                  'shape', matrix shapes
+        """
+        img = nib.load(self._comp_file)
+        if datatype == 'data':
+            outdata = img.get_data()
+        elif datatype == 'affine':
+            outdata = img.get_affine()
+        elif datatype == 'header':
+            outdata = img.get_header()
+        elif datatype == 'shape':
+            outdata = img.get_shape()
+        else:
+            raise Exception('Wrong datatype input')
+        return outdata
+                
+
+
+
 
 
 
