@@ -13,6 +13,13 @@ from ATT.iofunc import iofiles
 
 pjoin = os.path.join
 
+_figfactory = plotfig.FigureFactory()
+_plot_corr = _figfactory.createfactory('corr')
+_plot_mat = _figfactory.createfactory('mat')
+_plot_bar = _figfactory.createfactory('bar')
+_plot_hist = _figfactory.createfactory('hist')
+_plot_hierarchy = _figfactory.createfactory('hierarchy')
+
 class FeatureDescription(object):
     def __init__(self, meas, regions, outlier_method = 'iqr', outlier_range = [-3, 3], mergehemi = False, figure = False):
         """
@@ -70,7 +77,7 @@ class FeatureDescription(object):
             self.feat_stats[:, i] = [np.nanmean(self.data_removed[:,i]), np.nanstd(self.data_removed[:,i]), self.n_removed[i], t, p]    
 
         if self.figure:
-            plotfig.plot_bar(np.nanmean(self.data_removed, axis=0).reshape((self.data_removed.shape[1]/2, 2)), 'title', self.regions, 'values', stats.sem(tools.listwise_clean(self.data_removed)).reshape((self.data_removed.shape[1]/2,2)))    
+            _plot_bar(np.nanmean(self.data_removed, axis=0).reshape((self.data_removed.shape[1]/2, 2)), 'title', self.regions, 'values', stats.sem(tools.listwise_clean(self.data_removed)).reshape((self.data_removed.shape[1]/2,2)))    
         return self.feat_stats
 
 
@@ -137,11 +144,11 @@ class FeatureRelation(object):
         elif self.data_removed.shape[1] == 2:
             corr, pval = calfunc(tools.listwise_clean(self.data_removed)[:,0], tools.listwise_clean(self.data_removed)[:,1])
             if self.figure:
-               plotfig.plot_corr(self.data_removed[:,0], self.data_removed[:,1], self.keys, method)  
+               _plot_corr(self.data_removed[:,0], self.data_removed[:,1], self.keys, method)  
         else:
             corr, pval = tools.calwithincorr(tools.listwise_clean(self.data_removed), method)
             if self.figure:
-                plotfig.plot_mat(corr, self.keys, self.keys)
+                _plot_mat(corr, self.keys, self.keys)
         return corr, pval
 
     def feature_prediction2(self, estimator):
@@ -187,12 +194,12 @@ class FeatureRelation(object):
         if self.figure:
             if self.mergehemi:
                 xlbl = self.keys[1:]
-                plotfig.plot_bar(beta, 'Scaled beta', xlbl, 'beta values', ['beta values'])
+                _plot_bar(beta, 'Scaled beta', xlbl, 'beta values', ['beta values'])
             else:
                 xlbl1 = self.keys[2::2]
                 xlbl2 = self.keys[3::2]
-                plotfig.plot_bar(beta[:,0], 'Scaled beta', xlbl1, 'beta values', ['beta values'])
-                plotfig.plot_bar(beta[:,1], 'Scaled beta', xlbl2, 'beta values', ['beta values'])
+                _plot_bar(beta[:,0], 'Scaled beta', xlbl1, 'beta values', ['beta values'])
+                _plot_bar(beta[:,1], 'Scaled beta', xlbl2, 'beta values', ['beta values'])
         return r2, beta, tval, tpval, f, fpval
 
     def feature_prediction3(self, estimator, n_fold=3, isshuffle=True, cvmeth = 'shufflesplit', score_type = 'r2', n_perm = 1000): 
@@ -228,12 +235,12 @@ class FeatureRelation(object):
         if self.figure:
             if self.mergehemi:
                 xlbl = self.keys
-                plotfig.plot_hist(n_scores, xlbl, scores, pvalues)
+                _plot_hist(n_scores, xlbl, scores, pvalues)
             else:
                 xlbl1 = self.keys[2::2]
                 xlbl2 = self.keys[3::2]
-                plotfig.plot_hist(n_scores[:,0], xlbl1, scores[0], pvalues[0])
-                plotfig.plot_hist(n_scores[:,1], xlbl2, scores[1], pvalues[1])
+                _plot_hist(n_scores[:,0], xlbl1, scores[0], pvalues[0])
+                _plot_hist(n_scores[:,1], xlbl2, scores[1], pvalues[1])
         return scores, n_scores, pvalues
 
 class ComPatternMap(object):
@@ -306,8 +313,8 @@ class ComPatternMap(object):
             distance.append(pdist(cleandata.T, meth))
         distance = np.array(distance)
         if self.figure is True:
-            plotfig.plot_hierarchy(np.mean(distance, axis = 0), self.regions)
-            plotfig.plot_mat(np.mean(corrmatrix, axis = 2), self.regions, self.regions)
+            _plot_hierarchy(np.mean(distance, axis = 0), self.regions)
+            _plot_mat(np.mean(corrmatrix, axis = 2), self.regions, self.regions)
         return corrmatrix, distance
 
 class EvaluateMap(object):
