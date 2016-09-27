@@ -46,7 +46,7 @@ def make_mpm(pm, threshold):
     mpm = np.argmax(pm_temp, axis=3)
     return mpm    
 
-def sphere_roi(data, voxloc, radius, value):
+def sphere_roi(voxloc, radius, value, datashape = [91,109,91]):
     """
     Generate a sphere roi which centered in (x,y,z)
     Parameters:
@@ -54,7 +54,12 @@ def sphere_roi(data, voxloc, radius, value):
         voxloc: (x,y,z), center vox of spheres
         radius: radius (unit: vox), note that it's a list
         value: label value 
+    output:
+        data: sphere roi image data
+        loc: sphere roi coordinates
     """
+    loc = []
+    data = np.zeros(datashape)
     for n_x in range(int(voxloc[0]-radius[0]), int(voxloc[0]+radius[0]+1)):
         for n_y in range(int(voxloc[1]-radius[1]), int(voxloc[1]+radius[1]+1)):
             for n_z in range(int(voxloc[2]-radius[2]), int(voxloc[2]+radius[2]+1)):
@@ -64,9 +69,11 @@ def sphere_roi(data, voxloc, radius, value):
                 if (np.square(minus) / np.square(np.array(radius)).astype(np.float)).sum()<=1:
                     try:
                         data[n_x, n_y, n_z] = value
+                        loc.append([n_x,n_y,n_z])
                     except IndexError:
                         pass
-    return data
+    loc = np.array(loc)
+    return data, loc
 
 def region_growing(image, coordinate, voxnumber):
     """
@@ -77,7 +84,9 @@ def region_growing(image, coordinate, voxnumber):
         voxnumber: max growing number
     Output:
         rg_image: growth region image
+        loc: region growth location
     """
+    loc = []
     nt = voxnumber
     tmp_image = np.zeros_like(image)
     rg_image = np.zeros_like(image)
@@ -88,11 +97,11 @@ def region_growing(image, coordinate, voxnumber):
     z = coordinate[2]
 
     # ensuring the coordinate is in the image
-    inside = (x >= 0) and (x < image_shape[0]) and (y >= 0) and \
-             (y <= image_shape[1]) and (z >= 0) and (z < image_shape[2])
-    if inside is not True:
-        print "The coordinate is out of the image range"
-        return False
+    # inside = (x >= 0) and (x < image_shape[0]) and (y >= 0) and \
+    #          (y <= image_shape[1]) and (z >= 0) and (z < image_shape[2])
+    # if inside is not True:
+    #     print "The coordinate is out of the image range"
+    #     return False
 
     # initialize region_mean and region_size
     region_mean = image[x,y,z]
@@ -160,6 +169,7 @@ def region_growing(image, coordinate, voxnumber):
         # mark the new region point with 2 and update new image
         tmp_image[x, y, z] = 2
         rg_image[x, y, z] = image[x, y, z]
+        loc.append([x,y,z])
         region_size+=1
         
         # (x,y,z) the new seed point
@@ -173,5 +183,34 @@ def region_growing(image, coordinate, voxnumber):
         # remove the seed point from neighbour_list
         neighbour_list[index] = neighbour_list[neighbour_pos]
         neighbour_pos -= 1
-    return rg_image
+
+    loc = np.array(loc)
+    return rg_image, loc
+
+def peakn_location(data, ncluster = 5, rgsize = 10, reverse = False):
+    """
+    Using region growth to extract highest/lowest clusters
+    --------------------------------------
+    Parameters:
+        data: raw data
+        ncluster: cluster numbers by using information of data values
+        rgsize: region growth size (voxel), constraint neighbouring voxels
+        reverse: if True, get locations start from the largest values
+                 if False, start from the lowest values
+    Return:
+        nth_loc: list of locations
+    """
+    if reverse is True:
+        filterdata = np.argmin
+    else:
+        filterdata = np.argmax
+    median_data = np.median(data)
+    nth_loc = []
+    for i in range(ncluster):
+        temploc = np.unravel_index(filterdata(data), data.shape)
+        nth_loc.append(temploc)
+        tempdata, loc_rg = region_growing(data, temploc, rgsize)
+        for j in loc_rg:
+            data[j[0], j[1], j[2]] = median_data
+    return nth_loc, tempdata
 
