@@ -50,10 +50,10 @@ def sphere_roi(voxloc, radius, value, datashape = [91,109,91]):
     """
     Generate a sphere roi which centered in (x,y,z)
     Parameters:
-        data: your output data
         voxloc: (x,y,z), center vox of spheres
         radius: radius (unit: vox), note that it's a list
         value: label value 
+        datashape: data shape, by default is [91,109,91]
     output:
         data: sphere roi image data
         loc: sphere roi coordinates
