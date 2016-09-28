@@ -224,7 +224,7 @@ def get_signals(atlas, mask, method = 'mean'):
     Parameters:
         atlas: atlas
         mask: masks. Different roi labelled differently
-        method: 'mean', 'std', etc.
+        method: 'mean', 'std', 'max', etc.
     Return:
         signals: nsubj x nroi for activation data
                  resting signal x roi for resting data
@@ -237,8 +237,10 @@ def get_signals(atlas, mask, method = 'mean'):
         calfunc = np.nanmean
     elif method == 'std':
         calfunc = np.nanstd
+    elif method == 'max':
+        calfunc = np.max
     else:
-        raise Exception('Method contains mean or std')
+        raise Exception('Method contains mean or std or peak')
     for i in range(atlas.shape[3]):
         for j in range(labels.shape[0]):
             if mask.ndim == 3:
