@@ -4,13 +4,15 @@
 import numpy as np
 import os
 import nibabel as nib
-from ATT.algorithm import roimethod
-from ATT.algorithm import tools
-from ATT.iofunc import iofiles
+import copy
+from algorithm import roimethod
+from algorithm import tools
+from iofunc import iofiles
 
 class ImageCalculator(object):
     def __init__(self):
         pass
+
     def merge4D(self, rawdatapath, outdatapath, outname):    
         """
         Merge 3D images together
@@ -41,7 +43,39 @@ class ImageCalculator(object):
            # outdatapath_new = os.path.join(outdatapath, '.'.join([outname] + suffix))
            outdatapath_new = os.path.join(outdatapath, outname)
            nib.save(img, outdatapath_new)
-        return outdata 
+        return outdata
+
+    def combine_data(self, image1, image2, method = 'and'):
+        """
+        Combined data for 'and', 'or'
+        ------------------------------------------
+        Parameters:
+            image1: dataset of the first image
+            image2: dataset of the second image
+            method: 'and' or 'or'
+        """
+        if (isinstance(image1, str) & isinstance(image2, str)):
+            image1 = nib.load(image1).get_data()
+            image2 = nib.load(image2).get_data()
+        labels = np.unique(np.concatenate((np.unique(image1), np.unique(image2))))[1:]
+        outdata = np.empty((image1.shape[0], image1.shape[1], image2.shape[2], labels.size))
+        for i in range(labels.size):
+            tempimage1 = copy.copy(image1)
+            tempimage2 = copy.copy(image2)
+            tempimage1[tempimage1 != labels[i]] = 0
+            tempimage1[tempimage1 == labels[i]] = 1
+            tempimage2[tempimage2 != labels[i]] = 0
+            tempimage2[tempimage2 == labels[i]] = 1
+            tempimage1.astype('bool')
+            tempimage2.astype('bool')
+            if method == 'and':
+                tempimage = tempimage1 * tempimage2
+            elif method == 'or':
+                tempimage = tempimage1 + tempimage2
+            else:
+                raise Exception('Method support and, or now')
+            outdata[...,i] = labels[i]*tempimage
+        return outdata
 
 class ExtractSignals(object):
     def __init__(self, atlas, regions):
