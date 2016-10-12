@@ -46,20 +46,29 @@ def make_mpm(pm, threshold):
     mpm = np.argmax(pm_temp, axis=3)
     return mpm    
 
-def sphere_roi(voxloc, radius, value, datashape = [91,109,91]):
+def sphere_roi(voxloc, radius, value, datashape = (91,109,91), data = None):
     """
     Generate a sphere roi which centered in (x,y,z)
     Parameters:
         voxloc: (x,y,z), center vox of spheres
         radius: radius (unit: vox), note that it's a list
         value: label value 
-        datashape: data shape, by default is [91,109,91]
+        datashape: data shape, by default is (91,109,91)
+        data: Add sphere roi into your data, by default data is an empty array
     output:
         data: sphere roi image data
         loc: sphere roi coordinates
     """
+    if data is not None:
+        try:
+            if data.shape != datashape:
+                raise Exception('Data shape is not consistent with parameter datashape')
+        except AttributeError:
+            raise Exception('data type should be np.array')
+    else:
+        data = np.zeros(datashape)
+
     loc = []
-    data = np.zeros(datashape)
     for n_x in range(int(voxloc[0]-radius[0]), int(voxloc[0]+radius[0]+1)):
         for n_y in range(int(voxloc[1]-radius[1]), int(voxloc[1]+radius[1]+1)):
             for n_z in range(int(voxloc[2]-radius[2]), int(voxloc[2]+radius[2]+1)):
