@@ -32,6 +32,8 @@ class IOFactory(object):
         _comp_file = pjoin(filepath, filename)
         if _comp_file.endswith('csv'):
             return _CSV(_comp_file)
+        elif _comp_file.endswith('txt'):
+            return _TXT(_comp_file)
         elif _comp_file.endswith('pkl'):
             return _PKL(_comp_file)
         elif _comp_file.endswith('mat'):
@@ -43,7 +45,8 @@ class IOFactory(object):
 
 class _CSV(object):
     def __init__(self, _comp_file):
-	self._comp_file = _comp_file
+	    self._comp_file = _comp_file
+
     def save2csv(self, data):
         """
         Save a 1/2D list data into a csv file.
@@ -108,6 +111,27 @@ class _CSV(object):
         for key in pddata.keys():
             outdata[key] = pddata[key].get_values()
         return outdata
+
+class _TXT(object):
+    def __init__(self, _comp_file):
+        self._comp_file = _comp_file
+    
+    def save_txt(self, data):
+
+        """
+        Save data to .txt
+        ------------------------
+        Parameters:
+            data: raw data
+        """
+        np.savetxt(self._comp_file, data)
+    
+    def load_txt(self):
+        """
+        Load .txt data
+        ------------------------
+        """
+        return np.loadtxt(self._comp_file)
 
 class _PKL(object):
     def __init__(self, _comp_file):
