@@ -370,8 +370,8 @@ class PositionRelationship(object):
         except AttributeError:
             targdata = nib.load(targdata).get_data()
         finally:
-            self.targdata = targdata
-        self.targlabel = np.unique(targdata)[1:]
+            self._targdata = targdata
+        self._targlabel = np.unique(targdata)[1:]
 
     def template_overlap(self, template, para = 'percent'):
         """
@@ -388,15 +388,15 @@ class PositionRelationship(object):
             template = nib.load(template).get_data()
             print('Template should be an array')
         templabel = np.unique(template)[1:]
-        overlaparray = np.empty((templabel.size, self.targlabel.size))
+        overlaparray = np.empty((templabel.size, self._targlabel.size))
         
-        targloc = np.transpose(np.nonzero(self.targdata))
+        targloc = np.transpose(np.nonzero(self._targdata))
         tup_targloc = map(tuple, targloc)
         tempextlabel = np.array([template[i] for i in tup_targloc])
         uni_tempextlbl = np.unique(tempextlabel)
         if para == 'percent':
             for i, vali in enumerate(templabel):
-                for j, valj in enumerate(self.targlabel):
+                for j, valj in enumerate(self._targlabel):
                     overlaparray[i,j] = 1.0*tempextlabel[tempextlabel == vali].size/template[template == vali].size
         return overlaparray, uni_tempextlbl
 
