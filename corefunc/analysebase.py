@@ -387,6 +387,8 @@ class PositionRelationship(object):
         except AttributeError:
             template = nib.load(template).get_data()
             print('Template should be an array')
+        if template.shape != self._targdata.shape:
+            raise Exception('template should have same shape with target data')
         templabel = np.unique(template)[1:]
         overlaparray = np.empty((templabel.size, self._targlabel.size))
         
