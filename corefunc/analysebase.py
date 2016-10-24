@@ -4,7 +4,8 @@
 import os
 import numpy as np
 from scipy import stats
-from sklearn import preprocessing
+import nibabel as nib
+# from sklearn import preprocessing
 from scipy.spatial.distance import pdist
 
 from ATT.algorithm import tools
@@ -357,5 +358,52 @@ class EvaluateMap(object):
             else:
                 raise Exception('Please save .pkl') 
         return dice
+
+class PositionRelationship(object):
+    """
+    Class for measure position relationship between images
+    Pay attention that images should be labelled image!
+    """
+    def __init__(self, targdata):
+        try:
+            targdata.shape
+        except AttributeError:
+            targdata = nib.load(targdata).get_data()
+        finally:
+            self.targdata = targdata
+        self.targlabel = np.unique(targdata)[1:]
+
+    def template_overlap(self, template, para = 'percent'):
+        """
+        Compute overlap between target data and template 
+        -----------------------------------------
+        Parameters:
+            template: template image, 
+            para: index call for computing
+                  percent, overlap #voxels/template region #voxels
+        """
+        try:
+            template.shape
+        except AttributeError:
+            template = nib.load(template).get_data()
+            print('Template should be an array')
+        templabel = np.unique(template)[1:]
+        overlaparray = np.empty((templabel.size, self.targlabel.size))
+        
+        targloc = np.transpose(np.nonzero(self.targdata))
+        tup_targloc = map(tuple, targloc)
+        tempextlabel = np.array([template[i] for i in tup_targloc])
+        uni_tempextlbl = np.unique(tempextlabel)
+        if para == 'percent':
+            for i, vali in enumerate(templabel):
+                for j, valj in enumerate(self.targlabel):
+                    overlaparray[i,j] = 1.0*tempextlabel[tempextlabel == vali].size/template[template == vali].size
+        return overlaparray, uni_tempextlbl
+
+
+
+
+
+
 
 
