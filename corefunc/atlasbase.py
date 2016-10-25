@@ -5,9 +5,9 @@ import numpy as np
 import os
 import nibabel as nib
 import copy
-from algorithm import roimethod
-from algorithm import tools
-from iofunc import iofiles
+from ATT.algorithm import roimethod
+from ATT.algorithm import tools
+from ATT.iofunc import iofiles
 
 class ImageCalculator(object):
     def __init__(self):
