@@ -400,15 +400,16 @@ class PositionRelationship(object):
         targloc = np.transpose(np.nonzero(self._targdata))
         tup_targloc = map(tuple, targloc)
         tempextlabel = np.array([template[i] for i in tup_targloc])
+        targextlabel = np.array([self._targdata[i] for i in tup_targloc])
         uni_tempextlbl = np.unique(tempextlabel)
         for i, vali in enumerate(templabel):
             for j, valj in enumerate(self._targlabel):
                 if para == 'percent':
-                    overlaparray[i,j] = 1.0*tempextlabel[tempextlabel == vali].size/template[template == vali].size
+                    overlaparray[i,j] = 1.0*tempextlabel[(tempextlabel == vali)*(targextlabel == valj)].size/template[template == vali].size
                 elif para == 'amount':
-                    overlaparray[i,j] = tempextlabel[tempextlabel == vali].size
+                    overlaparray[i,j] = tempextlabel[(tempextlabel == vali)*(targextlabel == valj)].size
                 elif para == 'dice':
-                    overlaparray[i,j] = 2.0*tempextlabel[tempextlabel == vali].size/(template[template == vali].size + self._targdata[self._targdata == valj].size)
+                    overlaparray[i,j] = 2.0*tempextlabel[(tempextlabel == vali)*(targextlabel == valj)].size/(template[template == vali].size + self._targdata[self._targdata == valj].size)
                 else:
                     raise Exception("para should be 'percent', 'amount' or 'dice', please retype")
         return overlaparray, uni_tempextlbl
