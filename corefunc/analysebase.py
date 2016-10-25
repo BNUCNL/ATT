@@ -380,7 +380,12 @@ class PositionRelationship(object):
         Parameters:
             template: template image, 
             para: index call for computing
-                  percent, overlap #voxels/template region #voxels
+                  'percent', overlap #voxels/template region #voxels
+                  'amount', overlap #voxels
+                  'dice', 2*(intersection)/union
+        Output:
+            overlaparray, overlap array(matrix) in two images(target & template)
+            uni_tempextlbl, overlap label within template(Note that label not within target) 
         """
         try:
             template.shape
@@ -396,10 +401,16 @@ class PositionRelationship(object):
         tup_targloc = map(tuple, targloc)
         tempextlabel = np.array([template[i] for i in tup_targloc])
         uni_tempextlbl = np.unique(tempextlabel)
-        if para == 'percent':
-            for i, vali in enumerate(templabel):
-                for j, valj in enumerate(self._targlabel):
+        for i, vali in enumerate(templabel):
+            for j, valj in enumerate(self._targlabel):
+                if para == 'percent':
                     overlaparray[i,j] = 1.0*tempextlabel[tempextlabel == vali].size/template[template == vali].size
+                elif para == 'amount':
+                    overlaparray[i,j] = tempextlabel[tempextlabel == vali].size
+                elif para == 'dice':
+                    overlaparray[i,j] = 2.0*tempextlabel[tempextlabel == vali].size/(template[template == vali].size + self._targdata[self._targdata == valj].size)
+                else:
+                    raise Exception("para should be 'percent', 'amount' or 'dice', please retype")
         return overlaparray, uni_tempextlbl
 
 
