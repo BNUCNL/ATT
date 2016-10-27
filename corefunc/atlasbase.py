@@ -198,19 +198,26 @@ class MakeMasks(object):
         """ 
         spheremask = np.empty(atlasshape)
         for i, e in enumerate(voxloc):
-            spheremask = roimethod.sphere_roi(spheremask, e, radius, i+1)
+            spheremask, loc = roimethod.sphere_roi(spheremask, e, radius, i+1)
         self.spheremask = spheremask
         if self.issave is True:
             iofactory = iofiles.IOFactory()
             factory = iofactory.createfactory(self.savepath, maskname)
             if maskname.endswith('gz') | maskname.endswith('nii'):
                 factory.save_nifti(spheremask, self.header)
-        return spheremask
+        return spheremask, loc
 
-    def makemas_rgrowth(self):
-        pass 
-
-
+    def makemask_rgrowth(self, valuemap, coordinate, voxnum, maskname = 'rgmask.nii.gz'):
+        """
+        Make masks using region growth method
+        -----------------------------------
+        Parameters:
+            valuemap: raw image. Z map, cope map, etc.
+            coordinate: region growth origin points
+            voxnum: voxel numbers
+            maskname: output mask name.
+        """
+        pass
 
 
 
