@@ -399,8 +399,10 @@ class PositionRelationship(object):
         
         targloc = np.transpose(np.nonzero(self._targdata))
         tup_targloc = map(tuple, targloc)
-        tempextlabel = np.array([template[i] for i in tup_targloc])
-        targextlabel = np.array([self._targdata[i] for i in tup_targloc])
+        tempextlabel_all = np.array([template[i] for i in tup_targloc])
+        targextlabel_all = np.array([self._targdata[i] for i in tup_targloc])
+	tempextlabel = np.delete(tempextlabel_all, np.where(tempextlabel_all==0))
+	targextlabel = np.delete(targextlabel_all, np.where(tempextlabel_all==0))
         uni_tempextlbl = np.unique(tempextlabel)
         for i, vali in enumerate(templabel):
             for j, valj in enumerate(self._targlabel):
