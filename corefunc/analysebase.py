@@ -364,7 +364,7 @@ class PositionRelationship(object):
     Class for measure position relationship between images
     Pay attention that images should be labelled image!
     """
-    def __init__(self, targdata):
+    def __init__(self, targdata, roinumber = None):
         try:
             targdata.shape
         except AttributeError:
@@ -372,6 +372,10 @@ class PositionRelationship(object):
         finally:
             self._targdata = targdata
         self._targlabel = np.unique(targdata)[1:]
+	if roinumber is None:
+            self._roinumber = self._targlabel.size
+        else:
+            self._roinumber = roinumber
 
     def template_overlap(self, template, para = 'percent'):
         """
@@ -395,7 +399,7 @@ class PositionRelationship(object):
         if template.shape != self._targdata.shape:
             raise Exception('template should have same shape with target data')
         templabel = np.unique(template)[1:]
-        overlaparray = np.empty((templabel.size, self._targlabel.size))
+        overlaparray = np.empty((templabel.size, self._roinumber))
         
         targloc = np.transpose(np.nonzero(self._targdata))
         tup_targloc = map(tuple, targloc)
@@ -405,7 +409,7 @@ class PositionRelationship(object):
 	targextlabel = np.delete(targextlabel_all, np.where(tempextlabel_all==0))
         uni_tempextlbl = np.unique(tempextlabel)
         for i, vali in enumerate(templabel):
-            for j, valj in enumerate(self._targlabel):
+            for j, valj in enumerate(range(self._roinumber)):
                 if para == 'percent':
                     overlaparray[i,j] = 1.0*tempextlabel[(tempextlabel == vali)*(targextlabel == valj)].size/template[template == vali].size
                 elif para == 'amount':
