@@ -384,7 +384,7 @@ class PositionRelationship(object):
         Parameters:
             template: template image, 
             para: index call for computing
-                  'percent', overlap #voxels/template region #voxels
+                  'percent', overlap #voxels/target region #voxels
                   'amount', overlap #voxels
                   'dice', 2*(intersection)/union
         Output:
@@ -411,7 +411,7 @@ class PositionRelationship(object):
         for i, vali in enumerate(templabel):
             for j, valj in enumerate(range(self._roinumber)):
                 if para == 'percent':
-                    overlaparray[i,j] = 1.0*tempextlabel[(tempextlabel == vali)*(targextlabel == valj)].size/template[template == vali].size
+                    overlaparray[i,j] = 1.0*tempextlabel[(tempextlabel == vali)*(targextlabel == valj)].size/self._targetdata[self._targetdata == vali].size
                 elif para == 'amount':
                     overlaparray[i,j] = tempextlabel[(tempextlabel == vali)*(targextlabel == valj)].size
                 elif para == 'dice':
