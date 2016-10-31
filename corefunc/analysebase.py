@@ -409,7 +409,7 @@ class PositionRelationship(object):
 	targextlabel = np.delete(targextlabel_all, np.where(tempextlabel_all==0))
         uni_tempextlbl = np.unique(tempextlabel)
         for i, vali in enumerate(templabel):
-            for j, valj in enumerate(range(self._roinumber)):
+            for j, valj in enumerate(range(1, 1+self._roinumber)):
                 if para == 'percent':
                     overlaparray[i,j] = 1.0*tempextlabel[(tempextlabel == vali)*(targextlabel == valj)].size/self._targetdata[self._targetdata == vali].size
                 elif para == 'amount':
