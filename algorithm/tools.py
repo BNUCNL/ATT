@@ -293,6 +293,22 @@ def get_coordinate(atlas, mask, size = [2,2,2], method = 'peak'):
                 coordinate[i,j,:] = np.array([np.nan, np.nan, np.nan])
     return coordinate 
 
+def get_specificroi(image, labellist):
+    """
+    Get specific roi from nifti image indiced by its label
+    ----------------------------------------------------
+    Parameters:
+        image: nifti image data
+        labellist: label you'd like to choose
+    output:
+        specific_data: data with extracted roi
+    """
+    logic_array = np.full(image.shape, False, dtype = bool)
+    for i,e in enumerate(labellist):
+        logic_array += (image == e)
+    specific_data = image*logic_array
+    return specific_data
+    
 def lin_betafit(estimator, X, y, c, tail = 'both'):
     """
     Linear estimation using linear models
