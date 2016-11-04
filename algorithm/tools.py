@@ -227,7 +227,7 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
         method: 'mean', 'std', 'max', etc.
         labelnum: Mask's label numbers, by default is None. Add this parameters for group analysis
     Return:
-        signals: nsubj x nroi for activation data
+        signals: nroi for activation data
                  resting signal x roi for resting data
     """
     labels = np.unique(mask)[1:]
@@ -261,7 +261,7 @@ def get_coordinate(atlas, mask, size = [2,2,2], method = 'peak', labelnum = None
         method: 'peak' or 'center'
         labelnum: mask label numbers in total, by default is None, set parameters if you want to do group analysis
     Return:
-        coordinates: nsubj x nroi x 3 for activation data
+        coordinates: nroi x 3 for activation data
                      Note that do not extract coordinate of resting data
     """
     labels = np.unique(mask)[1:]
