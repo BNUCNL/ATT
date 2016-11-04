@@ -217,7 +217,7 @@ def get_masksize(mask):
                 masksize[i, j] = np.nan
     return masksize
  
-def get_signals(atlas, mask, method = 'mean'):
+def get_signals(atlas, mask, method = 'mean', labelnum = None):
     """
     Extract roi signals of atlas
     --------------------------------------
@@ -225,6 +225,7 @@ def get_signals(atlas, mask, method = 'mean'):
         atlas: atlas
         mask: masks. Different roi labelled differently
         method: 'mean', 'std', 'max', etc.
+        labelnum: Mask's label numbers, by default is None. Add this parameters for group analysis
     Return:
         signals: nsubj x nroi for activation data
                  resting signal x roi for resting data
@@ -232,7 +233,9 @@ def get_signals(atlas, mask, method = 'mean'):
     if atlas.ndim == 3:
         atlas = np.expand_dims(atlas, axis = 3)
     labels = np.unique(mask)[1:]
-    signals = np.empty((atlas.shape[3], labels.shape[0]))
+    if labelnum is None:
+        labelnum = np.max(labels)
+    signals = np.empty((atlas.shape[3], labelnum))
     if method == 'mean':
         calfunc = np.nanmean
     elif method == 'std':
@@ -242,11 +245,11 @@ def get_signals(atlas, mask, method = 'mean'):
     else:
         raise Exception('Method contains mean or std or peak')
     for i in range(atlas.shape[3]):
-        for j in range(labels.shape[0]):
+        for j in range(labelnum):
             if mask.ndim == 3:
-                roisignal = atlas[...,i]*(mask == labels[j])
+                roisignal = atlas[...,i]*(mask == (j+1))
             elif mask.ndim == 4:
-                roisignal = atlas[...,i]*(mask[...,i] == labels[j])
+                roisignal = atlas[...,i]*(mask[...,i] == (j+1))
             if np.any(roisignal):
                 signals[i, j] = calfunc(roisignal[roisignal!=0])         
             else:
