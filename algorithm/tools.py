@@ -253,7 +253,7 @@ def get_signals(atlas, mask, method = 'mean'):
                 signals[i, j] = np.nan
     return signals
 
-def get_coordinate(atlas, mask, size = [2,2,2], method = 'peak'):
+def get_coordinate(atlas, mask, size = [2,2,2], method = 'peak', labelnum = None):
     """
     Extract peak/center coordinate of rois
     --------------------------------------------
@@ -262,6 +262,7 @@ def get_coordinate(atlas, mask, size = [2,2,2], method = 'peak'):
         mask: roi mask.
         size: voxel size
         method: 'peak' or 'center'
+        labelnum: mask label numbers in total, by default is None, set parameters if you want to do group analysis
     Return:
         coordinates: nsubj x nroi x 3 for activation data
                      Note that do not extract coordinate of resting data
@@ -269,7 +270,9 @@ def get_coordinate(atlas, mask, size = [2,2,2], method = 'peak'):
     if atlas.ndim == 3:
         atlas = np.expand_dims(atlas, axis = 3)
     labels = np.unique(mask)[1:]
-    coordinate = np.empty((atlas.shape[3], labels.shape[0], 3))
+    if labelnum is None:
+        labelnum = np.max(labels)
+    coordinate = np.empty((atlas.shape[3], labelnum, 3))
 
     extractpeak = lambda x: np.unravel_index(x.argmax(), x.shape)
     extractcenter = lambda x: np.mean(np.transpose(np.nonzero(x)))
@@ -281,9 +284,9 @@ def get_coordinate(atlas, mask, size = [2,2,2], method = 'peak'):
     else:
         raise Exception('Method contains peak or center')
     for i in range(atlas.shape[3]):
-        for j in range(labels.shape[0]):
+        for j in range(labelnum):
             if mask.ndim == 3:
-                roisignal = atlas[...,i]*(mask == labels[j])
+                roisignal = atlas[...,i]*(mask == (j+1))
             elif mask.ndim == 4:
                 roisignal = atlas[...,i]*(mask[...,i] == labels[j])
             if np.any(roisignal):
