@@ -364,16 +364,16 @@ class PositionRelationship(object):
     Class for measure position relationship between images
     Pay attention that images should be labelled image!
     """
-    def __init__(self, targdata, roinumber = None):
+    def __init__(self, roimask, roinumber = None):
         try:
-            targdata.shape
+            roimask.shape
         except AttributeError:
-            targdata = nib.load(targdata).get_data()
+            roimask = nib.load(roimask).get_data()
         finally:
-            self._targdata = targdata
-        self._targlabel = np.unique(targdata)[1:]
+            self._roimask = roimask
+        self._masklabel = np.unique(roimask)[1:]
 	if roinumber is None:
-            self._roinumber = self._targlabel.size
+            self._roinumber = self._masklabel.size
         else:
             self._roinumber = roinumber
 
@@ -397,33 +397,53 @@ class PositionRelationship(object):
             template = nib.load(template).get_data()
             print('Template should be an array')
         if template.shape != self._targdata.shape:
-            raise Exception('template should have same shape with target data')
+            raise Exception('template should have the same shape with target data')
         templabel = np.unique(template)[1:]
         overlaparray = np.empty((templabel.size, self._roinumber))
         
-        targloc = np.transpose(np.nonzero(self._targdata))
-        tup_targloc = map(tuple, targloc)
-        tempextlabel_all = np.array([template[i] for i in tup_targloc])
-        targextlabel_all = np.array([self._targdata[i] for i in tup_targloc])
+        roiloc = np.transpose(np.nonzero(self._roimask))
+        tup_roiloc = map(tuple, roiloc)
+        tempextlabel_all = np.array([template[i] for i in tup_roiloc])
+        roiextlabel_all = np.array([self._roimask[i] for i in tup_roiloc])
 	tempextlabel = np.delete(tempextlabel_all, np.where(tempextlabel_all==0))
-	targextlabel = np.delete(targextlabel_all, np.where(tempextlabel_all==0))
+	roiextlabel = np.delete(roiextlabel_all, np.where(tempextlabel_all==0))
         uni_tempextlbl = np.unique(tempextlabel)
         for i, vali in enumerate(templabel):
             for j, valj in enumerate(range(1, 1+self._roinumber)):
                 if para == 'percent':
                     try:
-                        overlaparray[i,j] = 1.0*tempextlabel[(tempextlabel == vali)*(targextlabel == valj)].size/self._targetdata[self._targetdata == vali].size
+                        overlaparray[i,j] = 1.0*tempextlabel[(tempextlabel == vali)*(roiextlabel == valj)].size/self._roimask[self._roimask == vali].size
                     except ZeroDivisionError:
                         overlaparray[i,j] = np.nan
                 elif para == 'amount':
-                    overlaparray[i,j] = tempextlabel[(tempextlabel == vali)*(targextlabel == valj)].size
+                    overlaparray[i,j] = tempextlabel[(tempextlabel == vali)*(roiextlabel == valj)].size
                 elif para == 'dice':
-                    overlaparray[i,j] = 2.0*tempextlabel[(tempextlabel == vali)*(targextlabel == valj)].size/(template[template == vali].size + self._targdata[self._targdata == valj].size)
+                    overlaparray[i,j] = 2.0*tempextlabel[(tempextlabel == vali)*(roiextlabel == valj)].size/(template[template == vali].size + self._roimask[self._roimask == valj].size)
                 else:
                     raise Exception("para should be 'percent', 'amount' or 'dice', please retype")
         return overlaparray, uni_tempextlbl
 
+    def roidistance(self, targdata, extloc = 'peak', metric = 'euclidean'):
+        """
+        Compute distance between ROIs which contains in a mask
+        ---------------------------------------------
+        Input:
+            mask: mask nifti data
+        """
+        try:
+            targdata.shape
+        except AttributeError:
+            targdata = nib.load(targdata).get_data()
+            print('targdata should be an array')
+        if self._roimask.shape != targdata.shape:
+            raise Exception('targdata shape should have the save shape as target data')
 
+        peakcoord = tools.get_coordinate(targdata, self._roimask, method = extloc, labelnum = self._roinumber)
+        dist_array = np.empty((peakcoord.shape[1], peakcoord.shape[1]))
+        for i in range(peakcoord.shape[1]):
+            for j in range(peakcoord.shape[1]):
+                dist_array[i,j] = tools.calcdist(peakcoord[0,i,:], peakcoord[0,j,:], metric = metric)
+        return dist_array
 
 
 
