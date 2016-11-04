@@ -439,10 +439,10 @@ class PositionRelationship(object):
             raise Exception('targdata shape should have the save shape as target data')
 
         peakcoord = tools.get_coordinate(targdata, self._roimask, method = extloc, labelnum = self._roinumber)
-        dist_array = np.empty((peakcoord.shape[1], peakcoord.shape[1]))
-        for i in range(peakcoord.shape[1]):
-            for j in range(peakcoord.shape[1]):
-                dist_array[i,j] = tools.calcdist(peakcoord[0,i,:], peakcoord[0,j,:], metric = metric)
+        dist_array = np.empty((peakcoord.shape[0], peakcoord.shape[0]))
+        for i in range(peakcoord.shape[0]):
+            for j in range(peakcoord.shape[0]):
+                dist_array[i,j] = tools.calcdist(peakcoord[i,:], peakcoord[j,:], metric = metric)
         return dist_array
 
 
