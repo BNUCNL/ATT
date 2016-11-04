@@ -96,7 +96,15 @@ class ExtractSignals(object):
         Return:
             signals: extracted signals
         """
-        signals = tools.get_signals(targ, self.atlas, method)
+        if targ.ndim == 3:
+            targ = np.expand_dims(targ, axis = 3)
+        signals = np.empty((targ.shape[3], self.regions))
+        
+        for i in range(targ.shape[3]):
+            if self.atlas.ndim == 3:
+                signals[i,:] = tools.get_signals(targ[...,i], self.atlas, method)
+            elif self.atlas.ndim == 4:
+                signals[i,:] = tools.get_signals(targ[...,i], self.atlas[...,i], method)
         self.signals = signals
         return signals
 
@@ -110,7 +118,15 @@ class ExtractSignals(object):
             method: 'peak' or 'center'
                     coordinate extraction method
         """
-        coordinate = tools.get_coordinate(targ, self.atlas, size, method)
+        if targ.ndim == 3:
+            targ = np.expand_dims(targ, axis = 3)
+        coordinate = np.empty((targ.shape[3], self.regions, 3))
+
+        for i in range(targ.shape[3]):
+            if self.atlas.ndim == 3:
+                coordinate[i, ...] = tools.get_coordinate(targ[...,i], self.atlas, size, method)
+            elif self.atlas.ndim == 4:
+                coordinate[i, ...] = tools.get_coordinate(targ[...,i], self.atlas[...,i], size, method)
         self.coordinate = coordinate
         return coordinate
 
