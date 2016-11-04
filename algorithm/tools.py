@@ -230,12 +230,10 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
         signals: nsubj x nroi for activation data
                  resting signal x roi for resting data
     """
-    if atlas.ndim == 3:
-        atlas = np.expand_dims(atlas, axis = 3)
     labels = np.unique(mask)[1:]
     if labelnum is None:
         labelnum = np.max(labels)
-    signals = np.empty((atlas.shape[3], labelnum))
+    signals = np.empty(labelnum)
     if method == 'mean':
         calfunc = np.nanmean
     elif method == 'std':
@@ -244,16 +242,12 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
         calfunc = np.max
     else:
         raise Exception('Method contains mean or std or peak')
-    for i in range(atlas.shape[3]):
-        for j in range(labelnum):
-            if mask.ndim == 3:
-                roisignal = atlas[...,i]*(mask == (j+1))
-            elif mask.ndim == 4:
-                roisignal = atlas[...,i]*(mask[...,i] == (j+1))
-            if np.any(roisignal):
-                signals[i, j] = calfunc(roisignal[roisignal!=0])         
-            else:
-                signals[i, j] = np.nan
+    for i in range(labelnum):
+        roisignal = atlas*(mask == (i+1))
+        if np.any(roisignal):
+            signals[i] = calfunc(roisignal[roisignal!=0])         
+        else:
+            signals[i] = np.nan
     return signals
 
 def get_coordinate(atlas, mask, size = [2,2,2], method = 'peak', labelnum = None):
@@ -270,12 +264,10 @@ def get_coordinate(atlas, mask, size = [2,2,2], method = 'peak', labelnum = None
         coordinates: nsubj x nroi x 3 for activation data
                      Note that do not extract coordinate of resting data
     """
-    if atlas.ndim == 3:
-        atlas = np.expand_dims(atlas, axis = 3)
     labels = np.unique(mask)[1:]
     if labelnum is None:
         labelnum = np.max(labels)
-    coordinate = np.empty((atlas.shape[3], labelnum, 3))
+    coordinate = np.empty((labelnum, 3))
 
     extractpeak = lambda x: np.unravel_index(x.argmax(), x.shape)
     extractcenter = lambda x: np.mean(np.transpose(np.nonzero(x)))
@@ -286,17 +278,13 @@ def get_coordinate(atlas, mask, size = [2,2,2], method = 'peak', labelnum = None
         calfunc = extractcenter
     else:
         raise Exception('Method contains peak or center')
-    for i in range(atlas.shape[3]):
-        for j in range(labelnum):
-            if mask.ndim == 3:
-                roisignal = atlas[...,i]*(mask == (j+1))
-            elif mask.ndim == 4:
-                roisignal = atlas[...,i]*(mask[...,i] == labels[j])
-            if np.any(roisignal):
-                coordinate[i,j,:] = calfunc(roisignal)
-                coordinate[i,j,:] = vox2MNI(coordinate[i,j,:], size)
-            else:
-                coordinate[i,j,:] = np.array([np.nan, np.nan, np.nan])
+    for i in range(labelnum):
+        roisignal = atlas*(mask == (i+1))
+        if np.any(roisignal):
+            coordinate[i,:] = calfunc(roisignal)
+            coordinate[i,:] = vox2MNI(coordinate[i,:], size)
+        else:
+            coordinate[i,:] = np.array([np.nan, np.nan, np.nan])
     return coordinate 
 
 def get_specificroi(image, labellist):
