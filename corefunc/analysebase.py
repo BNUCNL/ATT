@@ -428,7 +428,9 @@ class PositionRelationship(object):
         Compute distance between ROIs which contains in a mask
         ---------------------------------------------
         Input:
-            mask: mask nifti data
+            targdata: target nifti data, pay attention that this data is not labelled data
+            extloc: 'peak' or 'center' in extraction of coordinate
+            metric: methods for calculating distance
         """
         try:
             targdata.shape
