@@ -78,11 +78,17 @@ class ImageCalculator(object):
         return outdata
 
 class ExtractSignals(object):
-    def __init__(self, atlas, regions):
+    def __init__(self, atlas, regions = None):
         masksize = tools.get_masksize(atlas)
         
         self.atlas = atlas
-        self.regions = regions
+        if regions is None:
+            self.regions = masksize.shape[1]
+        else:
+            if instance(regions, int):
+                self.regions = regions
+            else:
+                self.regions = len(regions)
         self.masksize = masksize
 
     def getsignals(self, targ, method = 'mean'):
@@ -102,9 +108,9 @@ class ExtractSignals(object):
         
         for i in range(targ.shape[3]):
             if self.atlas.ndim == 3:
-                signals[i,:] = tools.get_signals(targ[...,i], self.atlas, method)
+                signals[i,:] = tools.get_signals(targ[...,i], self.atlas, method, self.regions)
             elif self.atlas.ndim == 4:
-                signals[i,:] = tools.get_signals(targ[...,i], self.atlas[...,i], method)
+                signals[i,:] = tools.get_signals(targ[...,i], self.atlas[...,i], method, self.regions)
         self.signals = signals
         return signals
 
@@ -124,9 +130,9 @@ class ExtractSignals(object):
 
         for i in range(targ.shape[3]):
             if self.atlas.ndim == 3:
-                coordinate[i, ...] = tools.get_coordinate(targ[...,i], self.atlas, size, method)
+                coordinate[i, ...] = tools.get_coordinate(targ[...,i], self.atlas, size, method, self.regions)
             elif self.atlas.ndim == 4:
-                coordinate[i, ...] = tools.get_coordinate(targ[...,i], self.atlas[...,i], size, method)
+                coordinate[i, ...] = tools.get_coordinate(targ[...,i], self.atlas[...,i], size, method, self.regions)
         self.coordinate = coordinate
         return coordinate
 
