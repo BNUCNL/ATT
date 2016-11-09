@@ -12,19 +12,28 @@ class DeleteFile(object):
     --------------------------------
     Parameters:
         path: path for deleting
-
+        confirm: by default is 'no'.
+                 if 'no', each time when deleting file will be asked
+                 if 'yes', delete file without confirming
     >>> m = DeleteFile()
     >>> m.exexute(path)
     """
     def __init__(self):
         pass
-    def execute(self, path):
-        if verbose:
-            print('Deleting {}'.format(path))
-        if '.' in path:
-            os.remove(path)
+    def execute(self, path, confirm = 'no'):
+        if confirm == 'no':
+            confirm = input('Are you sure to delete {}?'.format(path))
+        if confirm == 'yes':
+            if verbose:
+                print('Deleting {}'.format(path))
+            if '.' in path:
+                os.remove(path)
+            else:
+                shutil.rmtree(path)
+        elif confirm == 'no':
+            print('Not delete {}'.format(path))
         else:
-            shutil.rmtree(self._path)
+            raise Exception('Wrong confirm parameter')
     def undo(self):
         pass
 
@@ -68,8 +77,10 @@ class RenameFile(object):
         if verbose:
             print('Renaming {0} to {1}'.format(src, dst))
         os.rename(src, dst)
-    def undo(self):
-        pass
+    def undo(self, src, dst):
+        if verbose:
+            print('renaming {0} to {1}'.format(dst, src))
+        os.rename(dst, src)
   
 class CreateFile(object):
     """
