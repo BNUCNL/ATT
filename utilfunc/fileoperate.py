@@ -26,7 +26,7 @@ class DeleteFile(object):
         if confirm == 'yes':
             if verbose:
                 print('Deleting {}'.format(path))
-            if '.' in path:
+            if os.path.isfile(path):
                 os.remove(path)
             else:
                 shutil.rmtree(path)
@@ -53,7 +53,7 @@ class CopyFile(object):
     def execute(self, src, dst):
         if verbose:
             print('Copying {0} to {1}'.format(src, dst))
-        if '.' in src:
+        if os.path.isfile(src):
             shutil.copyfile(src, os.path.join(dst, [x for x in src.split('/') if x][-1]))
         else:
             shutil.copytree(src, os.path.join(dst, [x for x in src.split('/') if x][-1]))
@@ -100,7 +100,7 @@ class CreateFile(object):
     def execute(self, path, text = 'Hello, world\n'):
         if verbose:
             print('Creating {}'.format(path))
-        if '.' in path:
+        if os.path.isfile(path):
             with open(path, 'w') as out_file:
                 out_file.write(text)
         else:
