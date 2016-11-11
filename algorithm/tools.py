@@ -125,7 +125,7 @@ def hemi_merge(left_region, right_region, meth = 'single', weight = None):
     merge_region[merge_region == 0] = np.nan
     return merge_region
 
-def removeoutlier(data, meth = 'iqr', thr = [-2, 2]):
+def removeoutlier(data, meth = None, thr = [-2,2]):
     """
     Remove data as outliers by indices you set
     -----------------------------
@@ -139,8 +139,11 @@ def removeoutlier(data, meth = 'iqr', thr = [-2, 2]):
         residue_data: outlier values will be set as nan
         n_removed: outlier numbers
     """
-    residue_data = copy.copy(data)    
-    if meth == 'abs':
+    residue_data = copy.copy(data)   
+    if meth is None:
+        residue_data = data
+        outlier_bool = np.zeros_like(residue_data, dtype=bool) 
+    elif meth == 'abs':
         outlier_bool = ((data<thr[0])|(data>thr[1]))
         residue_data[((residue_data<thr[0])|(residue_data>thr[1]))] = np.nan
     elif meth == 'iqr':

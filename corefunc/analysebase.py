@@ -245,7 +245,7 @@ class FeatureRelation(object):
         return scores, n_scores, pvalues
 
 class ComPatternMap(object):
-    def __init__(self, data, regions, outlier_method = 'iqr', outlier_range = [-3, 3], mergehemi = False, figure = False):
+    def __init__(self, data, regions, outlier_method = None, outlier_range = [-3, 3], mergehemi = False, figure = False):
         """
         Parameters:
             data: raw data. It could be 2D or 3D data.
