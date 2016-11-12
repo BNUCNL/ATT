@@ -95,7 +95,7 @@ class FeatureDescription(object):
         if isinstance(meas, list):
             meas = np.array(meas)
 
-        n_removed, data_removed = dataprocess(meas,hemiident)
+        n_removed, data_removed = dataprocess(meas,hemiident, outlier_method, outlier_range, mergehemi)
 
         feat_stats = np.empty((5, data_removed.shape[1]))
         self.regions = regions
@@ -138,7 +138,7 @@ class FeatureRelation(object):
         if isinstance(meas, list):
             meas = np.array(meas)
 
-        n_removed, data_removed = dataprocess(meas, hemiident)
+        n_removed, data_removed = dataprocess(meas, hemiident, outlier_method, outlier_range, mergehemi)
 
         self.regions = regions
         self.figure = figure
@@ -290,7 +290,7 @@ class ComPatternMap(object):
         if not isinstance(regions, list):
             regions = regions.tolist()
         
-        n_removed, data_removed = dataprocess(data, hemiident)
+        n_removed, data_removed = dataprocess(data, hemiident, outlier_method, outlier_range, mergehemi)
         
         self.regions = regions
         self.data_removed = data_removed
