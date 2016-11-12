@@ -110,15 +110,15 @@ def hemi_merge(left_region, right_region, meth = 'single', weight = None):
     rightregion_used = np.copy(right_region)
     if weight is None:
         weight = np.ones((nsubj,2))
-        weight[np.isnan(leftregion_used),0] = 0
-        weight[np.isnan(rightregion_used),1] = 0 
+        weight[np.isnan(leftregion_used),0] = 0.0
+        weight[np.isnan(rightregion_used),1] = 0.0 
     if meth == 'single': 
-        leftregion_used[np.isnan(leftregion_used)] = 0
-        rightregion_used[np.isnan(rightregion_used)] = 0
+        leftregion_used[np.isnan(leftregion_used)] = 0.0
+        rightregion_used[np.isnan(rightregion_used)] = 0.0
         merge_region = (leftregion_used*weight[:,0] + rightregion_used*weight[:,1])/(weight[:,0] + weight[:,1])
     elif meth == 'both':
         total_weight = weight[:,0] + weight[:,1]
-        total_weight[total_weight<2] = 0
+        total_weight[total_weight<2] = 0.0
         merge_region = (left_region*weight[:,0] + right_region*weight[:,1])/total_weight
     else:
         raise Exception('meth will be ''both'' or ''single''')
