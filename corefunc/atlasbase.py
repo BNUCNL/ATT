@@ -85,7 +85,7 @@ class ExtractSignals(object):
         if regions is None:
             self.regions = masksize.shape[1]
         else:
-            if instance(regions, int):
+            if isinstance(regions, int):
                 self.regions = regions
             else:
                 self.regions = len(regions)
@@ -97,22 +97,22 @@ class ExtractSignals(object):
         -------------------------------------------
         Parameters:
             targ: target image
-            method: 'mean' or 'std' or 'max'
+            method: 'mean' or 'std' ,'max' or 'voxel'
                     roi signal extraction method
         Return:
             signals: extracted signals
         """
         if targ.ndim == 3:
             targ = np.expand_dims(targ, axis = 3)
-        signals = np.empty((targ.shape[3], self.regions))
+        signals = []
         
         for i in range(targ.shape[3]):
             if self.atlas.ndim == 3:
-                signals[i,:] = tools.get_signals(targ[...,i], self.atlas, method, self.regions)
+                signals.append(tools.get_signals(targ[...,i], self.atlas, method, self.regions))
             elif self.atlas.ndim == 4:
-                signals[i,:] = tools.get_signals(targ[...,i], self.atlas[...,i], method, self.regions)
-        self.signals = signals
-        return signals
+                signals.append(tools.get_signals(targ[...,i], self.atlas[...,i], method, self.regions))
+        self.signals = np.array(signals)
+        return np.array(signals)
 
     def getcoordinate(self, targ, size = [2,2,2], method = 'peak'):
         """

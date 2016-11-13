@@ -227,7 +227,7 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
     Parameters:
         atlas: atlas
         mask: masks. Different roi labelled differently
-        method: 'mean', 'std', 'max', etc.
+        method: 'mean', 'std', 'max', 'voxel', etc.
         labelnum: Mask's label numbers, by default is None. Add this parameters for group analysis
     Return:
         signals: nroi for activation data
@@ -236,22 +236,25 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
     labels = np.unique(mask)[1:]
     if labelnum is None:
         labelnum = np.max(labels)
-    signals = np.empty(labelnum)
+    signals = []
     if method == 'mean':
         calfunc = np.nanmean
     elif method == 'std':
         calfunc = np.nanstd
     elif method == 'max':
         calfunc = np.max
+    elif method == 'voxel':
+        calfunc = np.array
     else:
         raise Exception('Method contains mean or std or peak')
     for i in range(labelnum):
         roisignal = atlas*(mask == (i+1))
         if np.any(roisignal):
-            signals[i] = calfunc(roisignal[roisignal!=0])         
+            signals.append(roisignal[roisignal!=0])         
         else:
-            signals[i] = np.nan
-    return signals
+            signals.append(np.nan)
+    
+    return np.array([calfunc(sg) for sg in signals])
 
 def get_coordinate(atlas, mask, size = [2,2,2], method = 'peak', labelnum = None):
     """
