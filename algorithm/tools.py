@@ -253,8 +253,8 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
             signals.append(roisignal[roisignal!=0])         
         else:
             signals.append(np.nan)
-    
-    return np.array([calfunc(sg) for sg in signals])
+    # return signals    
+    return [calfunc(sg) for sg in signals]
 
 def get_coordinate(atlas, mask, size = [2,2,2], method = 'peak', labelnum = None):
     """
