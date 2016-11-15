@@ -126,7 +126,7 @@ class FeatureRelation(object):
     def __init__(self, meas, regions, outlier_method = 'iqr', outlier_range = [-3, 3], mergehemi = None, figure = False):
         """
         Parameters:
-            meas: raw data. Notes that when the dimension is 1, data means regions. When the dimension is 2, data is the form of nsubj*regions. When the dimension is 3, data is the form of timeseries*regions*nsubj.
+        meas: raw data. Notes that when the dimension is 1, data means regions. When the dimension is 2, data is the form of nsubj*regions. When the dimension is 3, data is the form of timeseries*regions*nsubj.
         outlier_method: 'iqr' or 'std' or 'abs'. By default is None
         outlier_range: outlier standard threshold
         mergehemi: merge hemisphere or not. By default is False. Input bool expression to indicate left or right factor. True means left hemisphere, False means right hemisphere   
@@ -134,7 +134,7 @@ class FeatureRelation(object):
         if isinstance(meas, list):
             meas = np.array(meas)
 
-        n_removed, data_removed = data_preprocess(meas, hemiident, outlier_method, outlier_range, mergehemi)
+        n_removed, data_removed = data_preprocess(meas, outlier_method, outlier_range, mergehemi)
 
         self.regions = regions
         self.figure = figure
@@ -303,6 +303,7 @@ class ComPatternMap(object):
             cleandata = tools.listwise_clean(self.data_removed[...,i])
             corrmatrix[...,i], corrpval[...,i] = tools.calwithincorr(cleandata)
             distance.append(pdist(cleandata.T, meth))
+            print('subject {} finished'.format(i+1))
         distance = np.array(distance)
         if self.figure is True:
             _plot_hierarchy(np.mean(distance, axis = 0), self.regions)
