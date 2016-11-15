@@ -22,16 +22,15 @@ _plot_hist = _figfactory.createfactory('hist')
 _plot_hierarchy = _figfactory.createfactory('hierarchy')
 
 
-def data_preprocess(data, hemiident, outlier_method = None, outlier_range = [-3,3], mergehemi = False):
+def data_preprocess(data, outlier_method = None, outlier_range = [-3,3], mergehemi = None):
     """
     Pipline to merge hemisphere and do outlier removed.
     ---------------------------------------------------------
     Parameters:
-        data: raw data, 
-        hemiident: identify to point hemisphere. Should be a bool expression.
+        data: raw data. Notes that when the dimension is 1, data means regions. When the dimension is 2, data is the form of nsubj*regions. When the dimension is 3, data is the form of timeseries*regions*nsubj.
         outlier_method: 'iqr' or 'std' or 'abs'. By default is None
         outlier_range: outlier standard threshold
-        mergehemi: merge hemisphere or not. By default is False
+        mergehemi: merge hemisphere or not. By default is False. Input bool expression to indicate left or right factor. True means left hemisphere, False means right hemisphere
     Output:
         n_removed: outlier_numbers
         residue_data: output data
@@ -39,33 +38,33 @@ def data_preprocess(data, hemiident, outlier_method = None, outlier_range = [-3,
     Example:
         >>> a = np.array([[1,2,3,4],[5,6,7,8]])
         >>> b = array([True,True,False,False], dtype=bool)
-        >>> n_removed, residue_data = dataprocess(a,b)
+        >>> n_removed, residue_data = dataprocess(a,mergehemi = b)
     """
-    hemiident = np.array(hemiident).astype('bool')
-    if not len(hemiident[hemiident]) == len(hemiident[~hemiident]):
-        raise Exception("length of left data should equal to right data")
+    if mergehemi is not None:
+        if not len(mergehemi[mergehemi]) == len(mergehemi[~mergehemi]):
+            raise Exception("length of left data should equal to right data")
 
     if data.ndim == 1:
-        data = data[...,np.newaxis]
+        data = data[np.newaxis,...]
     if data.ndim == 2:
         data = data[...,np.newaxis]
     if data.ndim != 3:
         raise Exception('data dimensions should be 2 or 3!')
-    if mergehemi:
+    if mergehemi is None:
+        data_comb = data
+        n_removed = np.empty((data.shape[1], data.shape[2]))
+        data_removed = np.zeros_like(data)
+        for i in range(data.shape[1]):
+            for j in range(data.shape[2]):
+                n_removed[i,j], data_removed[:,i,j] = tools.removeoutlier(data_comb[:,i,j], meth = outlier_method, thr = outlier_range)
+    else:
         n_removed = np.empty((data.shape[1]/2, data.shape[2]))
         data_comb = np.empty((data.shape[0], data.shape[1]/2, data.shape[2]))
         data_removed = np.empty((data.shape[0], data.shape[1]/2, data.shape[2]))
         for i in range(data.shape[0]):
             for j in range(data.shape[2]):
-                data_comb[i,:,j] = tools.hemi_merge(data[i,hemiident,j], data[i,~hemiident,j])
+                data_comb[i,:,j] = tools.hemi_merge(data[i,mergehemi,j], data[i,~mergehemi,j])
         for i in range(data.shape[1]/2):
-            for j in range(data.shape[2]):
-                n_removed[i,j], data_removed[:,i,j] = tools.removeoutlier(data_comb[:,i,j], meth = outlier_method, thr = outlier_range)
-    else:
-        data_comb = data
-        n_removed = np.empty((data.shape[1], data.shape[2]))
-        data_removed = np.zeros_like(data)
-        for i in range(data.shape[1]):
             for j in range(data.shape[2]):
                 n_removed[i,j], data_removed[:,i,j] = tools.removeoutlier(data_comb[:,i,j], meth = outlier_method, thr = outlier_range)
     if n_removed.shape[-1] == 1:
@@ -75,7 +74,7 @@ def data_preprocess(data, hemiident, outlier_method = None, outlier_range = [-3,
     return n_removed, data_removed
 
 class FeatureDescription(object):
-    def __init__(self, meas, hemiident, regions, outlier_method = 'iqr', outlier_range = [-3, 3], mergehemi = False, figure = False):
+    def __init__(self, meas, regions, outlier_method = 'iqr', outlier_range = [-3, 3], mergehemi = None, figure = False):
         """
         Parameters:
         -------------
@@ -84,18 +83,17 @@ class FeatureDescription(object):
               meas are matrix of (nsubject)x(nregions)
               each feature should has order r/l or l/r
               Therefore feature classification is nfeature/2
-        hemiident: identify to point hemispheres
         regions: regions contain in meas.
                  Note that if you would like to merge hemisphere, regions should be regions have no hemispheric identity
         outlier_method: remove outlier criterion, 'iqr' or 'std' or 'abs'
         outlier_range: outlier range
-        mergehemi: whether merge signals between hemispheres or not
+        mergehemi: whether merge signals between hemispheres or not. Input bool expression to indicate left or right factor. True means left hemisphere, False means right hemisphere
         figure: whether plot figure or not
         """
         if isinstance(meas, list):
             meas = np.array(meas)
 
-        n_removed, data_removed = data_preprocess(meas,hemiident, outlier_method, outlier_range, mergehemi)
+        n_removed, data_removed = data_preprocess(meas, outlier_method, outlier_range, mergehemi)
 
         feat_stats = np.empty((5, data_removed.shape[1]))
         self.regions = regions
@@ -125,15 +123,13 @@ class FeatureDescription(object):
 
 class FeatureRelation(object):
     # Class for feature relationship
-    def __init__(self, meas, hemiident, regions, outlier_method = 'iqr', outlier_range = [-3, 3], mergehemi = False, figure = False):
+    def __init__(self, meas, regions, outlier_method = 'iqr', outlier_range = [-3, 3], mergehemi = None, figure = False):
         """
         Parameters:
-            meas: raw data
-            hemiident: identify to point hemispheres
-            regions: regions(or label) of raw data
-            outlier_method: outlier analysis
-            
-             
+            meas: raw data. Notes that when the dimension is 1, data means regions. When the dimension is 2, data is the form of nsubj*regions. When the dimension is 3, data is the form of timeseries*regions*nsubj.
+        outlier_method: 'iqr' or 'std' or 'abs'. By default is None
+        outlier_range: outlier standard threshold
+        mergehemi: merge hemisphere or not. By default is False. Input bool expression to indicate left or right factor. True means left hemisphere, False means right hemisphere   
         """
         if isinstance(meas, list):
             meas = np.array(meas)
@@ -274,23 +270,22 @@ class FeatureRelation(object):
         return scores, n_scores, pvalues
 
 class ComPatternMap(object):
-    def __init__(self, data, hemiident, regions, outlier_method = None, outlier_range = [-3, 3], mergehemi = False, figure = False):
+    def __init__(self, data, regions, outlier_method = None, outlier_range = [-3, 3], mergehemi = None, figure = False):
         """
         Parameters:
             data: raw data. It could be 2D or 3D data.
                   2D data is activation data. Which is the form of nsubj*regions
                   3D data is roi resting data. Which is the form of timeseries*regions*nsubj
-            hemiident: identify to point hemisphere, should be a bool expression
             regions: region names
             outlier_method: criterion of outlier removed, 'iqr' or 'std' or 'abs'
             outlier_range: outlier range
-            mergehemi: whether merge signals between hemispheres or not
+            mergehemi: whether merge signals between hemispheres or not. Input bool expression to indicate left or right factor. True means left hemisphere, False means right hemisphere   
             figure: whether plot figures or not                     
         """
         if not isinstance(regions, list):
             regions = regions.tolist()
         
-        n_removed, data_removed = data_preprocess(data, hemiident, outlier_method, outlier_range, mergehemi)
+        n_removed, data_removed = data_preprocess(data, outlier_method, outlier_range, mergehemi)
         
         self.regions = regions
         self.data_removed = data_removed
