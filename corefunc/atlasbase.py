@@ -218,9 +218,9 @@ class MakeMasks(object):
             atlasshape: atlas shape
             maskname: Output mask name. By default is 'speremask.nii.gz'
         """ 
-        spheremask = np.empty(atlasshape)
+        spheremask = np.zeros(atlasshape)
         for i, e in enumerate(voxloc):
-            spheremask, loc = roimethod.sphere_roi(spheremask, e, radius, i+1)
+            spheremask, loc = roimethod.sphere_roi(e, radius, i+1, data = spheremask)
         self.spheremask = spheremask
         if self.issave is True:
             iofactory = iofiles.IOFactory()
