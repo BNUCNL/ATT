@@ -409,12 +409,12 @@ class FeatureScale(object):
             >>> featCls = tools.FeatureScale(data)
             >>> outdata = featCls.rescaling()
         """
-        flattendata = self._data.flatten().tolist()
+        flattendata = self._data.flatten(order='C').tolist()
         mindata = np.min(self._data)
         maxdata = np.max(self._data)
         delta = maxdata - mindata
         flattenoutput = [(x-mindata)/delta if x!=0 else 0 for x in flattendata]
-        return np.reshape(np.array(flattenoutput), self._shape)
+        return np.reshape(np.array(flattenoutput), self._shape, order='C')
 
     def standardization(self):
         """
@@ -425,11 +425,11 @@ class FeatureScale(object):
             >>> featCls = tools.FeatureScale(data)
             >>> outdata = featCls.standardization()
         """
-        flattendata = self._data.flatten().tolist()
+        flattendata = self._data.flatten(order='C').tolist()
         meandata = np.mean(self._data[self._data!=0])
         stddata = np.std(self._data[self._data!=0])
         flattenoutput = [(x-meandata)/stddata if x!=0 else 0 for x in flattendata]
-        return np.reshape(np.array(flattenoutput), self._shape)
+        return np.reshape(np.array(flattenoutput), self._shape, order='C')
 
     def scale_unit_length(self, para = 'L1'):
         """
@@ -443,7 +443,7 @@ class FeatureScale(object):
             >>> featCls = tools.FeatureScale(data)
             >>> outdata = featCls.scale_unit_length(para='L1')
         """
-        flattendata = self._data.flatten().tolist()
+        flattendata = self._data.flatten(order='C').tolist()
 	if para == 'L1':
             normdata = sum(map(lambda a: abs(a), flattendata))
         elif para == 'L2':
@@ -451,7 +451,7 @@ class FeatureScale(object):
             normdata = sum(map(lambda a: b**2, flattendata))
             normdata = math.sqrt(normdata)
         flattenoutput = [x/normdata if x!=0 else 0 for x in flattendata]
-        return np.reshape(np.array(flattenoutput), self._shape)
+        return np.reshape(np.array(flattenoutput), self._shape, order='C')
 
 
          
