@@ -412,7 +412,7 @@ class FeatureScale(object):
         flattendata = self._data.flatten(order='C').tolist()
         mindata = np.min(self._data)
         maxdata = np.max(self._data)
-        delta = maxdata - mindata
+        delta = float(maxdata - mindata)
         flattenoutput = [(x-mindata)/delta if x!=0 else 0 for x in flattendata]
         return np.reshape(np.array(flattenoutput), self._shape, order='C')
 
@@ -427,7 +427,7 @@ class FeatureScale(object):
         """
         flattendata = self._data.flatten(order='C').tolist()
         meandata = np.mean(self._data[self._data!=0])
-        stddata = np.std(self._data[self._data!=0])
+        stddata = float(np.std(self._data[self._data!=0]))
         flattenoutput = [(x-meandata)/stddata if x!=0 else 0 for x in flattendata]
         return np.reshape(np.array(flattenoutput), self._shape, order='C')
 
@@ -448,7 +448,7 @@ class FeatureScale(object):
             normdata = sum(map(lambda a: abs(a), flattendata))
         elif para == 'L2':
             import math
-            normdata = sum(map(lambda a: b**2, flattendata))
+            normdata = sum(map(lambda a: a**2, flattendata))
             normdata = math.sqrt(normdata)
         flattenoutput = [x/normdata if x!=0 else 0 for x in flattendata]
         return np.reshape(np.array(flattenoutput), self._shape, order='C')
