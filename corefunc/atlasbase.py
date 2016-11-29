@@ -207,7 +207,7 @@ class MakeMasks(object):
                 factory.save_nifti(mpm, self.header)
         return mpm       
     
-    def makemask_sphere(self, voxloc, radius, atlasshape = [91,109,91], maskname = 'spheremask.nii.gz'):
+    def makemask_sphere(self, voxloc, radius, atlasshape = (91,109,91), maskname = 'spheremask.nii.gz'):
         """
         Make mask by means of roi sphere
         -------------------------------------------------
@@ -220,7 +220,7 @@ class MakeMasks(object):
         """ 
         spheremask = np.zeros(atlasshape)
         for i, e in enumerate(voxloc):
-            spheremask, loc = roimethod.sphere_roi(e, radius, i+1, data = spheremask)
+            spheremask, loc = roimethod.sphere_roi(e, radius, i+1, datashape = atlasshape, data = spheremask)
         self.spheremask = spheremask
         if self.issave is True:
             iofactory = iofiles.IOFactory()
