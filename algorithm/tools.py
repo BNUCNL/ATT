@@ -410,8 +410,8 @@ class FeatureScale(object):
             >>> outdata = featCls.rescaling()
         """
         flattendata = self._data.flatten(order='C').tolist()
-        mindata = np.min(self._data)
-        maxdata = np.max(self._data)
+        mindata = np.min(self._data[self._data!=0])
+        maxdata = np.max(self._data[self._data!=0])
         delta = float(maxdata - mindata)
         flattenoutput = [(x-mindata)/delta if x!=0 else 0 for x in flattendata]
         return np.reshape(np.array(flattenoutput), self._shape, order='C')
