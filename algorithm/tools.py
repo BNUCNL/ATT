@@ -304,6 +304,8 @@ def get_specificroi(image, labellist):
         specific_data: data with extracted roi
     """
     logic_array = np.full(image.shape, False, dtype = bool)
+    if isinstance(labellist, int):
+        labellist = [labellist]
     for i,e in enumerate(labellist):
         logic_array += (image == e)
     specific_data = image*logic_array
