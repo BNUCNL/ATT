@@ -164,9 +164,9 @@ class ExtractSignals(object):
 
 class MakeMasks(object):
     def __init__(self, header = None, issave = False, savepath = '.'):
-        self.header = header
-        self.issave = issave
-        self.savepath = savepath
+        self._header = header
+        self._issave = issave
+        self._savepath = savepath
 
     def makepm(self, atlas, meth = 'all', maskname = 'pm.nii.gz'):
         """
@@ -180,12 +180,12 @@ class MakeMasks(object):
             pm
         """
         pm = roimethod.make_pm(atlas, meth)
-        self.pm = pm
-        if self.issave is True:
+        self._pm = pm
+	if self._issave is True:
             iofactory = iofiles.IOFactory()
-            factory = iofactory.createfactory(self.savepath, maskname)
+            factory = iofactory.createfactory(self._savepath, maskname)
             if maskname.endswith('gz') | maskname.endswith('nii'):
-                factory.save_nifti(pm, self.header)
+                factory.save_nifti(pm, self._header)
         return pm
 
     def makempm(self, threshold, maskname = 'mpm.nii.gz'):
@@ -196,15 +196,14 @@ class MakeMasks(object):
             threshold: mpm threshold
             maskname: output mask name. By default is 'mpm.nii.gz'
         """
-        if self.pm is None:
+        if self._pm is None:
             raise Exception('please execute makepm first')
-        mpm = roimethod.make_mpm(self.pm, threshold)
-        self.mpm = mpm
-        if self.issave is True:
+        mpm = roimethod.make_mpm(self._pm, threshold)
+        if self._issave is True:
             iofactory = iofiles.IOFactory()
-            factory = iofactory.createfactory(self.savepath, maskname)
+            factory = iofactory.createfactory(self._savepath, maskname)
             if maskname.endswith('gz') | maskname.endswith('nii'):
-                factory.save_nifti(mpm, self.header)
+                factory.save_nifti(mpm, self._header)
         return mpm       
     
     def makemask_sphere(self, voxloc, radius, atlasshape = (91,109,91), maskname = 'spheremask.nii.gz'):
@@ -221,12 +220,11 @@ class MakeMasks(object):
         spheremask = np.zeros(atlasshape)
         for i, e in enumerate(voxloc):
             spheremask, loc = roimethod.sphere_roi(e, radius, i+1, datashape = atlasshape, data = spheremask)
-        self.spheremask = spheremask
-        if self.issave is True:
+        if self._issave is True:
             iofactory = iofiles.IOFactory()
-            factory = iofactory.createfactory(self.savepath, maskname)
+            factory = iofactory.createfactory(self._savepath, maskname)
             if maskname.endswith('gz') | maskname.endswith('nii'):
-                factory.save_nifti(spheremask, self.header)
+                factory.save_nifti(spheremask, self._header)
         return spheremask, loc
 
     def makemask_rgrowth(self, valuemap, coordinate, voxnum, maskname = 'rgmask.nii.gz'):
@@ -234,12 +232,39 @@ class MakeMasks(object):
         Make masks using region growth method
         -----------------------------------
         Parameters:
-            valuemap: raw image. Z map, cope map, etc.
+            valuemap: nifti data. Z map, cope map, etc.
             coordinate: region growth origin points
-            voxnum: voxel numbers
+            voxnum: voxel numbers, integer or list
             maskname: output mask name.
+        -----------------------------------
+        Example:
+            >>> outdata = INS.makemask_rgrowth(data, [[22,23,31], [22,22,31], [54,55,67]], 15)
         """
-        pass
+        import warnings
+        warnings.simplefilter('always', UserWarning)       
+ 
+        if isinstance(voxnum, int):
+            voxnum = [voxnum]
+        if len(voxnum) == 1:
+            voxnum = voxnum*len(coordinate)
+        if len(voxnum)!=len(coordinate):
+            raise Exception('Voxnum length unequal to coodinate length.')
+        rgmask = np.zeros_like(valuemap)
+        for i,e in enumerate(coordinate):
+            rg_image, loc = roimethod.region_growing(valuemap, e, voxnum[i])
+            rg_image[rg_image!=0] = i+1
+            if ~np.any(rgmask[rg_image!=0]):
+                # all zeros
+                rgmask += rg_image
+            else:
+                warnings.warn('coordinate {} has been overlapped! Label {} will missing'.format(e, i+1))
+        if self._issave is True:
+            iofactory = iofiles.IOFactory()
+            factory = iofactory.createfactory(self._savepath, maskname)
+            if maskname.endswith('gz') | maskname.endswith('nii'):
+                factory.save_nifti(rgmask, self._header)
+        return rgmask
+                
 
 
 
