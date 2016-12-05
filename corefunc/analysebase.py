@@ -332,7 +332,7 @@ class EvaluateMap(object):
         if data1.ndim == 3:
             data1 = np.expand_dims(data1, axis = 3)
         if data2.ndim == 3:
-            data2 = np.expand.dims(data2, axis = 3)
+            data2 = np.expand_dims(data2, axis = 3)
         dice = np.empty((data1.shape[3], label.shape[0]))
         for i in range(data1.shape[3]):
             for j in range(label.shape[0]):
