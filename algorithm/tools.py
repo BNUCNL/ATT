@@ -67,6 +67,46 @@ def caldice(data1, data2, label):
             dice.append(2.0*np.sum(data_mul)/(np.sum(data1 == (i+1)) + np.sum(data2 == (i+1))))
     return dice
 
+def caleta2(data1, data2, mask):
+    """
+    Compute eta2 between data1 and data2.
+    eta2 = 1-sum((ai-mi)^2+(bi-mi)^2)/sum((ai-M)^2+(bi-M)^2)
+    ai, value of each voxel in data1
+    bi, value of each voxel in data2
+    mi, 0.5*(ai+bi)
+    M, average of sum(all signal voxels that have values)
+    eta2 measures similarity between two images, note they need to comparable.
+         higher eta2 means higher similarity between two images
+    ------------------------------------------------------------------
+    Parameters:
+        data1: matrix data
+        data2: matrix data
+        mask: used to get inner-brain data
+    Output:
+        eta: eta2
+    Example:
+        >>> eta = caleta2(data1, data2, mask)
+    """
+    if isinstance(data1, list):
+        data1 = np.array(data1)
+    if isinstance(data2, list):
+        data2 = np.array(data2)
+    if data1.shape != data2.shape:
+        raise Exception('data1 and data2 should have same shape!')
+    data_avg1 = np.mean(data1[mask!=0])
+    data_avg2 = np.mean(data2[mask!=0])
+    M = 0.5*(data_avg1+data_avg2)
+    sumwithin = 0
+    sumtotal = 0
+    flattendata1 = data1[mask!=0].flatten()
+    flattendata2 = data2[mask!=0].flatten()
+    for i in range(flattendata1.shape[0]):
+        mi = (flattendata1[i] + flattendata2[i])/2
+        sumwithin += (flattendata1[i]-mi)**2+(flattendata2[i]-mi)**2
+        sumtotal += (flattendata1[i]-M)**2+(flattendata2[i]-M)**2
+    eta = 1-float(sumwithin)/sumtotal
+    return eta
+
 def calcdist(u, v, metric = 'euclidean', p = 1):
     """
     Compute distance between u and v
