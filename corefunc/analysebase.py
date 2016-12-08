@@ -333,15 +333,10 @@ class EvaluateMap(object):
             data1 = np.expand_dims(data1, axis = 3)
         if data2.ndim == 3:
             data2 = np.expand_dims(data2, axis = 3)
-        dice = np.empty((data1.shape[3], label.shape[0]))
+        dice = []
         for i in range(data1.shape[3]):
-            for j in range(label.shape[0]):
-                data_mul = (data1[...,i] == (j+1)) * (data2[...,i] == (j+1))
-                data_sum = (data1[...,i] == (j+1)) + (data2[...,i] == (j+1))
-                if not np.any(data_sum[data_sum!=0]):
-                    dice[i, j] = np.nan
-                else:
-                    dice[i, j] = 2.0*np.sum(data_mul)/(np.sum(data1[...,i] == (j+1)) + np.sum(data2[...,i] == (j+1)))
+            dice.append(tools.caldice(data1[...,i], data2[...,i], label))
+        dice = np.array(dice)
         if self.issave:
             iofactory = iofiles.IOFactory()
             factory = iofactory.createfactory(self.savepath, filename)
