@@ -129,7 +129,7 @@ class GradientImg(object):
     A class for computing gradient of a image.
     ---------------------------------------
     Parameters:
-        method: only 'sobel' provided.
+        method: 'sobel' or 'prewitt'
     Example:
         >>> gi = GradientImg()
         >>> graidentmap = gi.computegradientimg()
@@ -140,14 +140,16 @@ class GradientImg(object):
         oprz = np.zeros([3,3,3])
         if method == 'sobel':
             pattern = [[1,2,1], [2,2,2], [1,2,1]]
-            oprx[2,:,:] = pattern
-            oprx[0,:,:] = -1*np.array(pattern)
-            opry[:,2,:] = pattern
-            opry[:,0,:] = -1*np.array(pattern)
-            oprz[:,:,2] = pattern
-            oprz[:,:,0] = -1*np.array(pattern)
+        elif method == 'prewitt':
+            pattern = [[1,1,1], [1,1,1], [1,1,1]]
         else:
-            raise Exception('Only support sobel operator here')
+            raise Exception('Please input sobel or prewitt')
+        oprx[2,:,:] = pattern
+        oprx[0,:,:] = -1*np.array(pattern)
+        opry[:,2,:] = pattern
+        opry[:,0,:] = -1*np.array(pattern)
+        oprz[:,:,2] = pattern
+        oprz[:,:,0] = -1*np.array(pattern)
         self._oprx = oprx
         self._opry = opry
         self._oprz = oprz
