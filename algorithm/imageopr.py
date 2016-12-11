@@ -69,3 +69,105 @@ class FeatureScale(object):
         flattenoutput = [x/normdata if x!=0 else 0 for x in flattendata]
         return np.reshape(np.array(flattenoutput), self._shape, order='C')
 
+def calgradient3D(A, loc, oprx, opry, oprz):
+    """
+    Calculate gradient in location loc
+    ----------------------------------------------------
+    Parameters:
+        A: raw image data
+        loc: a 3D coordinate
+        oprx: gradient operator, in x axis, a 3D matrix
+        opry: gradient operator, in y axis, a 3D matrix
+        oprz: gradient operator, in z axis, a 3D matrix
+    Output:
+        g: gradient magnitude values.
+        vectorg: gradient vector. g = sum(abs(vectorg[i]))
+    Example:
+        >>> g, vectorg = calgradient3D(imgdata, [31,22,45], oprx, opry, oprz)
+    """
+    if isinstance(loc, list):
+        loc = np.array(loc)
+    neighbor = ((-1,-1,-1),\
+                (-1,-1,0),\
+                (-1,-1,1),\
+                (-1,0,-1),\
+                (-1,0,0),\
+                (-1,0,1),\
+                (-1,1,-1),\
+                (-1,1,0),\
+                (-1,1,1),\
+                (0,-1,-1),\
+                (0,-1,0),\
+                (0,-1,1),\
+                (0,0,-1),\
+                (0,0,0),\
+                (0,0,1),\
+                (0,1,-1),\
+                (0,1,0),\
+                (0,1,1),\
+                (1,-1,-1),\
+                (1,-1,0),\
+                (1,-1,1),\
+                (1,0,-1),\
+                (1,0,0),\
+                (1,0,1),\
+                (1,1,-1),\
+                (1,1,0),\
+                (1,1,1))
+    cubeloc = [loc+np.array(i) for i in neighbor] 
+    signal = [A[tuple(i)] for i in cubeloc]
+    signal = np.reshape(signal, [3,3,3])
+    gx = np.sum((oprx*signal).flatten())
+    gy = np.sum((opry*signal).flatten())
+    gz = np.sum((oprz*signal).flatten())
+    g = np.abs(gx)+np.abs(gy)+np.abs(gz)
+    vectorg = (gx, gy, gz)
+    return g, vectorg
+  
+class GradientImg(object):
+    """
+    A class for computing gradient of a image.
+    ---------------------------------------
+    Parameters:
+        method: only 'sobel' provided.
+    Example:
+        >>> gi = GradientImg()
+        >>> graidentmap = gi.computegradientimg()
+    """
+    def __init__(self, method = 'sobel'):
+        oprx = np.zeros([3,3,3])
+        opry = np.zeros([3,3,3])
+        oprz = np.zeros([3,3,3])
+        if method == 'sobel':
+            pattern = [[1,2,1], [2,2,2], [1,2,1]]
+            oprx[2,:,:] = pattern
+            oprx[0,:,:] = -1*np.array(pattern)
+            opry[:,2,:] = pattern
+            opry[:,0,:] = -1*np.array(pattern)
+            oprz[:,:,2] = pattern
+            oprz[:,:,0] = -1*np.array(pattern)
+        else:
+            raise Exception('Only support sobel operator here')
+        self._oprx = oprx
+        self._opry = opry
+        self._oprz = oprz
+    def computegradientimg(self, imgdata):
+        """
+        Compute graident image
+        -----------------------------
+        Parameters:
+            imgdata: raw nifti data
+        Output:
+            gradientimg: gradient image
+        """ 
+        gradientimg = np.zeros_like(imgdata)
+        for i in range(1,imgdata.shape[0]-1):
+            for j in range(1,imgdata.shape[1]-1):
+                for k in range(1,imgdata.shape[2]-1):
+                    gradientimg[i,j,k], vectorg = calgradient3D(imgdata, [i,j,k], self._oprx, self._opry, self._oprz)
+            print('{}'.format(i))
+        return gradientimg
+
+
+
+
