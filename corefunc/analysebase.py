@@ -159,7 +159,7 @@ class FeatureRelation(object):
         if method == 'pearson':
             calfunc = stats.pearsonr
         elif method == 'spearman':
-            calfunc = stats.spearman
+            calfunc = stats.spearmanr
         else:
             raise Exception('No such method now')
 
@@ -201,13 +201,13 @@ class FeatureRelation(object):
             for i in range(measdata.shape[1]-1):
                 c = np.zeros(measdata.shape[1]-1)
                 c[i] = 1
-                r2, beta, tval[i], tpval[i], f, fpval = tools.lin_betafit(estimator, measdata[:,1:], measdata[:,0], c)
+                r2, betaval, tval[i], tpval[i], f, fpval = tools.lin_betafit(estimator, measdata[:,1:], measdata[:,0], c)
         else:
             measdata1 = tools.listwise_clean(self.data_removed[:,0::2])
             measdata2 = tools.listwise_clean(self.data_removed[:,1::2])
             
             r2 = np.empty(2)
-            beta = np.empty((measdata1.shape[1]-1, 2))
+            betaval = np.empty((measdata1.shape[1]-1, 2))
             tval = np.empty((measdata1.shape[1]-1, 2))
             tpval = np.empty((measdata1.shape[1]-1, 2))
             f = np.empty(2)
@@ -215,16 +215,16 @@ class FeatureRelation(object):
             for i in range(measdata1.shape[1]-1):
                 c = np.zeros(measdata1.shape[1]-1) 
                 c[i] = 1
-                r2[0], beta[:,0], tval[i,0], tpval[i,0], f[0], fpval[0] = tools.lin_betafit(estimator, measdata1[:,1:], measdata1[:,0], c)
-                r2[1], beta[:,1], tval[i,1], tpval[i,1], f[1], fpval[1] = tools.lin_betafit(estimator, measdata2[:,1:], measdata2[:,0], c)
+                r2[0], betaval[:,0], tval[i,0], tpval[i,0], f[0], fpval[0] = tools.lin_betafit(estimator, measdata1[:,1:], measdata1[:,0], c)
+                r2[1], betaval[:,1], tval[i,1], tpval[i,1], f[1], fpval[1] = tools.lin_betafit(estimator, measdata2[:,1:], measdata2[:,0], c)
         if self.figure:
             if self.mergehemi:
-                xlbl = self.regons[1:]
-                _plot_bar(beta, 'Scaled beta', xlbl, 'beta values', ['beta values'])
+                xlbl = self.regions[1:]
+                _plot_bar(betaval, 'Scaled beta', xlbl, 'beta values', ['beta values'])
             else:
                 xlbl1 = self.regions[2::2]
                 xlbl2 = self.regions[3::2]
-                _plot_bar(beta[:,0], 'Scaled beta', xlbl1, 'beta values', ['beta values'])
+                _plot_bar(betaval[:,0], 'Scaled beta', xlbl1, 'beta values', ['beta values'])
                 _plot_bar(beta[:,1], 'Scaled beta', xlbl2, 'beta values', ['beta values'])
         return r2, beta, tval, tpval, f, fpval
 
@@ -359,12 +359,12 @@ class PositionRelationship(object):
         finally:
             self._roimask = roimask
         self._masklabel = np.unique(roimask)[1:]
-	if roinumber is None:
+        if roinumber is None:
             self._roinumber = self._masklabel.size
         else:
             self._roinumber = roinumber
 
-    def template_overlap(self, template, para = 'percent'):
+    def template_overlap(self, template, para='percent'):
         """
         Compute overlap between target data and template 
         -----------------------------------------
@@ -383,7 +383,7 @@ class PositionRelationship(object):
         except AttributeError:
             template = nib.load(template).get_data()
             print('Template should be an array')
-        if template.shape != self._targdata.shape:
+        if template.shape != self._roimask.shape:
             raise Exception('template should have the same shape with target data')
         templabel = np.unique(template)[1:]
         overlaparray = np.empty((templabel.size, self._roinumber))
@@ -392,8 +392,8 @@ class PositionRelationship(object):
         tup_roiloc = map(tuple, roiloc)
         tempextlabel_all = np.array([template[i] for i in tup_roiloc])
         roiextlabel_all = np.array([self._roimask[i] for i in tup_roiloc])
-	tempextlabel = np.delete(tempextlabel_all, np.where(tempextlabel_all==0))
-	roiextlabel = np.delete(roiextlabel_all, np.where(tempextlabel_all==0))
+        tempextlabel = np.delete(tempextlabel_all, np.where(tempextlabel_all==0))
+        roiextlabel = np.delete(roiextlabel_all, np.where(tempextlabel_all==0))
         uni_tempextlbl = np.unique(tempextlabel)
         for i, vali in enumerate(templabel):
             for j, valj in enumerate(range(1, 1+self._roinumber)):
