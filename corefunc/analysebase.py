@@ -434,6 +434,107 @@ class PositionRelationship(object):
                 dist_array[i,j] = tools.calcdist(peakcoord[i,:], peakcoord[j,:], metric = metric)
         return dist_array
 
+class PatternSimilarity(object):
+    """
+    Compute connectivity between vox2vox, roi2vox and roi2roi in whole brain
+    By default data consist of (nx,ny,nz,nt)
+    In vox2vox, do pearson connectivity in a seed point(1 vox) with other voxels in whole brain
+    In roi2vox, do pearson connectivity in one roi (average signals of roi) with other voxels
+                in whole brain
+    In roi2roi, do pearson connectivity between rois (average signals of rois)
+    ------------------------------------------------------------------------
+    Parameters:
+        imgdata: image data with time/task series. Note that it's a 4D data
+    Example:
+        >>> m = PatternSimilarity(imgdata)
+    """
+    def __init__(self, imgdata):
+        try:
+            assert imgdata.ndim == 4
+        except AssertionError:
+            raise Exception('imgdata should be 4 dimensions!')
+        self._imgdata = imgdata
+
+    def vox2vox(self, vxloc):
+        """
+        Compute connectivity between a voxel and the other voxels.
+        ----------------------------------------------------
+        Parameters:
+            vxloc: seed voxel location. voxel coordinate.
+        Output:
+            rmap: r values map
+            pmap: p values map
+        Example:
+            >>> rmap, pmap = m.vox2vox(vxloc)
+        """
+        rmap = np.zeros(self._imgdata.shape[:3])
+        pmap = np.zeros_like(rmap)
+        vxseries = self._imgdata[vxloc[0], vxloc[1], vxloc[2], :]
+        for i in range(self._imgdata.shape[0]):
+            for j in range(self._imgdata.shape[1]):
+                for k in range(self._imgdata.shape[2]):
+                    if np.any(self._imgdata[i, j, k, :]):
+                        rmap[i, j, k], pmap[i, j, k] = stats.pearsonr(vxseries, self._imgdata[i, j, k, :])
+            print('{}% finished'.format(100.0*i/self._imgdata.shape[0]))
+        return rmap, pmap
+
+    def roi2vox(self, roimask):
+        """
+        Compute connectivity between roi and other voxels
+        --------------------------------------------------
+        Parameters:
+            roimask: roi mask. Contain one roi only, note!
+        Output:
+            rmap: r values map
+            pmap: p values map
+        Example:
+            >>> rmap, pmap = m.roi2vox(roimask)
+        """
+        roilabel = np.unique(roimask)[1:]
+        assert len(roilabel) == 1
+        rmap = np.zeros(self._imgdata.shape[:3])
+        pmap = np.zeros_like(rmap)
+        roiseries, roiloc = _avgseries(self._imgdata, roimask, roilabel[0])
+        for i in range(self._imgdata.shape[0]):
+            for j in range(self._imgdata.shape[1]):
+                for k in range(self._imgdata.shape[2]):
+                    if np.any(self._imgdata[i, j, k, :]) & ((i, j, k) not in roiloc):
+                        rmap[i, j, k], pmap[i, j, k] = stats.pearsonr(roiseries, self._imgdata[i, j, k, :])
+            print('{}% finished'.format(100.0*i/self._imgdata.shape[0]))
+        return rmap, pmap
+
+    def roi2roi(self, roimask):
+        """
+        Compute connectivity between rois
+        ---------------------------------------
+        Parameters:
+            roimask: roi mask. Need to contain over 1 rois
+        Output:
+            rmap: r values map
+            pmap: p values map
+        Example:
+            >>> rmap, pmap = m.roi2roi(roimask)
+        """
+        roimxlb = np.sort(np.unique(roimask)[1:])[-1]
+        assert roimxlb > 1
+        rmap = np.zeros((roimxlb, roimxlb))
+        pmap = np.zeros_like(rmap)
+        for i in range(roimxlb):
+            for j in range(roimxlb):
+                roiseries1, roiloc1 = _avgseries(self._imgdata, roimask, i+1)
+                roiseries2, roiloc2 = _avgseries(self._imgdata, roimask, j+1)
+                if np.all(~np.isnan(roiseries1)) & np.all(~np.isnan(roiseries2)):
+                    rmap[i,j], pmap[i,j] = stats.pearsonr(roiseries1, roiseries2)
+            print('{}% is finished'.format(100.0*i/roimxlb))
+        return rmap, pmap
+
+def _avgseries(imgdata, roimask, label):
+    """
+    Extract average series from 4D image data of a specific label
+    """
+    roii, roij, roik = np.where(roimask == label)
+    roiloc = zip(roii, roij, roik)
+    return np.nanmean([imgdata[i] for i in roiloc], axis=0), roiloc
 
 
 
