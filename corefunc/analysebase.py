@@ -519,7 +519,7 @@ class PatternSimilarity(object):
         assert roimxlb > 1
         rmap = np.zeros((roimxlb, roimxlb))
         pmap = np.zeros_like(rmap)
-        for i in range(roimxlb):
+        for i in range(int(roimxlb)):
             for j in range(roimxlb):
                 roiseries1, roiloc1 = _avgseries(self._imgdata, roimask, i+1)
                 roiseries2, roiloc2 = _avgseries(self._imgdata, roimask, j+1)
@@ -527,6 +527,23 @@ class PatternSimilarity(object):
                     rmap[i,j], pmap[i,j] = stats.pearsonr(roiseries1, roiseries2)
             print('{}% is finished'.format(100.0*i/roimxlb))
         return rmap, pmap
+
+    def roiavgsignal(self, roimask):
+        """
+        Extract within-roi average signal from roimask
+        ------------------------------------------------
+        Parameters:
+            roimask: roi mask
+        Output:
+            avgsignal: average signals
+        Example:
+            >>> avgsignal = m.roiavgsignal(roimask)
+        """
+        roimxlb = np.sort(np.unique(roimask)[1:])[-1]
+        avgsignal = np.empty((roimxlb, self._imgdata.shape[3]))
+        for i in range(int(roimxlb)):
+            avgsignal[i, :], roiloc = _avgseries(self._imgdata, roimask, i+1)
+        return avgsignal
 
 def _avgseries(imgdata, roimask, label):
     """
