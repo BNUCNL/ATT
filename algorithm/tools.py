@@ -151,6 +151,39 @@ def regressoutvariable(rawdata, covariate):
     residue = zfunc(rawdata) - slope*zfunc(covariate)
     return residue
 
+def pearsonr(A, B):
+    """
+    A broadcasting method to compute pearson r.
+    Code reprint from stackflow
+    -----------------------------------------------
+    Parameters:
+        A: matrix A, i*k
+        B: matrix B, j*k
+    Return:
+        rcorr: matrix correlation, i*j
+    Example:
+        >>> rcorr = pearsonr(A, B)
+    """
+    if isinstance(A,list):
+        A = np.array(A)
+    if isinstance(B,list):
+        B = np.array(B)
+    if np.ndim(A) == 1:
+        A = np.expand_dims(A, axis=1)
+    if np.ndim(B) == 1:
+        B = np.expand_dims(B, axis=1)
+    A = A.T
+    B = B.T
+    N = B.shape[0]
+    sA = A.sum(0)
+    sB = B.sum(0)
+    p1 = N*np.einsum('ij,ik->kj', A, B)
+    p2 = sA*sB[:,None]
+    p3 = N*((B**2).sum(0)) - (sB**2)
+    p4 = N*((A**2).sum(0)) - (sA**2)
+    rcorr = ((p1-p2)/np.sqrt(p4*p3[:,None]))
+    return rcorr.T
+
 def hemi_merge(left_region, right_region, meth = 'single', weight = None):
     """
     Merge hemisphere data
