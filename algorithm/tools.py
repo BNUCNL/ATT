@@ -153,7 +153,7 @@ def regressoutvariable(rawdata, covariate):
 
 def pearsonr(A, B):
     """
-    A broadcasting method to compute pearson r.
+    A broadcasting method to compute pearson r and p
     Code reprint from stackflow
     -----------------------------------------------
     Parameters:
@@ -161,8 +161,9 @@ def pearsonr(A, B):
         B: matrix B, j*k
     Return:
         rcorr: matrix correlation, i*j
+        pcorr: matrix correlation p, i*j
     Example:
-        >>> rcorr = pearsonr(A, B)
+        >>> rcorr, pcorr = pearsonr(A, B)
     """
     if isinstance(A,list):
         A = np.array(A)
@@ -182,7 +183,12 @@ def pearsonr(A, B):
     p3 = N*((B**2).sum(0)) - (sB**2)
     p4 = N*((A**2).sum(0)) - (sA**2)
     rcorr = ((p1-p2)/np.sqrt(p4*p3[:,None]))
-    return rcorr.T
+
+    df = A.T.shape[1] - 2
+    t_squared = rcorr.T**2*(df/((1.0-rcorr.T)*(1.0+rcorr.T)))
+    pcorr = stats.betai(0.5*df, 0.5, df/(df+t_squared))
+    pcorr[rcorr == 1] = 0
+    return rcorr.T, pcorr
 
 def hemi_merge(left_region, right_region, meth = 'single', weight = None):
     """
