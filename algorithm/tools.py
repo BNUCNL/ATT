@@ -280,31 +280,6 @@ def listwise_clean(data):
     clean_data = pd.DataFrame(data).dropna().values
     return clean_data    
 
-def calwithincorr(meas, method = 'pearson'):
-    """
-    Compute correlation within matrix
-    --------------------------------------
-    Parameters:
-        meas: nsubj x features
-        method: 'pearson' or 'spearman'
-                Do pearson correlation or spearman correlation
-    Return:
-        corrmatrix
-        corrpval
-    """
-    if method == 'pearson':
-        calfunc = stats.pearsonr
-    elif method == 'spearman':
-        calfunc = stats.spearmanr
-    else:
-        raise Exception('No such method now')
-    corrmatrix = np.empty((meas.shape[1], meas.shape[1]))
-    corrpval = np.empty((meas.shape[1], meas.shape[1]))
-    for i in np.arange(meas.shape[1]):
-        for j in np.arange(meas.shape[1]):
-            corrmatrix[i, j], corrpval[i, j] = calfunc(meas[:,i], meas[:,j])
-    return corrmatrix, corrpval
-
 def get_masksize(mask):
     """
     Compute mask size
