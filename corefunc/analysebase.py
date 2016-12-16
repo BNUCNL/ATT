@@ -469,11 +469,13 @@ class PatternSimilarity(object):
         rmap = np.zeros(self._imgdata.shape[:3])
         pmap = np.zeros_like(rmap)
         vxseries = self._imgdata[vxloc[0], vxloc[1], vxloc[2], :]
+        vxseries = np.expand_dims(vxseries, axis=1).T
         for i in range(self._imgdata.shape[0]):
             for j in range(self._imgdata.shape[1]):
-                for k in range(self._imgdata.shape[2]):
-                    if np.any(self._imgdata[i, j, k, :]):
-                        rmap[i, j, k], pmap[i, j, k] = stats.pearsonr(vxseries, self._imgdata[i, j, k, :])
+                if np.any(self._imgdata[i, j, :, :]):
+                    r, p = tools.pearsonr(vxseries, self._imgdata[i, j, :, :])
+                    rmap[i,j,:] = r[0,:]
+                    pmap[i,j,:] = p[0,:]
             print('{}% finished'.format(100.0*i/self._imgdata.shape[0]))
         return rmap, pmap
 
@@ -494,11 +496,11 @@ class PatternSimilarity(object):
         rmap = np.zeros(self._imgdata.shape[:3])
         pmap = np.zeros_like(rmap)
         roiseries, roiloc = _avgseries(self._imgdata, roimask, roilabel[0])
+        roiseries = np.expand_dims(roiseries, axis=1).T
         for i in range(self._imgdata.shape[0]):
             for j in range(self._imgdata.shape[1]):
-                for k in range(self._imgdata.shape[2]):
-                    if np.any(self._imgdata[i, j, k, :]) & ((i, j, k) not in roiloc):
-                        rmap[i, j, k], pmap[i, j, k] = stats.pearsonr(roiseries, self._imgdata[i, j, k, :])
+                if np.any(self._imgdata[i, j, :, :]):
+                    rmap[i, j, :], pmap[i, j, :] = tools.pearsonr(roiseries, self._imgdata[i, j, :, :])
             print('{}% finished'.format(100.0*i/self._imgdata.shape[0]))
         return rmap, pmap
 
@@ -514,17 +516,8 @@ class PatternSimilarity(object):
         Example:
             >>> rmap, pmap = m.roi2roi(roimask)
         """
-        roimxlb = np.sort(np.unique(roimask)[1:])[-1]
-        assert roimxlb > 1
-        rmap = np.zeros((roimxlb, roimxlb))
-        pmap = np.zeros_like(rmap)
-        for i in range(int(roimxlb)):
-            for j in range(roimxlb):
-                roiseries1, roiloc1 = _avgseries(self._imgdata, roimask, i+1)
-                roiseries2, roiloc2 = _avgseries(self._imgdata, roimask, j+1)
-                if np.all(~np.isnan(roiseries1)) & np.all(~np.isnan(roiseries2)):
-                    rmap[i,j], pmap[i,j] = stats.pearsonr(roiseries1, roiseries2)
-            print('{}% is finished'.format(100.0*i/roimxlb))
+        avgsignals = self.roiavgsignal(roimask)
+        rmap, pmap = tools.pearsonr(avgsignals, avgsignals)
         return rmap, pmap
 
     def roiavgsignal(self, roimask):
