@@ -5,7 +5,6 @@ import os
 import numpy as np
 from scipy import stats
 import nibabel as nib
-# from sklearn import preprocessing
 from scipy.spatial.distance import pdist
 
 from ATT.algorithm import tools
