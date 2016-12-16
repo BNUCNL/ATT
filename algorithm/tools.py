@@ -170,9 +170,9 @@ def pearsonr(A, B):
     if isinstance(B,list):
         B = np.array(B)
     if np.ndim(A) == 1:
-        A = np.expand_dims(A, axis=1)
+        A = np.expand_dims(A, axis=1).T
     if np.ndim(B) == 1:
-        B = np.expand_dims(B, axis=1)
+        B = np.expand_dims(B, axis=1).T
     A = A.T
     B = B.T
     N = B.shape[0]
@@ -185,9 +185,11 @@ def pearsonr(A, B):
     rcorr = ((p1-p2)/np.sqrt(p4*p3[:,None]))
 
     df = A.T.shape[1] - 2
+    
+    r_forp = rcorr*1.0
+    r_forp[r_forp==1.0] = 0.0
     t_squared = rcorr.T**2*(df/((1.0-rcorr.T)*(1.0+rcorr.T)))
     pcorr = stats.betai(0.5*df, 0.5, df/(df+t_squared))
-    pcorr[rcorr == 1] = 0
     return rcorr.T, pcorr
 
 def hemi_merge(left_region, right_region, meth = 'single', weight = None):
