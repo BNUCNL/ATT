@@ -472,11 +472,12 @@ class PatternSimilarity(object):
         vxseries = np.expand_dims(vxseries, axis=1).T
         for i in range(self._imgdata.shape[0]):
             for j in range(self._imgdata.shape[1]):
-                if np.any(self._imgdata[i, j, :, :]):
-                    r, p = tools.pearsonr(vxseries, self._imgdata[i, j, :, :])
-                    rmap[i,j,:] = r[0,:]
-                    pmap[i,j,:] = p[0,:]
+                rmap[i,j,:], pmap[i,j,:] = tools.pearsonr(vxseries, self._imgdata[i, j, :, :])
             print('{}% finished'.format(100.0*i/self._imgdata.shape[0]))
+        # solve problems as output of nifti data
+        # won't affect fdr corrected result
+        rmap[np.isnan(rmap)] = 0
+        pmap[pmap == 1] = 0
         return rmap, pmap
 
     def roi2vox(self, roimask):
@@ -499,9 +500,10 @@ class PatternSimilarity(object):
         roiseries = np.expand_dims(roiseries, axis=1).T
         for i in range(self._imgdata.shape[0]):
             for j in range(self._imgdata.shape[1]):
-                if np.any(self._imgdata[i, j, :, :]):
-                    rmap[i, j, :], pmap[i, j, :] = tools.pearsonr(roiseries, self._imgdata[i, j, :, :])
+                rmap[i, j, :], pmap[i, j, :] = tools.pearsonr(roiseries, self._imgdata[i, j, :, :])
             print('{}% finished'.format(100.0*i/self._imgdata.shape[0]))
+        rmap[np.isnan(rmap)] = 0
+        pmap[pmap == 1] = 0
         return rmap, pmap
 
     def roi2roi(self, roimask):
