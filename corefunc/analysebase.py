@@ -300,7 +300,7 @@ class ComPatternMap(object):
         corrpval = np.empty((self.data_removed.shape[1], self.data_removed.shape[1], self.data_removed.shape[2]))
         for i in range(self.data_removed.shape[2]):
             cleandata = tools.listwise_clean(self.data_removed[...,i])
-            corrmatrix[...,i], corrpval[...,i] = tools.calwithincorr(cleandata)
+            corrmatrix[...,i], corrpval[...,i] = tools.pearsonr(cleandata.T, cleandata.T)
             distance.append(pdist(cleandata.T, meth))
             print('subject {} finished'.format(i+1))
         distance = np.array(distance)
