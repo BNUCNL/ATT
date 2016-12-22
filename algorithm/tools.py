@@ -471,13 +471,80 @@ def permutation_cross_validation(estimator, X, y, n_fold=3, isshuffle = True, cv
     score, permutation_scores, pvalues = cross_validation.permutation_test_score(estimator, X, y, scoring = score_type, cv = cvmethod, n_permutations = n_perm)
     return score, permutation_scores, pvalues
 
-         
+class PCorrection(object):
+    """
+    Multiple comparison correction
+    ------------------------------
+    Parameters:
+        parray: pvalue array
+        mask: masks, by default is None
+    Example:
+        >>> pcorr = PCorrection(parray)
+        >>> q = pcorr.bonferroni(alpha = 0.05) 
+    """
+    def __init__(self, parray, mask = None):
+        if isinstance(parray, list):
+            parray = np.array(parray)
+        if mask is not None:
+            parray = parray*mask
+        self._parray = np.sort(parray.flatten())
+        self._n = len(parray.flatten())
+        
+    def bonferroni(self, alpha = 0.05):
+        """
+        Bonferroni correction method
+        p(k)<=alpha/m
+        """
+        return 1.0*alpha/self._n         
 
+    def sidak(self, alpha = 0.05):
+        """
+        sidak correction method
+        p(k)<=1-((1-alpha)**(1/m))
+        """
+        return 1.0-(1.0-alpha)**(1.0/self._n)
+   
+    def holm_bonferroni(self, alpha = 0.05):
+        """
+        Holm-Bonferroni correction method
+        p(k)<=alpha/(m+1-k)
+        """
+        bool_array = [e>(alpha/(self._n-i)) for i,e in enumerate(self._parray)]
+        return self._parray[np.where(bool_array)[0][0]]
+    
+    def holm_sidak(self, alpha = 0.05):
+        """
+        Holm-Sidak correction method
+        When the hypothesis tests are not negatively dependent
+        p(k)<=1-(1-alpha)**(1/(m+1-k))
+        """
+        bool_array = [e>(1-(1-alpha)**(1.0/self._n-i)) for i,e in enumerate(self._parray)]
+        return self._parray[np.where(bool_array)[0][0]]
 
+    def fdr_bh(self, alpha = 0.05):
+        """
+        False discovery rate, Benjamini-Hochberg procedure
+        Valid when all tests are independent, and also in various scenarios of dependence
+        p(k) <= alpha*k/m
+        FSL by-default option
+        """
+        bool_array = [e>(1.0*i*alpha/self._n) for i,e in enumerate(self._parray)]
+        return self._parray[np.where(bool_array)[0][0]]
 
-
-
-
+    def fdr_bhy(self, alpha = 0.05, arb_depend = True):
+        """
+        False discovery rate, Benjamini-Hochberg-Yekutieli procedure
+        p(k) <= alpha*k/m*c(m)
+        if the tests are independent or positively correlated, c(m)=1, arb_depend = False
+        in the case of negative correlation, c(m) = sum(1/i) ~= ln(m)+gamma+1/(2m), arb_depend = True, gamma = 0.577216
+        """
+        if arb_depend is False:   
+            cm = 1
+        else:
+            gamma = 0.577216
+            cm = np.log(self._n) + gamma + 1.0/(2*self._n)
+        bool_array = [e>(1.0*i*alpha/(self._n*cm)) for i,e in enumerate(self._parray)] 
+        return self._parray[np.where(bool_array)[0][0]]       
 
 
 
