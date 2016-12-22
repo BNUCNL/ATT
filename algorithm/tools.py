@@ -485,9 +485,10 @@ class PCorrection(object):
     def __init__(self, parray, mask = None):
         if isinstance(parray, list):
             parray = np.array(parray)
-        if mask is not None:
-            parray = parray*mask
-        self._parray = np.sort(parray.flatten())
+        if mask is None:
+            self._parray = np.sort(parray.flatten())
+        else:
+            self._parray = np.sort(parray.flatten()[mask.flatten()!=0])
         self._n = len(parray.flatten())
         
     def bonferroni(self, alpha = 0.05):
