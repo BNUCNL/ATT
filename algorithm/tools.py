@@ -519,7 +519,7 @@ class PCorrection(object):
         When the hypothesis tests are not negatively dependent
         p(k)<=1-(1-alpha)**(1/(m+1-k))
         """
-        bool_array = [e>(1-(1-alpha)**(1.0/self._n-i)) for i,e in enumerate(self._parray)]
+        bool_array = [e>(1-(1-alpha)**(1.0/(self._n-i))) for i,e in enumerate(self._parray)]
         return self._parray[np.argmax(bool_array)]
 
     def fdr_bh(self, alpha = 0.05):
