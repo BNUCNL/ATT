@@ -16,7 +16,7 @@ class FeatureScale(object):
             raise Exception("Data should be np.ndarray data")
         self._data = data
         self._shape = data.shape
-    def rescaling(self):
+    def rescaling(self, step = (0,1)):
         """
         Rescaling data
         x' = (x-min(x))/(max(x)-min(x))
@@ -25,11 +25,16 @@ class FeatureScale(object):
             >>> featCls = tools.FeatureScale(data)
             >>> outdata = featCls.rescaling()
         """
+        if len(step) != 2:
+            raise Exception('step should be an 2 factor list')
+        if step[1]<step[0]:
+            step = list(step)
+            step[1], step[0] = step[0], step[1]
         flattendata = self._data.flatten(order='C').tolist()
         mindata = np.min(self._data[self._data!=0])
         maxdata = np.max(self._data[self._data!=0])
         delta = float(maxdata - mindata)
-        flattenoutput = [(x-mindata)/delta if x!=0 else 0 for x in flattendata]
+        flattenoutput = [step[0]+(step[1]-step[0])*((x-mindata)/delta) if x!=0 else 0 for x in flattendata]
         return np.reshape(np.array(flattenoutput), self._shape, order='C')
 
     def standardization(self):
