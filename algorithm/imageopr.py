@@ -175,6 +175,39 @@ class GradientImg(object):
             print('{}'.format(i))
         return gradientimg
 
+def thrimg(imgdata, thr, method = 'abs'):
+    """
+    Threshold imgdata
+    ----------------------------------
+    Parameters:
+        imgdata: raw image data
+        thr: threshold. It could be a value or a 2 factor list
+        method: 'abs', threshold image by absolute values.
+                'percent', threshold image by percent values.
+    Output:
+        img_thr: threshold image
+    Example:
+        >>> img_thr = thrimg(imgdata, [0,0.3], 'percent')
+    """
+    import copy
+    img_thr = copy.deepcopy(imgdata)
+    if method == 'percent':
+        maxvalue = np.max(img_thr)
+        thr = np.array(thr)*maxvalue
+    elif method == 'abs':
+        thr = np.array(thr)
+    else:
+        raise Exception('Method should be abs or percent')
+    if len(thr) == 1:
+        img_thr[img_thr<thr] = 0
+    elif len(thr) == 2:
+        thr = np.sort(thr)
+        img_thr[img_thr>thr[1]] = 0
+        img_thr[img_thr<thr[0]] = 0
+    else:
+        raise Exception('Bad thr input')
+    return img_thr
+
 
 
 
