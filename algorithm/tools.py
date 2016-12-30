@@ -7,7 +7,7 @@ from scipy.spatial import distance
 import copy
 import pandas as pd
 from sklearn import preprocessing
-from sklearn import linear_model
+# from sklearn import linear_model
 from sklearn import cross_validation
 
 def vox2MNI(vox, size):
@@ -300,7 +300,18 @@ def get_masksize(mask):
             else:
                 masksize[i, j] = np.nan
     return masksize
- 
+
+def _ste(data):
+    """
+    Calculate standard error
+    --------------------------------
+    Parameters:
+        data: data array
+    Output:
+        standard error
+    """
+    return np.nanstd(data)/np.sqrt(data.size)
+
 def get_signals(atlas, mask, method = 'mean', labelnum = None):
     """
     Extract roi signals of atlas
@@ -308,7 +319,7 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
     Parameters:
         atlas: atlas
         mask: masks. Different roi labelled differently
-        method: 'mean', 'std', 'max', 'voxel', etc.
+        method: 'mean', 'std', 'ste'(standard error), 'max', 'voxel', etc.
         labelnum: Mask's label numbers, by default is None. Add this parameters for group analysis
     Return:
         signals: nroi for activation data
@@ -322,6 +333,8 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
         calfunc = np.nanmean
     elif method == 'std':
         calfunc = np.nanstd
+    elif method == 'ste':
+        calfunc = _ste
     elif method == 'max':
         calfunc = np.max
     elif method == 'voxel':

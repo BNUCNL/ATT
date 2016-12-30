@@ -97,7 +97,7 @@ class ExtractSignals(object):
         -------------------------------------------
         Parameters:
             targ: target image
-            method: 'mean' or 'std' ,'max' or 'voxel'
+            method: 'mean' or 'std', 'ste'(standard error), 'max' or 'voxel'
                     roi signal extraction method
         Return:
             signals: extracted signals
