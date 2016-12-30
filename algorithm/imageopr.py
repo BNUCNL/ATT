@@ -198,9 +198,9 @@ def thrimg(imgdata, thr, method = 'abs'):
         thr = np.array(thr)
     else:
         raise Exception('Method should be abs or percent')
-    if len(thr) == 1:
+    if thr.size == 1:
         img_thr[img_thr<thr] = 0
-    elif len(thr) == 2:
+    elif thr.size == 2:
         thr = np.sort(thr)
         img_thr[img_thr>thr[1]] = 0
         img_thr[img_thr<thr[0]] = 0
