@@ -560,6 +560,39 @@ class PCorrection(object):
         bool_array = [e>(1.0*i*alpha/(self._n*cm)) for i,e in enumerate(self._parray)] 
         return self._parray[np.argmax(bool_array)]       
 
-
+class NonUniformity(object):
+    """
+    Indices for non-uniformity
+    -------------------------------
+    Parameters:
+        array: data arrays
+    Example:
+        >>> nu = NonUniformity(array)
+    """
+    def __init__(self, array):
+        # normalize array to make it comparable
+        self._array = array/sum(array)
+        self._len = len(array)
+    
+    def entropy_meth(self):
+        """
+        Entropy method.
+        Using Shannon Entropy to estimate non-uniformity, because uniformity has the highest entropy
+        --------------------------------------------
+        Parameters:
+            None
+        Output:
+            nonuniformity: non-uniformity index value
+        Example:
+            >>> values = nu.entropy_meth()
+        """
+        # create an array that have the highest entropy
+        from math import log
+        ref_array = np.array([1.0/self._len]*self._len)
+        entropy = lambda array: -1*sum(array.flatten()*np.array([log(i,2) for i in array.flatten()]))
+        ref_entropy = entropy(ref_array)
+        act_entropy = entropy(self._array)
+        nonuniformity = 1 - act_entropy/ref_entropy        
+        return nonuniformity
 
 
