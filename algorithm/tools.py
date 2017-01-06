@@ -192,6 +192,32 @@ def pearsonr(A, B):
     pcorr = stats.betai(0.5*df, 0.5, df/(df+t_squared))
     return rcorr.T, pcorr
 
+def r2z(r):
+    """
+    Perform the Fisher r-to-z transformation
+    formula:
+    z = (1/2)*(log(1+r) - log(1-r))
+    se = 1/sqrt(n-3)
+    --------------------------------------
+    Parameters:
+        r: r matrix or array
+    Output:
+        z: z matrix or array
+    Example:
+        >>> z = r2z(r)
+    """
+    from math import log
+    func_rz = lambda r: 0.5*(log(1+r) - log(1-r))
+    if isinstance(r,float):
+        z = func_rz(r)
+    else:
+        r_diag = np.diag(np.diag(r))
+        r = r - r_diag
+        r_flat = r.flatten()
+        z_flat = np.array([func_rz(rvalue) for rvalue in r_flat])
+        z = z_flat.reshape(r.shape[0], r.shape[1]) + r_diag
+    return z
+
 def hemi_merge(left_region, right_region, meth = 'single', weight = None):
     """
     Merge hemisphere data
