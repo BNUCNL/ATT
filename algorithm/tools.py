@@ -218,6 +218,29 @@ def r2z(r):
         z = z_flat.reshape(r.shape[0], r.shape[1]) + r_diag
     return z
 
+def z2r(z):
+    """
+    Perform the Fisher z-to-r transformation
+    r = tanh(z)
+    --------------------------------------------
+    Parameters:
+        z: z matrix or array
+    Output:
+        r: r matrix or array
+    Example:
+        >>> r = z2r(z)
+    """
+    from math import tanh
+    if isinstance(z, float):
+        r = tanh(z)
+    else:
+        z_diag = np.diag(np.diag(z))
+        z = z - z_diag
+        z_flat = z.flatten()
+        r_flat = np.array([tanh(zvalue) for zvalue in z_flat])
+        r = r_flat.reshape(z.shape[0], z.shape[1]) + z_diag
+    return r
+
 def hemi_merge(left_region, right_region, meth = 'single', weight = None):
     """
     Merge hemisphere data
