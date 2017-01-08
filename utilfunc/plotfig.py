@@ -24,18 +24,21 @@ class FigureFactory(object):
                         'bar', plot bar
                         'hist', histogram
                         'hierarchy', hierarchy maps
+                        'line', line maps
         """
         figure = self._Figures()
         if figuretype == 'corr':
-              figuror = figure._corr_ploting
+            figuror = figure._corr_ploting
         elif figuretype == 'mat':
-              figuror = figure._mat_ploting
+            figuror = figure._mat_ploting
         elif figuretype == 'bar':
-              figuror = figure._bar_ploting
+            figuror = figure._bar_ploting
         elif figuretype == 'hist':
-              figuror = figure._hist_ploting
+            figuror = figure._hist_ploting
         elif figuretype == 'hierarchy':
-              figuror = figure._hierarchy_ploting
+            figuror = figure._hierarchy_ploting
+        elif figuretype == 'line':
+            figuror = figure._simpleline_ploting
         else:
               raise Exception('wrong parameter input!')
         return figuror
@@ -170,6 +173,23 @@ class FigureFactory(object):
             """
             Z = linkage(distance, 'average')
             dendrogram(Z, labels = regions)
+            plt.show()
+
+        def _simpleline_ploting(self, dataarray, xlabel, ylabel, ylim = None):
+            """
+            Plot an array using simple line
+            --------------------------------------
+            Parameters:
+                dataarray: data array
+                xlabel: xlabel
+                ylabel: ylabel
+                ylim: By default is None, if ylim exists, limit y values of figure
+            """
+            plt.plot(dataarray)
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+            if ylim is not None:
+                plt.ylim(ylim)
             plt.show()
 
 
