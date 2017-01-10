@@ -180,11 +180,13 @@ class FigureFactory(object):
             Plot an array using simple line
             --------------------------------------
             Parameters:
-                dataarray: data array
+                dataarray: data array, a x*y array, y means number of lines
                 xlabel: xlabel
                 ylabel: ylabel
                 ylim: By default is None, if ylim exists, limit y values of figure
             """
+            fig, ax = plt.subplots()
+            ax.set_color_cycle(['red', 'blue', 'yellow', 'black', 'green'])
             plt.plot(dataarray)
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
