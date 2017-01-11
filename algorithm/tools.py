@@ -631,7 +631,7 @@ class NonUniformity(object):
         Parameters:
             None
         Output:
-            nonuniformity: non-uniformity index value
+            Nonuniformity: non-uniformity index values
         Example:
             >>> values = nu.entropy_meth()
         """
@@ -644,4 +644,19 @@ class NonUniformity(object):
         nonuniformity = 1 - act_entropy/ref_entropy        
         return nonuniformity
 
-
+    def l2norm(self):
+        """
+        Use l2 norm to describe non-uniformity.
+        Assume elements in any vector sum to 1 (which transferred when initial instance), uniformity can be represented by L2 norm, which ranges from 1/sqrt(len) to 1.
+        Here represented using: 
+        (n*sqrt(d)-1)/(sqrt(d)-1)
+        where n is the L2 norm, d is the vector length
+        -----------------------------------------------
+        Parameters:
+            None
+        Output:
+            Nonuniformity: non-uniformity index values
+        Example:
+            >>> values = nu.l2norm()
+        """
+        return (np.linalg.norm(self._array)*np.sqrt(self._len)-1)/(np.sqrt(self._len)-1)
