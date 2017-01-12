@@ -177,7 +177,8 @@ class FigureFactory(object):
 
         def _simpleline_ploting(self, dataarray, xlabel, ylabel, ylim = None):
             """
-            Plot an array using simple line
+            Plot an array using simple lines
+            For better showing, rescaling each array into range of 0 to 1
             --------------------------------------
             Parameters:
                 dataarray: data array, a x*y array, y means number of lines
@@ -187,7 +188,10 @@ class FigureFactory(object):
             """
             fig, ax = plt.subplots()
             ax.set_color_cycle(['red', 'blue', 'yellow', 'black', 'green'])
-            plt.plot(dataarray)
+            dataarray_scaling = np.zeros_like(dataarray)
+            for i in range(dataarray.shape[1]):
+                dataarray_scaling[:,i] = (dataarray[:,i]-np.min(dataarray[:,i]))/(np.max(dataarray[:,i])-np.min(dataarray[:,i]))
+            plt.plot(dataarray_scaling)
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
             if ylim is not None:
