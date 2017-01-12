@@ -190,9 +190,12 @@ class FigureFactory(object):
             ax.set_color_cycle(['red', 'blue', 'yellow', 'black', 'green'])
             if dataarray.ndim == 1:
                 dataarray = np.expand_dims(dataarray, axis = 1)
-            dataarray_scaling = np.zeros_like(dataarray)
-            for i in range(dataarray.shape[1]):
-                dataarray_scaling[:,i] = (dataarray[:,i]-np.min(dataarray[:,i]))/(np.max(dataarray[:,i])-np.min(dataarray[:,i]))
+            if dataarray.shape[1]>1:
+                dataarray_scaling = np.zeros_like(dataarray)
+                for i in range(dataarray.shape[1]):
+                    dataarray_scaling[:,i] = (dataarray[:,i]-np.min(dataarray[:,i]))/(np.max(dataarray[:,i])-np.min(dataarray[:,i]))
+            else:
+                dataarray_scaling = dataarray
             plt.plot(dataarray_scaling)
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
