@@ -9,10 +9,10 @@ from scipy.cluster.hierarchy import linkage, dendrogram
 
 class FigureFactory(object):
     def __init__(self):
-	pass
+	    pass
 
     def __str__(self):
-        return 'A factory for ploting figures'
+        return 'A factory for plotting figures'
 
     def createfactory(self, figuretype):
         """
@@ -25,20 +25,23 @@ class FigureFactory(object):
                         'hist', histogram
                         'hierarchy', hierarchy maps
                         'line', line maps
+                        'scatter', scatter maps
         """
         figure = self._Figures()
         if figuretype == 'corr':
-            figuror = figure._corr_ploting
+            figuror = figure._corr_plotting
         elif figuretype == 'mat':
-            figuror = figure._mat_ploting
+            figuror = figure._mat_plotting
         elif figuretype == 'bar':
-            figuror = figure._bar_ploting
+            figuror = figure._bar_plotting
         elif figuretype == 'hist':
-            figuror = figure._hist_ploting
+            figuror = figure._hist_plotting
         elif figuretype == 'hierarchy':
-            figuror = figure._hierarchy_ploting
+            figuror = figure._hierarchy_plotting
         elif figuretype == 'line':
-            figuror = figure._simpleline_ploting
+            figuror = figure._simpleline_plotting
+        elif figuretype == 'scatter':
+            figuror = figure._scatter_plotting
         else:
               raise Exception('wrong parameter input!')
         return figuror
@@ -47,7 +50,7 @@ class FigureFactory(object):
         def __init__(self):
             pass    
     
-        def _corr_ploting(self, meas1, meas2, labels, method = 'pearson'):
+        def _corr_plotting(self, meas1, meas2, labels=['',''], method = 'pearson'):
             """
             Make scatter plot and give a fit on it.
             ------------------------------------------
@@ -83,7 +86,7 @@ class FigureFactory(object):
             plt.title(method.capitalize()+' Correlation')
             plt.show()
 
-        def _mat_ploting(self, data, xlabel, ylabel):
+        def _mat_plotting(self, data, xlabel='', ylabel=''):
             """
             Plot matrix using heatmap
             ------------------------------------
@@ -95,7 +98,7 @@ class FigureFactory(object):
             sns.heatmap(data, xticklabels = xlabel, yticklabels = ylabel)
             plt.show()
 
-        def _bar_ploting(self, data, title, xlabels, ylabels, legendname, legendpos = 'upper left', err=None):
+        def _bar_plotting(self, data, title, xlabels, ylabels, legendname, legendpos = 'upper left', err=None):
             """
             Do barplot
             --------------------------
@@ -137,7 +140,7 @@ class FigureFactory(object):
             ax.set_title(title, fontsize=12)
             plt.show()
 
-        def _hist_ploting(self, n_scores, legend_label, *oppar):
+        def _hist_plotting(self, n_scores, legend_label, *oppar):
             """
             Plot histogram of given data
             Parameters:
@@ -163,7 +166,7 @@ class FigureFactory(object):
             plt.xlabel('Score')
             plt.show()
           
-        def _hierarchy_ploting(self, distance, regions):
+        def _hierarchy_plotting(self, distance, regions):
             """
             Plot hierarchy structure of specific indices between regions
             -------------------------------
@@ -175,7 +178,7 @@ class FigureFactory(object):
             dendrogram(Z, labels = regions)
             plt.show()
 
-        def _simpleline_ploting(self, dataarray, xlabel, ylabel, ylim = None):
+        def _simpleline_plotting(self, dataarray, xlabel='', ylabel='', ylim = None):
             """
             Plot an array using simple lines
             For better showing, rescaling each array into range of 0 to 1
@@ -203,4 +206,31 @@ class FigureFactory(object):
                 plt.ylim(ylim)
             plt.show()
 
+        def _scatter_plotting(self, array1, array2, xlabel='', ylabel='', colors = ['red'], xlim = None, ylim = None):
+            """
+            Plot scatter map among several group's data
+            ----------------------------------------------
+            Parameters:
+                array1: x axis data. m*n arrays, n means different groups
+                array2: y axis data. array2 should have same shape with array1
+                xlabel: xlabel
+                ylabel: ylabel
+                colors: color of each group
+                ylim: y axis limitation
+            """
+            if array1.ndim == 1:
+                array1 = np.expand_dims(array1, axis=1)
+            if array2.ndim == 1:
+                array2 = np.expand_dims(array2, axis=1)
+            assert array1.shape == array2.shape, 'arrays shape should be equal'
+            assert array1.shape[1] == len(colors), 'data class need to be equal with color class'
+            for i,c in enumerate(colors):
+                plt.scatter(array1[:,i], array2[:,i], color = c)
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+            if xlim is not None:
+                plt.xlim(xlim)
+            if ylim is not None:
+                plt.ylim(ylim)
+            plt.show()
 
