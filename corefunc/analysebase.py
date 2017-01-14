@@ -398,7 +398,7 @@ class PositionRelationship(object):
             for j, valj in enumerate(range(1, 1+self._roinumber)):
                 if para == 'percent':
                     try:
-                        overlaparray[i,j] = 1.0*tempextlabel[(tempextlabel == vali)*(roiextlabel == valj)].size/self._roimask[self._roimask == vali].size
+                        overlaparray[i,j] = 1.0*tempextlabel[(tempextlabel == vali)*(roiextlabel == valj)].size/self._roimask[self._roimask == valj].size
                     except ZeroDivisionError:
                         overlaparray[i,j] = np.nan
                 elif para == 'amount':
