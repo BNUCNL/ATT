@@ -52,7 +52,7 @@ class FeatureScale(object):
         flattenoutput = [(x-meandata)/stddata if x!=0 else 0 for x in flattendata]
         return np.reshape(np.array(flattenoutput), self._shape, order='C')
 
-    def scale_unit_length(self, para = 'L1'):
+    def scale_unit_length(self, para = 'raw'):
         """
         Scaling to unit length
         x' = x/||x||
@@ -60,6 +60,7 @@ class FeatureScale(object):
         Parameters:
             para: 'L1', L1 norm. ||x|| = sum(abs(x))
                   'L2', L2 norm. ||x|| = sum(x**2)
+                  'raw', original values summation, ||x|| = sum(x)
         Example:
             >>> featCls = tools.FeatureScale(data)
             >>> outdata = featCls.scale_unit_length(para='L1')
@@ -71,7 +72,9 @@ class FeatureScale(object):
             import math
             normdata = sum(map(lambda a: a**2, flattendata))
             normdata = math.sqrt(normdata)
-        flattenoutput = [x/normdata if x!=0 else 0 for x in flattendata]
+        elif para == 'raw':
+            normdata = sum(map(lambda a: a, flattendata))
+        flattenoutput = [1.0*x/normdata if x!=0 else 0 for x in flattendata]
         return np.reshape(np.array(flattenoutput), self._shape, order='C')
 
 def calgradient3D(A, loc, oprx, opry, oprz):
