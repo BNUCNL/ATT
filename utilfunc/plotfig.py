@@ -178,7 +178,7 @@ class FigureFactory(object):
             dendrogram(Z, labels = regions)
             plt.show()
 
-        def _simpleline_plotting(self, dataarray, xlabel='', ylabel='', ylim = None):
+        def _simpleline_plotting(self, dataarray, xlabel='', ylabel='', xlim = None, ylim = None):
             """
             Plot an array using simple lines
             For better showing, rescaling each array into range of 0 to 1
@@ -187,6 +187,7 @@ class FigureFactory(object):
                 dataarray: data array, a x*y array, y means number of lines
                 xlabel: xlabel
                 ylabel: ylabel
+                xlim: By default is None, if ylim exists, limit x values of figure
                 ylim: By default is None, if ylim exists, limit y values of figure
             """
             fig, ax = plt.subplots()
@@ -202,6 +203,8 @@ class FigureFactory(object):
             plt.plot(dataarray_scaling)
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
+            if xlim is not None:
+                plt.xlim(xlim)
             if ylim is not None:
                 plt.ylim(ylim)
             plt.show()
