@@ -349,6 +349,11 @@ class PositionRelationship(object):
     """
     Class for measure position relationship between images
     Pay attention that images should be labelled image!
+    Note that we recommend you giving numbers of roi so to avoid mess.
+    ---------------------------------------------------
+    Parameters:
+        roimask: roi label data
+        roinumber: the number of roi in your label data
     """
     def __init__(self, roimask, roinumber = None):
         try:
