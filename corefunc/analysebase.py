@@ -449,15 +449,17 @@ class PatternSimilarity(object):
     ------------------------------------------------------------------------
     Parameters:
         imgdata: image data with time/task series. Note that it's a 4D data
+        transform_z: By default is False, if the output corrmatrix be z matrix, please flag it as True
     Example:
-        >>> m = PatternSimilarity(imgdata)
+        >>> m = PatternSimilarity(imgdata, transform_z = True)
     """
-    def __init__(self, imgdata):
+    def __init__(self, imgdata, transform_z = False):
         try:
             assert imgdata.ndim == 4
         except AssertionError:
             raise Exception('imgdata should be 4 dimensions!')
         self._imgdata = imgdata
+        self._transform_z = transform_z
 
     def vox2vox(self, vxloc):
         """
@@ -466,10 +468,10 @@ class PatternSimilarity(object):
         Parameters:
             vxloc: seed voxel location. voxel coordinate.
         Output:
-            rmap: r values map
+            corrmap: corr values map, rmap or zmap
             pmap: p values map
         Example:
-            >>> rmap, pmap = m.vox2vox(vxloc)
+            >>> corrmap, pmap = m.vox2vox(vxloc)
         """
         rmap = np.zeros(self._imgdata.shape[:3])
         pmap = np.zeros_like(rmap)
@@ -483,7 +485,12 @@ class PatternSimilarity(object):
         # won't affect fdr corrected result
         rmap[np.isnan(rmap)] = 0
         pmap[pmap == 1] = 0
-        return rmap, pmap
+        if self._transform_z is False:
+            corrmap = rmap
+        else:
+            print('Perform the Fisher r-to-z transformation')
+            corrmap = tools.r2z(rmap)
+        return corrmap, pmap
 
     def roi2vox(self, roimask):
         """
@@ -492,10 +499,10 @@ class PatternSimilarity(object):
         Parameters:
             roimask: roi mask. Contain one roi only, note!
         Output:
-            rmap: r values map
+            corrmap: corr values map
             pmap: p values map
         Example:
-            >>> rmap, pmap = m.roi2vox(roimask)
+            >>> corrmap, pmap = m.roi2vox(roimask)
         """
         roilabel = np.unique(roimask)[1:]
         assert len(roilabel) == 1
@@ -509,7 +516,12 @@ class PatternSimilarity(object):
             print('{}% finished'.format(100.0*i/self._imgdata.shape[0]))
         rmap[np.isnan(rmap)] = 0
         pmap[pmap == 1] = 0
-        return rmap, pmap
+        if self._transform_z is False:
+            corrmap = rmap
+        else:
+            print('Perform the Fisher r-to-z transformation')
+            corrmap = tools.r2z(rmap)
+        return corrmap, pmap
 
     def roi2roi(self, roimask):
         """
@@ -518,14 +530,19 @@ class PatternSimilarity(object):
         Parameters:
             roimask: roi mask. Need to contain over 1 rois
         Output:
-            rmap: r values map
+            corrmap: corr values map
             pmap: p values map
         Example:
-            >>> rmap, pmap = m.roi2roi(roimask)
+            >>> corrmap, pmap = m.roi2roi(roimask)
         """
         avgsignals = self.roiavgsignal(roimask)
         rmap, pmap = tools.pearsonr(avgsignals, avgsignals)
-        return rmap, pmap
+        if self._transform_z is False:
+            corrmap = rmap
+        else: 
+            print('Perform the Fisher r-to-z transformation')
+            corrmap = tools.r2z(rmap)
+        return corrmap, pmap
 
     def roiavgsignal(self, roimask):
         """
