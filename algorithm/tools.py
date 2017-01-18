@@ -10,37 +10,33 @@ from sklearn import preprocessing
 # from sklearn import linear_model
 from sklearn import cross_validation
 
-def vox2MNI(vox, size):
+def vox2MNI(vox, affine):
     """
     Voxel coordinates transformed to MNI coordinates
     ------------------------------------------------
     Parameters:
         vox: voxel coordinates
-        size: voxel size
+        affine: affine matrix
     Return:
-        MNI
+        mni
     """
-    MNI = np.empty(3)
-    MNI[0] = (45 - vox[0])*size[0]
-    MNI[1] = (vox[1] - 63)*size[1]
-    MNI[2] = (vox[2] - 36)*size[2]
-    return MNI
+    vox = np.append(vox, 1)
+    mni = np.dot(affine, vox)
+    return mni[:3]
 
-def MNI2vox(MNI, size):
+def MNI2vox(mni, affine):
     """
     MNI coordintes transformed to voxel coordinates
     ----------------------------------------------
     Parameters:
-        MNI: MNI coordinates
-        size: voxel size
+        mni: mni coordinates
+        affine: affine matrix
     Return:
         vox
     """
-    vox = np.empty(3)
-    vox[0] = 45 - (MNI[0]/size[0])
-    vox[1] = 63 + (MNI[1]/size[1])
-    vox[2] = 36 + (MNI[2]/size[2])
-    return vox
+    mni = np.append(mni,1)
+    vox = np.dot(mni, np.linalg.inv(affine.T))
+    return vox[:3]
 
 def caldice(data1, data2, label):
     """
