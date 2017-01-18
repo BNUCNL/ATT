@@ -207,11 +207,9 @@ def r2z(r):
     if isinstance(r,float):
         z = func_rz(r)
     else:
-        r_diag = np.diag(np.diag(r))
-        r = r - r_diag
         r_flat = r.flatten()
-        z_flat = np.array([func_rz(rvalue) for rvalue in r_flat])
-        z = z_flat.reshape(r.shape[0], r.shape[1]) + r_diag
+        z_flat = np.array([func_rz(rvalue) if rvalue!=1 else 1.0 for rvalue in r_flat])
+        z = z_flat.reshape(r.shape)
     return z
 
 def z2r(z):
@@ -230,11 +228,9 @@ def z2r(z):
     if isinstance(z, float):
         r = tanh(z)
     else:
-        z_diag = np.diag(np.diag(z))
-        z = z - z_diag
         z_flat = z.flatten()
-        r_flat = np.array([tanh(zvalue) for zvalue in z_flat])
-        r = r_flat.reshape(z.shape[0], z.shape[1]) + z_diag
+        r_flat = np.array([tanh(zvalue) if zvalue!=1 else 1.0 for zvalue in z_flat])
+        r = r_flat.reshape(z.shape)
     return r
 
 def hemi_merge(left_region, right_region, meth = 'single', weight = None):
