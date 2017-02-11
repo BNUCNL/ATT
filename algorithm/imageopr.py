@@ -22,7 +22,7 @@ class FeatureScale(object):
         x' = (x-min(x))/(max(x)-min(x))
         --------------------------
         Example:
-            >>> featCls = tools.FeatureScale(data)
+            >>> featCls = imageopr.FeatureScale(data)
             >>> outdata = featCls.rescaling()
         """
         if len(step) != 2:
