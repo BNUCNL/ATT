@@ -178,7 +178,7 @@ class FigureFactory(object):
             dendrogram(Z, labels = regions)
             plt.show()
 
-        def _simpleline_plotting(self, dataarray, xlabel='', ylabel='', xlim = None, ylim = None, scaling = False):
+        def _simpleline_plotting(self, dataarray, xlabel='', ylabel='', xlim = None, ylim = None, xticklabel = None, scaling = False):
             """
             Plot an array using simple lines
             For better showing, rescaling each array into range of 0 to 1
@@ -189,6 +189,7 @@ class FigureFactory(object):
                 ylabel: ylabel
                 xlim: By default is None, if ylim exists, limit x values of figure
                 ylim: By default is None, if ylim exists, limit y values of figure
+                xticklabel: axis x labels
                 scaling: whether do rescaling or not to show multiple lines
             """
             fig, ax = plt.subplots()
@@ -208,6 +209,8 @@ class FigureFactory(object):
                 plt.xlim(xlim)
             if ylim is not None:
                 plt.ylim(ylim)
+            if xticklabel is not None:
+                plt.xticks(range(dataarray.shape[0]), xticklabel)
             plt.show()
 
         def _scatter_plotting(self, array1, array2, xlabel='', ylabel='', colors = ['red'], xlim = None, ylim = None):
@@ -215,12 +218,13 @@ class FigureFactory(object):
             Plot scatter map among several group's data
             ----------------------------------------------
             Parameters:
-                array1: x axis data. m*n arrays, n means different groups
-                array2: y axis data. array2 should have same shape with array1
+                array1: axis x data. m*n arrays, n means different groups
+                array2: axis y data. array2 should have same shape with array1
                 xlabel: xlabel
                 ylabel: ylabel
                 colors: color of each group
-                ylim: y axis limitation
+                xlim: axis x limitation
+                ylim: axis y limitation
             """
             if array1.ndim == 1:
                 array1 = np.expand_dims(array1, axis=1)
