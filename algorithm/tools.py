@@ -308,6 +308,25 @@ def removeoutlier(data, meth = None, thr = [-2,2]):
     n_removed = sum(i for i in outlier_bool if i) 
     return n_removed, residue_data
 
+def threshold_by_voxperc(imgdata, percent):
+    """
+    Threshold imgdata by a given percentage that filter from high values to low values
+    Parameters:
+        imgdata: image data
+        percent: threshold percentage
+    Return:
+        imgdata_thr: thresholded image data
+    Example:
+        >>> imagedata_thr = threshold_by_voxperc(imgdata, percent)
+    """
+    voxnum = int(imgdata[imgdata!=0].shape[0]*percent)
+    outdata = np.zeros_like(imgdata)
+    for i in range(voxnum):
+        peakcoord = np.unravel_index(np.argmax(imgdata), imgdata.shape)
+        outdata[peakcoord] = imgdata[peakcoord]
+        imgdata[peakcoord] = 0
+    return outdata
+
 def listwise_clean(data):
     """
     Clean missing data by listwise method
