@@ -321,10 +321,11 @@ def threshold_by_voxperc(imgdata, percent):
     """
     voxnum = int(imgdata[imgdata!=0].shape[0]*percent)
     outdata = np.zeros_like(imgdata)
+    tempdata = copy.deepcopy(imgdata)
     for i in range(voxnum):
-        peakcoord = np.unravel_index(np.argmax(imgdata), imgdata.shape)
-        outdata[peakcoord] = imgdata[peakcoord]
-        imgdata[peakcoord] = 0
+        peakcoord = np.unravel_index(np.argmax(tempdata), tempdata.shape)
+        outdata[peakcoord] = tempdata[peakcoord]
+        tempdata[peakcoord] = 0
     return outdata
 
 def listwise_clean(data):
