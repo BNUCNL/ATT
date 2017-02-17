@@ -308,24 +308,38 @@ def removeoutlier(data, meth = None, thr = [-2,2]):
     n_removed = sum(i for i in outlier_bool if i) 
     return n_removed, residue_data
 
-def threshold_by_voxperc(imgdata, percent):
+def threshold_by_voxperc(imgdata, percent, option = 'decrease'):
     """
-    Threshold imgdata by a given percentage that filter from high values to low values
+    Threshold imgdata by a given percentage
+    parameter option is 'decrease', filter from the highest values
+                        'increase', filter from the lowest non-zero values
     Parameters:
         imgdata: image data
         percent: threshold percentage
+        option: 'decrease', filter from the highest values
+                'increase', filter from the lowest values
     Return:
         imgdata_thr: thresholded image data
     Example:
-        >>> imagedata_thr = threshold_by_voxperc(imgdata, percent)
+        >>> imagedata_thr = threshold_by_voxperc(imgdata, percent, 'decrease')
     """
     voxnum = int(imgdata[imgdata!=0].shape[0]*percent)
     outdata = np.zeros_like(imgdata)
     tempdata = copy.deepcopy(imgdata)
+    if option == 'increase':
+        maxdata = np.max(imgdata)
+        tempdata[tempdata == 0] = maxdata
     for i in range(voxnum):
-        peakcoord = np.unravel_index(np.argmax(tempdata), tempdata.shape)
-        outdata[peakcoord] = tempdata[peakcoord]
-        tempdata[peakcoord] = 0
+        if option == 'decrease':
+            peakcoord = np.unravel_index(np.argmax(tempdata), tempdata.shape)
+            outdata[peakcoord] = tempdata[peakcoord]
+            tempdata[peakcoord] = 0
+        elif option == 'increase':
+            peakcoord = np.unravel_index(np.argmin(tempdata), tempdata.shape)
+            outdata[peakcoord] = tempdata[peakcoord]
+            tempdata[peakcoord] = maxdata
+        else:
+            raise Exception('Wrong option inputed!')
     return outdata
 
 def listwise_clean(data):
