@@ -45,6 +45,33 @@ class ImageCalculator(object):
            nib.save(img, outdatapath_new)
         return outdata
 
+    def decompose_img(self, imagedata, header, outpath, outname=None):
+        """
+        Decompose 4D image into multiple 3D image to make it easy to show or analysis
+        --------------------------------------------------------------------
+        Parameters:
+            imagedata: 4D image, the 4th dimension is the axis to decompose
+            header: image header
+            outpath: outpath
+            outname: outname, should be a list. By default is None, system will distribute name into multiple 3D images automatically. If you want to generate images with meaningful name, please assign a list.
+        Output:
+            save outdata into multiple files
+        Example:
+            >>> imccls = ImageCalculator() 
+            >>> imccls.decompose_img(imagedata, header, outpath)
+        """
+        assert np.ndim(imagedata) == 4, 'imagedata must be a 4D data'
+        filenumber = imagedata.shape[3]
+        if outname is None:
+            digitname = range(1,filenumber+1,1)
+            outname = [str(i) for i in digitname]
+        else:
+            assert len(outname) == filenumber, 'length of outname unequal to length of imagedata'
+        for i,e in enumerate(outname):
+            outdata = imagedata[...,i]
+            img = nib.Nifti1Image(outdata, None, header)
+            nib.save(img, os.path.join(outpath, e+'.nii.gz'))
+
     def combine_data(self, image1, image2, method = 'and'):
         """
         Combined data for 'and', 'or'
