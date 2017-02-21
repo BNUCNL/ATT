@@ -308,38 +308,40 @@ def removeoutlier(data, meth = None, thr = [-2,2]):
     n_removed = sum(i for i in outlier_bool if i) 
     return n_removed, residue_data
 
-def threshold_by_voxperc(imgdata, percent, option = 'decrease'):
+def threshold_by_voxperc(imgdata, thr, option = 'descend'):
     """
     Threshold imgdata by a given percentage
-    parameter option is 'decrease', filter from the highest values
-                        'increase', filter from the lowest non-zero values
+    parameter option is 'ascend', filter from the highest values
+                        'descend', filter from the lowest non-zero values
     Parameters:
         imgdata: image data
-        percent: threshold percentage
-        option: 'decrease', filter from the highest values
-                'increase', filter from the lowest values
+        thr: threshold percentage
+        option: default, 'descend', filter from the highest values
+                'ascend', filter from the lowest values
     Return:
         imgdata_thr: thresholded image data
     Example:
-        >>> imagedata_thr = threshold_by_voxperc(imgdata, percent, 'decrease')
+        >>> imagedata_thr = threshold_by_voxperc(imgdata, percent, 'descend')
     """
-    voxnum = int(imgdata[imgdata!=0].shape[0]*percent)
-    outdata = np.zeros_like(imgdata)
-    tempdata = copy.deepcopy(imgdata)
-    if option == 'increase':
-        maxdata = np.max(imgdata)
-        tempdata[tempdata == 0] = maxdata
-    for i in range(voxnum):
-        if option == 'decrease':
-            peakcoord = np.unravel_index(np.argmax(tempdata), tempdata.shape)
-            outdata[peakcoord] = tempdata[peakcoord]
-            tempdata[peakcoord] = 0
-        elif option == 'increase':
-            peakcoord = np.unravel_index(np.argmin(tempdata), tempdata.shape)
-            outdata[peakcoord] = tempdata[peakcoord]
-            tempdata[peakcoord] = maxdata
-        else:
-            raise Exception('Wrong option inputed!')
+    voxnum = int(imgdata[imgdata!=0].shape[0]*thr)
+    data_flat = imgdata.flatten()
+    outdata_flat = np.zeros_like(data_flat)
+    sortlist = np.sort(data_flat)[::-1]
+    if option == 'ascend':
+        data_flat[data_flat == 0] = sortlist[0]
+    if option == 'descend':
+        for i in range(voxnum):
+            loc_flat = np.argmax(data_flat)
+            outdata_flat[loc_flat] = sortlist[i]
+            data_flat[loc_flat] = 0
+    elif option == 'ascend':
+        for i in range(voxnum):
+            loc_flat = np.argmin(data_flat)
+            outdata_flat[loc_flat] = sortlist[-1-i]
+            data_flat[loc_flat] = sortlist[0]
+    else:
+        raise Exception('Wrong option inputed!')
+    outdata = np.reshape(outdata_flat, imgdata.shape)
     return outdata
 
 def listwise_clean(data):
