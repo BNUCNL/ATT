@@ -311,8 +311,8 @@ def removeoutlier(data, meth = None, thr = [-2,2]):
 def threshold_by_voxperc(imgdata, thr, option = 'descend'):
     """
     Threshold imgdata by a given percentage
-    parameter option is 'ascend', filter from the highest values
-                        'descend', filter from the lowest non-zero values
+    parameter option is 'descend', filter from the highest values
+                        'ascend', filter from the lowest non-zero values
     Parameters:
         imgdata: image data
         thr: threshold percentage
