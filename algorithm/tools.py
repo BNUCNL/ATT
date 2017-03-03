@@ -404,7 +404,7 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
     """
     labels = np.unique(mask)[1:]
     if labelnum is None:
-        labelnum = np.max(labels)
+        labelnum = int(np.max(labels))
     signals = []
     if method == 'mean':
         calfunc = np.nanmean
