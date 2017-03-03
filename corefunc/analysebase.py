@@ -57,6 +57,8 @@ def data_preprocess(data, outlier_method = None, outlier_range = [-3,3], mergehe
             for j in range(data.shape[2]):
                 n_removed[i,j], data_removed[:,i,j] = tools.removeoutlier(data_comb[:,i,j], meth = outlier_method, thr = outlier_range)
     else:
+        if not mergehemi.dtype == np.bool:
+            mergehemi = mergehemi.astype('bool')
         n_removed = np.empty((data.shape[1]/2, data.shape[2]))
         data_comb = np.empty((data.shape[0], data.shape[1]/2, data.shape[2]))
         data_removed = np.empty((data.shape[0], data.shape[1]/2, data.shape[2]))
