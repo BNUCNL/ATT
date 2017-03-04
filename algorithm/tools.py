@@ -419,9 +419,11 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
     else:
         raise Exception('Method contains mean or std or peak')
     for i in range(labelnum):
-        roisignal = atlas*(mask == (i+1))
+        loc_raw = np.where(mask == (i+1))
+        roiloc = zip(loc_raw[0], loc_raw[1], loc_raw[2])
+        roisignal = [atlas[roiloc[i]] for i in range(len(roiloc))]
         if np.any(roisignal):
-            signals.append(roisignal[roisignal!=0])         
+            signals.append(roisignal)         
         else:
             signals.append(np.nan)
     # return signals    
