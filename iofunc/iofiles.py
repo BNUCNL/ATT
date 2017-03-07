@@ -47,31 +47,7 @@ class _CSV(object):
     def __init__(self, _comp_file):
 	    self._comp_file = _comp_file
 
-    def save2csv(self, data):
-        """
-        Save a 1/2D list data into a csv file.
-        ------------------------------------
-        Parameters:
-            data: raw data
-        """
-        if isinstance(data, list):
-            try:
-                f = open(self._comp_file, 'w')
-            except IOError:
-                print('Can not save file' + self._comp_file)
-            else:
-                for line in data:
-                    if isinstance(line, list):
-                        line_str = [str(item) for item in line]
-                        line_str = ','.join(line_str)
-                    else:
-                        line_str = str(line)
-                    f.write(line_str + '\n')
-                f.close()
-        else:
-            raise ValueError, 'Input must be a list.'        
-
-    def nparray2csv(self, data, labels = None):
+    def save2csv(self, data, labels = None):
         """
         Save a np array into a csv file.
         ---------------------------------------------
