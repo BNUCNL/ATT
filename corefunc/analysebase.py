@@ -7,7 +7,7 @@ from scipy import stats
 import nibabel as nib
 from scipy.spatial.distance import pdist
 
-from ATT.algorithm import tools
+from ATT.algorithm import tools, roimethod
 from ATT.utilfunc import plotfig
 from ATT.iofunc import iofiles
 
@@ -571,6 +571,98 @@ def _avgseries(imgdata, roimask, label):
     roiloc = zip(roii, roij, roik)
     return np.nanmean([imgdata[i] for i in roiloc], axis=0), roiloc
 
+class MVPA(object):
+    """
+    Simple class for MVPA
+    Class contains:
+        space mvpa for correlation between sphere and sphere: mvpa_space_sph2sph
+        space mvpa for roi between roi and roi: mvpa_space_roi2roi
+        space mvpa for global brain: searchlight (sph to sph for global brain): mvpa_space_searchlight
+
+        timeseries mvpa
+        [Unfinished yet]         
+    -----------------------------------
+    Parameters:
+        imgdata: nifti data
+    Example:
+        >>> mvpacls = MVPA(imgdata)  
+    """
+    def __init__(self, imgdata):
+        self._imgdata = imgdata
+        self._imgshape = imgdata.shape
+
+    def mvpa_space_sph2sph(self, voxloc1, voxloc2, radius = [2,2,2]):
+        """
+        MVPA method for correlation between sphere to sphere
+        ---------------------------------------------
+        Parameters:
+            voxloc1, voxloc2: voxel location, used for generate spheres
+            radius: sphere radius
+        Output:
+            r: correlation coefficient of signals between two spheres
+            p: significant level
+        """
+        assert np.ndim(self._imgdata) == 3, "Dimension of inputdata, imgdata, should be 3 in space mvpa"
+        sphereroi1, _ = roimethod.sphere_roi(voxloc1, radius, 1, datashape = self._imgshape)
+        signals1 = tools.get_signals(self._imgdata, sphereroi1, 'voxel')[0]
+        sphereroi2, _ = roimethod.sphere_roi(voxloc2, radius, 1, datashape = self._imgshape)
+        signals2 = tools.get_signals(self._imgdata, sphereroi2, 'voxel')[0]
+        r, p = stats.pearsonr(signals1, signals2)        
+        return r, p
+   
+    def mvpa_space_roi2roi(self, roimask1, roimask2):
+        """
+        MVPA method for correlation between roi to roi
+        ---------------------------------------------
+        Parameters:
+            roimask1, roimask2: roimasks
+                                I haven't considered method how to check two roi have the same shape
+        Output:
+            r: correlation coefficient of signals between two spheres
+            p: significant level
+        """
+        assert np.ndim(self._imgdata) == 3, "Dimension of inputdata, imgdata, should be 3 in space mvpa"
+        signal1 = tools.get_signals(self._imgdata, roimask1, 'voxel')[0]
+        signal2 = tools.get_signals(self._imgdata, roimask2, 'voxel')[0]
+        r, p = stats.pearsonr(signals1, signals2)
+        return r, p
+ 
+    def mvpa_space_searchlight(self, voxloc, radius = [2,2,2], thr = 1e-3):
+        """
+        Searchlight method search in global brain
+        Note that I'm not quite sure whether the details are right
+        In future maybe I need to fix details
+        --------------------------------------------
+        Parameters:
+            voxloc: voxel location
+            radius: sphere radius, by default is [2,2,2]
+            thr: threshold values of raw activation values
+                 higher value means smaller checking range, with smaller computational time
+        Output:
+            rdata: r maps
+            pdata: p maps
+        Example:
+            >>> rdata, pdata = mvpa_space_searchlight(voxloc)
+        """   
+        assert np.ndim(self._imgdata) == 3, "Dimension of inputdata, imgdata, should be 3 in space mvpa"
+        rdata = np.zeros_like(self._imgdata)
+        pdata = np.zeros_like(self._imgdata)
+        sphere_org, _ = roimethod.sphere_roi(voxloc, radius, 1, self._imgshape)
+        signal_org = tools.get_signals(self._imgdata, sphere_org, 'voxel')[0]
+        for i in range(self._imgshape[0]):
+            for j in range(self._imgshape[1]):
+                for k in range(self._imgshape[2]):
+                    if np.abs(self._imgdata[i,j,k]) < thr:
+                        continue
+                    else:
+                        sphere_dest, _ = roimethod.sphere_roi([i,j,k], radius, 1, self._imgshape)
+                        if sphere_dest[sphere_dest!=0].shape[0]!=sphere_org[sphere_org!=0].shape[0]:
+                            continue
+                        signal_dest = tools.get_signals(self._imgdata, sphere_dest, 'voxel')[0]
+                        rdata[i,j,k], pdata[i,j,k] = stats.pearsonr(signal_org, signal_dest)
+            print('{}% finished'.format(100.0*i/91))
+        return rdata, pdata
+                        
 
 
 
