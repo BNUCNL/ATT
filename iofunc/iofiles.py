@@ -47,7 +47,7 @@ class _CSV(object):
     def __init__(self, _comp_file):
 	    self._comp_file = _comp_file
 
-    def save2csv(self, data, labels = None):
+    def save_csv(self, data, labels = None):
         """
         Save a np array into a csv file.
         ---------------------------------------------
@@ -75,7 +75,7 @@ class _CSV(object):
         else:
             raise ValueError, 'Input must be a numpy array.'
 
-    def readcsv(self):
+    def read_csv(self):
         """
         Read data from .csv
         ----------------------------------
