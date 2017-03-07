@@ -369,11 +369,11 @@ def get_masksize(mask):
     labels = np.unique(mask)[1:]
     if mask.ndim == 3:
         mask = np.expand_dims(mask, axis = 3)
-    masksize = np.empty((mask.shape[3], labels.shape[0]))
+    masksize = np.empty((mask.shape[3], int(np.max(labels))))
     for i in range(mask.shape[3]):
-        for j in range(labels.shape[0]):
-            if np.any(mask[...,i] == labels[j]):
-                masksize[i, j] = np.sum(mask[...,i] == labels[j])
+        for j in range(int(np.max(labels))):
+            if np.any(mask[...,i] == j+1):
+                masksize[i, j] = np.sum(mask[...,i] == j+1)
             else:
                 masksize[i, j] = np.nan
     return masksize
