@@ -387,7 +387,10 @@ def _ste(data):
     Output:
         standard error
     """
-    return np.nanstd(data)/np.sqrt(data.size)
+    if isinstance(data, float) | isinstance(data, int):
+        return np.nanstd(data)/np.sqrt(1)
+    else:
+        return np.nanstd(data)/np.sqrt(len(data))
 
 def get_signals(atlas, mask, method = 'mean', labelnum = None):
     """
