@@ -140,7 +140,7 @@ class GradientImg(object):
         method: 'sobel' or 'prewitt'
     Example:
         >>> gi = GradientImg()
-        >>> graidentmap = gi.computegradientimg()
+        >>> graidentmap = gi.computegradientimg(imgdata)
     """
     def __init__(self, method = 'sobel'):
         oprx = np.zeros([3,3,3])
