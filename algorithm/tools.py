@@ -428,7 +428,7 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
         if np.any(roisignal):
             signals.append(roisignal)         
         else:
-            signals.append(np.nan)
+            signals.append([np.nan])
     # return signals    
     return [calfunc(sg) for sg in signals]
 
