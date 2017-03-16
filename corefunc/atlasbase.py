@@ -13,7 +13,7 @@ class ImageCalculator(object):
     def __init__(self):
         pass
 
-    def merge4D(self, rawdatapath, outdatapath, outname):    
+    def merge4D(self, rawdatapath, outdatapath, outname, issave = True):    
         """
         Merge 3D images together
         --------------------------------------
@@ -21,6 +21,7 @@ class ImageCalculator(object):
             rawdatapath: raw data path. Need to be a list contains path of each image
             outdatapath: output path.
             outname: output data name.
+            issave: save data or not, by default is True
         Return:
             outdata: merged file
         """
@@ -36,13 +37,12 @@ class ImageCalculator(object):
             else:
                 raise Exception('File may not exist of %s' % rawdatapath[i])
         img = nib.Nifti1Image(outdata, None, header)
-        if outdatapath.split('/')[-1].endswith('.nii.gz'):
-            nib.save(img, outdatapath)
-        else:
-           # suffix = rawdatapath[0].split('/')[-1].split('.')[1:]
-           # outdatapath_new = os.path.join(outdatapath, '.'.join([outname] + suffix))
-           outdatapath_new = os.path.join(outdatapath, outname)
-           nib.save(img, outdatapath_new)
+        if issave is True:
+            if outdatapath.split('/')[-1].endswith('.nii.gz'):
+                nib.save(img, outdatapath)
+            else:
+                outdatapath_new = os.path.join(outdatapath, outname)
+                nib.save(img, outdatapath_new)
         return outdata
 
     def decompose_img(self, imagedata, header, outpath, outname=None):
