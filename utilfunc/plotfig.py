@@ -61,6 +61,8 @@ class FigureFactory(object):
                         labels[0] means label of meas1, labels[1] means label of meas2.
                 method: 'pearson' or 'spearman' correlation
             """
+            plt.rc('xtick', labelsize = 14)
+            plt.rc('ytick', labelsize = 14)
             if (meas1.dtype != 'O') | (meas2.dtype != 'O'):
                 samp_sel = ~np.isnan(meas1*meas2)
                 x = meas1[samp_sel]
@@ -84,6 +86,7 @@ class FigureFactory(object):
             plt.xlabel(labels[0])
             plt.ylabel(labels[1])
             plt.title(method.capitalize()+' Correlation')
+
             plt.show()
 
         def _mat_plotting(self, data, xlabel='', ylabel=''):
@@ -95,6 +98,8 @@ class FigureFactory(object):
                 xlabel: xlabels
                 ylabel: ylabels
             """
+            plt.rc('xtick', labelsize=14)
+            plt.rc('ytick', labelsize=14)
             sns.heatmap(data, xticklabels = xlabel, yticklabels = ylabel)
             plt.show()
 
@@ -104,10 +109,13 @@ class FigureFactory(object):
             --------------------------
             Parameters:
                 data: raw data
-                title:
-                xlabels, ylabels: 
+                title: title of figures
+                xlabels, ylabels: xlabel and ylabel of figures
+                legendname: identified legend name
                 err: error of data estimation. Used for errorbar
             """
+            plt.rc('xtick', labelsize=14)
+            plt.rc('ytick', labelsize=14)
             color = ['#BDBDBD', '#575757', '#404040', '#080808', '#919191']
             if isinstance(data, list):
                 data = np.array(data)
@@ -138,6 +146,7 @@ class FigureFactory(object):
             plt.xticks(rotation = 45)
             ax.set_xticklabels(xlabels)
             ax.set_title(title, fontsize=12)
+
             plt.show()
 
         def _hist_plotting(self, n_scores, legend_label, *oppar):
@@ -150,6 +159,8 @@ class FigureFactory(object):
                 score: Optional choice. used for permutation cross validation results.In permutation cross validation, n_scores means value of permutation scores, score means actual score.
                 pval: Optional choice. Need to use with score. p values of permutation test.
             """
+            plt.rc('xtick', labelsize=14)
+            plt.rc('ytick', labelsize=14)
             if len(oppar) == 0:
                 plt.hist(n_scores, 50, label = legend_label)
                 ylim = plt.ylim()
@@ -164,6 +175,7 @@ class FigureFactory(object):
                 raise Exception('parameter numbers should be 2 or 4!')
             plt.legend()
             plt.xlabel('Score')
+             
             plt.show()
           
         def _hierarchy_plotting(self, distance, regions):
@@ -174,8 +186,11 @@ class FigureFactory(object):
                 distance: distance array, distance array by using scipy.pdist
                 regions: region name        
             """
+            plt.rc('xtick', labelsize=14)
+            plt.rc('xtick', labelsize=14)
             Z = linkage(distance, 'average')
             dendrogram(Z, labels = regions)
+
             plt.show()
 
         def _simpleline_plotting(self, dataarray, xlabel='', ylabel='', xlim = None, ylim = None, xticklabel = None, scaling = False):
@@ -192,6 +207,8 @@ class FigureFactory(object):
                 xticklabel: axis x labels
                 scaling: whether do rescaling or not to show multiple lines
             """
+            plt.rc('xtick', labelsize = 14)
+            plt.rc('ytick', labelsize = 14)
             fig, ax = plt.subplots()
             ax.set_color_cycle(['red', 'blue', 'yellow', 'black', 'green'])
             if dataarray.ndim == 1:
@@ -211,6 +228,7 @@ class FigureFactory(object):
                 plt.ylim(ylim)
             if xticklabel is not None:
                 plt.xticks(range(dataarray.shape[0]), xticklabel)
+
             plt.show()
 
         def _scatter_plotting(self, array1, array2, xlabel='', ylabel='', colors = ['red'], xlim = None, ylim = None):
@@ -226,6 +244,8 @@ class FigureFactory(object):
                 xlim: axis x limitation
                 ylim: axis y limitation
             """
+            plt.rc('xtick', labelsize = 14)
+            plt.rc('ytick', labelsize = 14)
             if array1.ndim == 1:
                 array1 = np.expand_dims(array1, axis=1)
             if array2.ndim == 1:
@@ -240,5 +260,6 @@ class FigureFactory(object):
                 plt.xlim(xlim)
             if ylim is not None:
                 plt.ylim(ylim)
+
             plt.show()
 
