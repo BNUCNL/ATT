@@ -12,7 +12,7 @@ iofunc: input/output package, used for load/save files
 utilfunc: utility package, contains figure module (plotfig), file operation module (fileoperate) and decorator
 
 Usage:
-    >>> from ATT.corefunc import atlasbase
+    >>> from ATT import corefunc
 """
 
 
