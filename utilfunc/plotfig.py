@@ -8,6 +8,13 @@ import numpy as np
 from scipy.cluster.hierarchy import linkage, dendrogram
 
 class FigureFactory(object):
+    """
+    A Factory for Figures
+    ----------------------------
+    Example:
+        >>> figFact = plotfig.FigureFactory()
+        >>> plotmat = figFact.createfactory('mat')
+    """
     def __init__(self):
 	    pass
 
@@ -60,6 +67,8 @@ class FigureFactory(object):
                 labels: A list contains two labels.
                         labels[0] means label of meas1, labels[1] means label of meas2.
                 method: 'pearson' or 'spearman' correlation
+            Example:
+                >>> plotcorr(data1, data2, labels = label, method = 'pearson')
             """
             plt.rc('xtick', labelsize = 14)
             plt.rc('ytick', labelsize = 14)
@@ -97,6 +106,8 @@ class FigureFactory(object):
                 data: raw data
                 xlabel: xlabels
                 ylabel: ylabels
+            Example:
+                >>> plotmat(data, xlabel = xlabellist, ylabel = ylabellist)
             """
             plt.rc('xtick', labelsize=14)
             plt.rc('ytick', labelsize=14)
@@ -113,6 +124,8 @@ class FigureFactory(object):
                 xlabels, ylabels: xlabel and ylabel of figures
                 legendname: identified legend name
                 err: error of data estimation. Used for errorbar
+            Example:
+                >>> plotbar(data, title = titletxt, xlabels = xlabel, ylabels = ylabel, legendname = legendnametxt, err = errdata)
             """
             plt.rc('xtick', labelsize=14)
             plt.rc('ytick', labelsize=14)
@@ -158,6 +171,8 @@ class FigureFactory(object):
                 legend_label: data legend label
                 score: Optional choice. used for permutation cross validation results.In permutation cross validation, n_scores means value of permutation scores, score means actual score.
                 pval: Optional choice. Need to use with score. p values of permutation test.
+            Example:
+                >>> plothist(values, legend_label = labels, score = score_collect, pval = pvalue)
             """
             plt.rc('xtick', labelsize=14)
             plt.rc('ytick', labelsize=14)
@@ -184,7 +199,9 @@ class FigureFactory(object):
             -------------------------------
             Parameters:
                 distance: distance array, distance array by using scipy.pdist
-                regions: region name        
+                regions: region name       
+            Example:
+                >>> plothierarchy(distance, regions) 
             """
             plt.rc('xtick', labelsize=14)
             plt.rc('xtick', labelsize=14)
@@ -206,6 +223,8 @@ class FigureFactory(object):
                 ylim: By default is None, if ylim exists, limit y values of figure
                 xticklabel: axis x labels
                 scaling: whether do rescaling or not to show multiple lines
+            Example:
+                >>> plotline(dataarray)
             """
             plt.rc('xtick', labelsize = 14)
             plt.rc('ytick', labelsize = 14)
@@ -243,6 +262,8 @@ class FigureFactory(object):
                 colors: color of each group
                 xlim: axis x limitation
                 ylim: axis y limitation
+            Example:
+                >>> plotscatter(array1, array2)
             """
             plt.rc('xtick', labelsize = 14)
             plt.rc('ytick', labelsize = 14)
