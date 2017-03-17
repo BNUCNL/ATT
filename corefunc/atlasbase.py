@@ -208,7 +208,7 @@ class MakeMasks(object):
         """
         pm = roimethod.make_pm(atlas, meth)
         self._pm = pm
-	if self._issave is True:
+        if self._issave is True:
             iofactory = iofiles.IOFactory()
             factory = iofactory.createfactory(self._savepath, maskname)
             if maskname.endswith('gz') | maskname.endswith('nii'):

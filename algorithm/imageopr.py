@@ -66,7 +66,7 @@ class FeatureScale(object):
             >>> outdata = featCls.scale_unit_length(para='L1')
         """
         flattendata = self._data.flatten(order='C').tolist()
-	if para == 'L1':
+        if para == 'L1':
             normdata = sum(map(lambda a: abs(a), flattendata))
         elif para == 'L2':
             import math
@@ -210,7 +210,6 @@ def thrimg(imgdata, thr, method = 'abs'):
     else:
         raise Exception('Bad thr input')
     return img_thr
-
 
 
 
