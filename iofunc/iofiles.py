@@ -73,7 +73,7 @@ class _CSV(object):
                     f.write(line_str + '\n')
                 f.close()
         else:
-            raise ValueError, 'Input must be a numpy array.'
+            raise Exception('Input must be a numpy array.')
 
     def read_csv(self):
         """
