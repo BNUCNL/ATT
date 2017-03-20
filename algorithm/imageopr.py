@@ -143,20 +143,18 @@ class GradientImg(object):
     For detail, please read wikipedia in Sobel_operator, Extension to other dimensions
     ---------------------------------------
     Parameters:
-        method: 'sobel'
+        h: operator for smoothing perpendicular to the derivative direction with a triangle filter
+        By default is sobel operator, h = [1,2,1]
+        h_d: simple central difference in derivative direction
+        By default is sobel operator, h_d = [1,0,-1]
     Example:
         >>> gi = GradientImg()
         >>> graidentmap = gi.computegradientimg(imgdata)
     """
-    def __init__(self, method = 'sobel'):
+    def __init__(self, h = [1,2,1], h_d = [1,0,-1]):
         oprx = np.zeros([3,3,3])
         opry = np.zeros([3,3,3])
         oprz = np.zeros([3,3,3])
-        if method == 'sobel':
-            h = [1,2,1]
-            h_d = [1,0,-1] 
-        else:
-            raise Exception('Only support sobel now')
         for i in range(3):
             for j in range(3):
                 for k in range(3):
