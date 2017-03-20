@@ -135,9 +135,15 @@ def calgradient3D(A, loc, oprx, opry, oprz):
 class GradientImg(object):
     """
     A class for computing gradient of a image.
+    Support sobel only
+    The Sobel-Feldman operator consists of two separable operations
+    h = [1,2,1]
+    h_d = [1,0,-1]
+    3D: sobelx[x,y,z] = h_d[x]*h[y]*h[z]
+    For detail, please read wikipedia in Sobel_operator, Extension to other dimensions
     ---------------------------------------
     Parameters:
-        method: 'sobel' or 'prewitt'
+        method: 'sobel'
     Example:
         >>> gi = GradientImg()
         >>> graidentmap = gi.computegradientimg(imgdata)
@@ -147,17 +153,16 @@ class GradientImg(object):
         opry = np.zeros([3,3,3])
         oprz = np.zeros([3,3,3])
         if method == 'sobel':
-            pattern = [[1,2,1], [2,2,2], [1,2,1]]
-        elif method == 'prewitt':
-            pattern = [[1,1,1], [1,1,1], [1,1,1]]
+            h = [1,2,1]
+            h_d = [1,0,-1] 
         else:
-            raise Exception('Please input sobel or prewitt')
-        oprx[2,:,:] = pattern
-        oprx[0,:,:] = -1*np.array(pattern)
-        opry[:,2,:] = pattern
-        opry[:,0,:] = -1*np.array(pattern)
-        oprz[:,:,2] = pattern
-        oprz[:,:,0] = -1*np.array(pattern)
+            raise Exception('Only support sobel now')
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    oprx[i,j,k] = h_d[i]*h[j]*h[k]
+                    opry[i,j,k] = h[i]*h_d[j]*h[k]
+                    oprz[i,j,k] = h[i]*h[j]*h_d[k]
         self._oprx = oprx
         self._opry = opry
         self._oprz = oprz
