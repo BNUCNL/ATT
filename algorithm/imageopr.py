@@ -135,7 +135,6 @@ def calgradient3D(A, loc, oprx, opry, oprz):
 class GradientImg(object):
     """
     A class for computing gradient of a image.
-    Support sobel only
     The Sobel-Feldman operator consists of two separable operations
     h = [1,2,1]
     h_d = [1,0,-1]
