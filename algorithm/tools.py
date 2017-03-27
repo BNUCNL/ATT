@@ -174,7 +174,6 @@ def pearsonr(A, B):
     N = B.shape[0]
     sA = A.sum(0)
     sB = B.sum(0)
-    p1 = N*np.einsum('ij,ik->kj', A, B)
     p1 = N*np.dot(B.T, A)
     p2 = sA*sB[:,None]
     p3 = N*((B**2).sum(0)) - (sB**2)
