@@ -104,6 +104,28 @@ class ImageCalculator(object):
             outdata[...,i] = labels[i]*tempimage
         return outdata
 
+    def relabel_roi(self, roiimg):
+        """
+        Relabel roi image, convert discontinous label image into label-continue image
+        --------------------------
+        Parameters:
+            roiimg: roi image
+
+        Output:
+            relabelimg: relabeling image with continous label sequence
+            corr_label: the correspond relationship between original label and new label
+       
+        Example:
+            >>> relabelimg, corr_label = m.relabel_roi(roiimg)
+        """
+        relabelimg = np.zeros_like(roiimg)
+        rawlabel = np.sort(np.unique(roiimg))[1:].astype('int')
+        newlabel = np.array(range(1, len(rawlabel)+1)).astype('int')
+        corr_label = zip(rawlabel, newlabel)
+        for i,e in enumerate(rawlabel):
+            relabelimg[roiimg==e] = newlabel[i]
+        return relabelimg, corr_label
+
 class ExtractSignals(object):
     def __init__(self, atlas, regions = None):
         masksize = tools.get_masksize(atlas)
