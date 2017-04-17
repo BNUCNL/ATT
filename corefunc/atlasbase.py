@@ -237,7 +237,7 @@ class MakeMasks(object):
                 factory.save_nifti(pm, self._header)
         return pm
 
-    def makempm(self, threshold, maskname = 'mpm.nii.gz'):
+    def makempm(self, threshold, pmfile = None, maskname = 'mpm.nii.gz'):
         """
         Make maximum probabilistic maps
         --------------------------------
@@ -245,8 +245,10 @@ class MakeMasks(object):
             threshold: mpm threshold
             maskname: output mask name. By default is 'mpm.nii.gz'
         """
+        if pmfile is not None:
+            self._pm = pmfile
         if self._pm is None:
-            raise Exception('please execute makepm first')
+            raise Exception('please execute makepm first or give pmfile in this method')
         mpm = roimethod.make_mpm(self._pm, threshold)
         if self._issave is True:
             iofactory = iofiles.IOFactory()
