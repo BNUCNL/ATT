@@ -370,7 +370,7 @@ class PositionRelationship(object):
         else:
             self._roinumber = roinumber
 
-    def template_overlap(self, template, para='percent'):
+    def template_overlap(self, template, para='percent', tempnumber = None):
         """
         Compute overlap between target data and template 
         -----------------------------------------
@@ -380,6 +380,7 @@ class PositionRelationship(object):
                   'percent', overlap #voxels/target region #voxels
                   'amount', overlap #voxels
                   'dice', 2*(intersection)/union
+            tempnumber: template label number, set in case miss label in specific subjects
         Output:
             overlaparray, overlap array(matrix) in two images(target & template)
             uni_tempextlbl, overlap label within template(Note that label not within target) 
@@ -392,7 +393,10 @@ class PositionRelationship(object):
         if template.shape != self._roimask.shape:
             raise Exception('template should have the same shape with target data')
         templabel = np.unique(template)[1:]
-        overlaparray = np.empty((templabel.size, self._roinumber))
+        if tempnumber is not None:
+            overlaparray = np.empty((tempnumber, self._roinumber))
+        else:
+            overlaparray = np.empty((templabel.size, self._roinumber))
         
         roiloc = np.transpose(np.nonzero(self._roimask))
         tup_roiloc = map(tuple, roiloc)
