@@ -394,9 +394,8 @@ class PositionRelationship(object):
             raise Exception('template should have the same shape with target data')
         templabel = np.unique(template)[1:]
         if tempnumber is not None:
-            overlaparray = np.empty((tempnumber, self._roinumber))
-        else:
-            overlaparray = np.empty((templabel.size, self._roinumber))
+            templabel = np.array(range(1,tempnumber+1))
+        overlaparray = np.empty((templabel.size, self._roinumber))
         
         roiloc = np.transpose(np.nonzero(self._roimask))
         tup_roiloc = map(tuple, roiloc)
@@ -415,7 +414,10 @@ class PositionRelationship(object):
                 elif para == 'amount':
                     overlaparray[i,j] = tempextlabel[(tempextlabel == vali)*(roiextlabel == valj)].size
                 elif para == 'dice':
-                    overlaparray[i,j] = 2.0*tempextlabel[(tempextlabel == vali)*(roiextlabel == valj)].size/(template[template == vali].size + self._roimask[self._roimask == valj].size)
+                    try:
+                        overlaparray[i,j] = 2.0*tempextlabel[(tempextlabel == vali)*(roiextlabel == valj)].size/(template[template == vali].size + self._roimask[self._roimask == valj].size)
+                    except ZeroDivisionError:
+                        overlaparray[i,j] = np.nan
                 else:
                     raise Exception("para should be 'percent', 'amount' or 'dice', please retype")
         return overlaparray, uni_tempextlbl
