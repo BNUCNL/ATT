@@ -391,7 +391,11 @@ def _ste(data):
     if isinstance(data, float) | isinstance(data, int):
         return np.nanstd(data)/np.sqrt(1)
     else:
-        return np.nanstd(data)/np.sqrt(len(data))
+        n = len(data[~np.isnan(data)])
+        if n != 0:
+            return np.nanstd(data)/np.sqrt(n)
+        else: 
+            return 0
 
 def get_signals(atlas, mask, method = 'mean', labelnum = None):
     """
