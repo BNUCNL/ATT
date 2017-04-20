@@ -8,8 +8,8 @@ import nibabel as nib
 from scipy.spatial.distance import pdist
 
 from ATT.algorithm import tools, roimethod
-from ATT.utilfunc import plotfig
-from ATT.iofunc import iofiles
+from ATT.util import plotfig
+from ATT.io import iofiles
 
 pjoin = os.path.join
 
