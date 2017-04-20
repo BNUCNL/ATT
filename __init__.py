@@ -6,21 +6,24 @@ ATT package is a toolbox used for analyzing nifti data
 
 Modules
 ------------
-corefunc: core operation package of ATT
+volume: volume operation modules
+surface: surface operation modules
 algorithm: algorithm storehouse of ATT. Main completion in corefunc comes from here
-iofunc: input/output package, used for load/save files
-utilfunc: utility package, contains figure module (plotfig), file operation module (fileoperate) and decorator
+io: input/output package, used for load/save files
+util: utility package, contains figure module (plotfig), file operation module (fileoperate) and decorator
 
 Usage:
-    >>> from ATT import corefunc
+    >>> from ATT import volume
 """
 
 
 __all__ = []
 from . import algorithm
-from . import corefunc
-from . import utilfunc
-from . import iofunc
+from . import volume
+from . import surface
+from . import util
+from . import io
+
 
 
 
