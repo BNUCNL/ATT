@@ -29,29 +29,68 @@ def extract_edge_from_faces(faces):
         print('{} finished'.format(i))
     return edge
 
-def generate_adjacent_matrix(edge):
+class GenAdjacentMatrix(object):
     """
-    Generate adjacency matrix from edge
-    
-    Parameters:
-    -------
-    edge: edge list
+    Generate adjacency matrix from edge or ring_list
     
     Return:
     --------
     ad_matrix: adjacent matrix
-  
+    
     Example:
-    ---------
-    >>> ad_matrix = generate_adjacent_matrix(edge)
+    --------
+    >>> gamcls = GenAdjacentMatrix()
+    >>> admatrix = gamcls.from_edge(edge)
     """
-    node_number = np.max(edge)+1
-    ad_matrix = np.zeros((node_number, node_number))
-    for eg in edge:
-        ad_matrix[eg] = 1
-    ad_matrix = np.logical_or(ad_matrix, ad_matrix.T)
-    ad_matrix = ad_matrix.astype('int')
-    return ad_matrix
+    def __init__(self):
+        pass
+
+    def from_edge(self, edge):
+        """
+        Generate adjacent matrix from edge
+        
+        Parameters:
+        -----------
+        edge: edge list, which have the format like below, 
+              [(i1,j1), (i2,j2), ...] 
+              note that i,j is the number of vertex/node
+        
+        Return:
+        -----------
+        adjmatrix: adjacent matrix
+        """ 
+        assert isinstance(edge, list), "edge should be a list"
+        edge_node_num = [len(i) for i in edge]
+        assert edge_node_num.count((edge_node_num[0]) == len(edge_node_num)), "One edge should only contain 2 nodes"
+        node_number = np.max(edge)+1
+        ad_matrix = np.zeros((node_number, node_number))
+        for eg in edge:
+            ad_matrix[eg] = 1
+        ad_matrix = np.logical_or(ad_matrix, ad_matrix.T)
+        ad_matrix = ad_matrix.astype('int')
+        return ad_matrix
+
+    def from_ring(self, ring):
+        """
+        Generate adjacent matrix from ringlist
+        
+        Parameters:
+        ----------
+        ring: list of ring node, the format of ring list like below
+              [{i1,j1,k1,...}, {i2,j2,k2,...}, ...]
+              each element correspond to a index (index means a vertex)
+        
+        Return:
+        ----------
+        adjmatrix: adjacent matrix 
+        """
+        assert isinstance(ring, list), "ring should be a list"
+        node_number = len(ring_list)
+        adjmatrix = np.zeros((node_number, node_number))
+        for i,e in enumerate(ring):
+            for j in e:
+                adjmatrix[i,j] = 1
+        return adjmatrix
 
 def caldice(imgdata1, imgdata2, label1, label2):
     """
