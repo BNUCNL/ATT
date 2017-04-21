@@ -85,7 +85,7 @@ class GenAdjacentMatrix(object):
         adjmatrix: adjacent matrix 
         """
         assert isinstance(ring, list), "ring should be a list"
-        node_number = len(ring_list)
+        node_number = len(ring)
         adjmatrix = np.zeros((node_number, node_number))
         for i,e in enumerate(ring):
             for j in e:
