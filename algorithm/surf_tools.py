@@ -188,6 +188,10 @@ def get_masksize(mask, labelnum = None):
     Return:
     --------
     masksize: mask size of each roi
+
+    Example:
+    --------
+    >>> masksize = get_masksize(mask)
     """
     if mask.ndim == 3:
         mask = mask[:,0,0]
@@ -213,6 +217,10 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
     Return:
     -------
     signals: signals of specific roi
+   
+    Example:
+    -------
+    >>> signals = get_signals(atlas, mask, 'mean')
     """
     if atlas.ndim == 3:
         atlas = atlas[:,0,0]
@@ -257,6 +265,10 @@ def get_vexnumber(atlas, mask, method = 'peak', labelnum = None):
     Return:
     -------
     vexnumber: vertex number
+
+    Example:
+    --------
+    >>> vexnumber = get_vexnumber(atlas, mask, 'peak')
     """
     if atlas.ndim == 3:
         atlas = atlas[:,0,0]
