@@ -47,5 +47,39 @@ def make_pm(mask, meth = 'all', labelnum = None):
     return pm
 
 def make_mpm(pm, threshold):
-    pass
+    """
+    Make maximum probablistic map (mpm)
+    
+    Parameters:
+    -----------
+    pm: probabilistic map
+    threshold: threshold to filter vertex with low probability
+    
+    Return:
+    -------
+    mpm: maximum probabilistic map
+    
+    Example:
+    >>> mpm = make_mpm(pm, 0.2)
+    """
+    if (pm.ndim != 4)&(pm.ndim != 2):
+        raise Exception('Probablistic map should be 2/4 dimension to get maximum probablistic map')
+    if pm.ndim == 4:
+        pm = pm.reshape((pm.shape[0], pm.shape[3]))
+    pm_temp = np.empty((pm.shape[0], pm.shape[1]+1))
+    pm_temp[..., range(1,pm.shape[1]+1)] = pm
+    pm_temp[pm_temp<threshold] = 0
+    mpm = np.argmax(pm_temp, axis=1)
+    mpm = mpm.reshape((mpm.shape[0], 1, 1))
+    return mpm
+    
+        
+
+
+
+
+
+
+
+
 
