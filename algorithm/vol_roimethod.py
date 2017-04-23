@@ -36,6 +36,7 @@ def make_mpm(pm, threshold):
     Make maximum probabilistic map (mpm)
     ---------------------------------------
     Parameters:
+        pm: probabilistic map
         threshold: threholds to mask probabilistic maps
     Return:
         mpm: maximum probabilisic map
