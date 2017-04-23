@@ -5,7 +5,7 @@ import numpy as np
 import os
 import nibabel as nib
 import copy
-from ATT.algorithm import roimethod
+from ATT.algorithm import vol_roimethod
 from ATT.algorithm import tools
 from ATT.io import iofiles
 

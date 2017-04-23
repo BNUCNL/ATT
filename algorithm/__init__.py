@@ -3,5 +3,5 @@
 __all__ = []
 
 from . import tools
-from . import roimethod
+from . import vol_roimethod
 from . import imageopr
