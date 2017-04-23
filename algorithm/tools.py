@@ -379,7 +379,7 @@ def get_masksize(mask):
                 masksize[i, j] = np.nan
     return masksize
 
-def _ste(data):
+def ste(data):
     """
     Calculate standard error
     --------------------------------
@@ -395,7 +395,7 @@ def _ste(data):
         if n != 0:
             return np.nanstd(data)/np.sqrt(n)
         else: 
-            return 0
+            return np.nan
 
 def get_signals(atlas, mask, method = 'mean', labelnum = None):
     """
@@ -419,7 +419,7 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
     elif method == 'std':
         calfunc = np.nanstd
     elif method == 'ste':
-        calfunc = _ste
+        calfunc = ste
     elif method == 'max':
         calfunc = np.max
     elif method == 'voxel':

@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 et:
 
 import numpy as np
+from . import tools
 
 def extract_edge_from_faces(faces):
     """
@@ -175,9 +176,124 @@ def get_n_ring_neighbour(faces, n, option='part'):
     else:
         raise Exception('bad option!')
        
+def get_masksize(mask, labelnum = None):
+    """
+    Compute mask size in surface space
+    
+    Parameters:
+    ----------
+    mask: label image (mask)
+    labelnum: mask's label number, use for group analysis
+
+    Return:
+    --------
+    masksize: mask size of each roi
+    """
+    if mask.ndim == 3:
+        mask = mask[:,0,0]
+    labels = np.unique(mask)[1:]
+    if labelnum is None:
+        labelnum = int(np.max(labels))
+    masksize = []
+    for i in range(labelnum):
+        masksize.append(len(mask[mask == i+1]))
+    return np.array(masksize)
+    
+def get_signals(atlas, mask, method = 'mean', labelnum = None):
+    """
+    Extract roi signals of atlas from mask
+    
+    Parameters:
+    -----------
+    atlas: atlas
+    mask: mask, a label image
+    method: 'mean', 'std', 'ste', 'max', 'vertex', etc.
+    labelnum: mask's label numbers, add this parameters for group analysis
+
+    Return:
+    -------
+    signals: signals of specific roi
+    """
+    if atlas.ndim == 3:
+        atlas = atlas[:,0,0]
+    if mask.ndim == 3:
+        mask = mask[:,0,0]
+    labels = np.unique(mask)[1:]
+    if labelnum is None:
+        labelnum = int(np.max(labels))
+    if method == 'mean':
+        calfunc = np.nanmean
+    elif method == 'std':
+        calfunc = np.nanstd
+    elif method == 'max':
+        calfunc = np.max
+    elif method == 'vertex':
+        calfunc = np.array
+    elif method == 'ste':
+        calfunc = tools.ste
+    else:
+        raise Exception('Miss paramter of method')
+    signals = []
+    for i in range(labelnum):
+        if np.any(mask==i+1):
+            signals.append(atlas[mask==i+1])
+        else:
+            signals.append(np.array([np.nan]))
+    return [calfunc(sg) for sg in signals]
+
+def get_vexnumber(atlas, mask, method = 'peak', labelnum = None):
+    """
+    Get vertex number of rois from surface space data
+    
+    Parameters:
+    -----------
+    atlas: atlas
+    mask: mask, a label image
+    method: 'peak' ,'center', or 'vertex', 
+            'peak' means peak vertex number with maximum signals from specific roi
+            'vertex' means extract all vertex of each roi
+    labelnum: mask's label numbers, add this parameters for group analysis
+    
+    Return:
+    -------
+    vexnumber: vertex number
+    """
+    if atlas.ndim == 3:
+        atlas = atlas[:,0,0]
+    if mask.ndim == 3:
+        mask = mask[:,0,0]
+    labels = np.unique(mask)[1:]
+    if labelnum is None:
+        labelnum = int(np.max(labels))
+
+    extractpeak = lambda x: np.unravel_index(x.argmax(), x.shape)[0]
+    extractcenter = lambda x: np.mean(np.transpose(np.nonzero(x)))
+    extractvertex = lambda x: x[x!=0]
+    
+    if method == 'peak':
+        calfunc = extractpeak
+    elif method == 'center':
+        calfunc = extractcenter
+    elif method == 'vertex':
+        calfunc = extractvertex
+    else:
+        raise Exception('Miss parameter of method')
+
+    vexnumber = []
+    for i in range(labelnum):
+        roisignal = atlas*(mask==(i+1))
+        if np.any(roisignal):
+            vexnumber.append(calfunc(roisignal))
+        else:
+            vexnumber.append(np.array([np.nan]))
+    return vexnumber
 
 
 
 
 
 
+
+
+
+    
