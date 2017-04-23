@@ -228,7 +228,7 @@ class MakeMasks(object):
         Return:
             pm
         """
-        pm = roimethod.make_pm(atlas, meth)
+        pm = vol_roimethod.make_pm(atlas, meth)
         self._pm = pm
         if self._issave is True:
             iofactory = iofiles.IOFactory()
@@ -249,7 +249,7 @@ class MakeMasks(object):
             self._pm = pmfile
         if self._pm is None:
             raise Exception('please execute makepm first or give pmfile in this method')
-        mpm = roimethod.make_mpm(self._pm, threshold)
+        mpm = vol_roimethod.make_mpm(self._pm, threshold)
         if self._issave is True:
             iofactory = iofiles.IOFactory()
             factory = iofactory.createfactory(self._savepath, maskname)
@@ -270,7 +270,7 @@ class MakeMasks(object):
         """ 
         spheremask = np.zeros(atlasshape)
         for i, e in enumerate(voxloc):
-            spheremask, loc = roimethod.sphere_roi(e, radius, i+1, datashape = atlasshape, data = spheremask)
+            spheremask, loc = vol_roimethod.sphere_roi(e, radius, i+1, datashape = atlasshape, data = spheremask)
         if self._issave is True:
             iofactory = iofiles.IOFactory()
             factory = iofactory.createfactory(self._savepath, maskname)
@@ -302,7 +302,7 @@ class MakeMasks(object):
             raise Exception('Voxnum length unequal to coodinate length.')
         rgmask = np.zeros_like(valuemap)
         for i,e in enumerate(coordinate):
-            rg_image, loc = roimethod.region_growing(valuemap, e, voxnum[i])
+            rg_image, loc = vol_roimethod.region_growing(valuemap, e, voxnum[i])
             rg_image[rg_image!=0] = i+1
             if ~np.any(rgmask[rg_image!=0]):
                 # all zeros
