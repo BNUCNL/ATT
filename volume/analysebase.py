@@ -7,7 +7,7 @@ from scipy import stats
 import nibabel as nib
 from scipy.spatial.distance import pdist
 
-from ATT.algorithm import tools, roimethod
+from ATT.algorithm import vol_tools, tools, vol_roimethod
 from ATT.util import plotfig
 from ATT.io import iofiles
 
@@ -173,7 +173,7 @@ class FeatureRelation(object):
             if self.figure:
                _plot_corr(self.data_removed[:,0], self.data_removed[:,1], self.regions, method)  
         else:
-            corr, pval = tools.calwithincorr(tools.listwise_clean(self.data_removed), method)
+            corr, pval = tools.pearsonr(tools.listwise_clean(self.data_removed), tools.listwise_clean(self.data_removed))
             if self.figure:
                 _plot_mat(corr, self.regions, self.regions)
         return corr, pval
@@ -336,7 +336,7 @@ class EvaluateMap(object):
             data2 = np.expand_dims(data2, axis = 3)
         dice = []
         for i in range(data1.shape[3]):
-            dice.append(tools.caldice(data1[...,i], data2[...,i], label))
+            dice.append(vol_tools.caldice(data1[...,i], data2[...,i], label))
         dice = np.array(dice)
         if self.issave:
             iofactory = iofiles.IOFactory()
@@ -439,7 +439,7 @@ class PositionRelationship(object):
         if self._roimask.shape != targdata.shape:
             raise Exception('targdata shape should have the save shape as target data')
 
-        peakcoord = tools.get_coordinate(targdata, self._roimask, method = extloc, labelnum = self._roinumber)
+        peakcoord = vol_tools.get_coordinate(targdata, self._roimask, method = extloc, labelnum = self._roinumber)
         dist_array = np.empty((peakcoord.shape[0], peakcoord.shape[0]))
         for i in range(peakcoord.shape[0]):
             for j in range(peakcoord.shape[0]):
@@ -610,9 +610,9 @@ class MVPA(object):
         """
         assert np.ndim(self._imgdata) == 3, "Dimension of inputdata, imgdata, should be 3 in space mvpa"
         sphereroi1, _ = roimethod.sphere_roi(voxloc1, radius, 1, datashape = self._imgshape)
-        signals1 = tools.get_signals(self._imgdata, sphereroi1, 'voxel')[0]
+        signals1 = vol_tools.get_signals(self._imgdata, sphereroi1, 'voxel')[0]
         sphereroi2, _ = roimethod.sphere_roi(voxloc2, radius, 1, datashape = self._imgshape)
-        signals2 = tools.get_signals(self._imgdata, sphereroi2, 'voxel')[0]
+        signals2 = vol_tools.get_signals(self._imgdata, sphereroi2, 'voxel')[0]
         r, p = stats.pearsonr(signals1, signals2)        
         return r, p
    
@@ -628,8 +628,8 @@ class MVPA(object):
             p: significant level
         """
         assert np.ndim(self._imgdata) == 3, "Dimension of inputdata, imgdata, should be 3 in space mvpa"
-        signal1 = tools.get_signals(self._imgdata, roimask1, 'voxel')[0]
-        signal2 = tools.get_signals(self._imgdata, roimask2, 'voxel')[0]
+        signal1 = vol_tools.get_signals(self._imgdata, roimask1, 'voxel')[0]
+        signal2 = vol_tools.get_signals(self._imgdata, roimask2, 'voxel')[0]
         r, p = stats.pearsonr(signals1, signals2)
         return r, p
  
@@ -654,7 +654,7 @@ class MVPA(object):
         rdata = np.zeros_like(self._imgdata)
         pdata = np.zeros_like(self._imgdata)
         sphere_org, _ = roimethod.sphere_roi(voxloc, radius, 1, self._imgshape)
-        signal_org = tools.get_signals(self._imgdata, sphere_org, 'voxel')[0]
+        signal_org = vol_tools.get_signals(self._imgdata, sphere_org, 'voxel')[0]
         for i in range(self._imgshape[0]):
             for j in range(self._imgshape[1]):
                 for k in range(self._imgshape[2]):
@@ -664,7 +664,7 @@ class MVPA(object):
                         sphere_dest, _ = roimethod.sphere_roi([i,j,k], radius, 1, self._imgshape)
                         if sphere_dest[sphere_dest!=0].shape[0]!=sphere_org[sphere_org!=0].shape[0]:
                             continue
-                        signal_dest = tools.get_signals(self._imgdata, sphere_dest, 'voxel')[0]
+                        signal_dest = vol_tools.get_signals(self._imgdata, sphere_dest, 'voxel')[0]
                         rdata[i,j,k], pdata[i,j,k] = stats.pearsonr(signal_org, signal_dest)
             print('{}% finished'.format(100.0*i/91))
         return rdata, pdata

@@ -5,8 +5,7 @@ import numpy as np
 import os
 import nibabel as nib
 import copy
-from ATT.algorithm import vol_roimethod
-from ATT.algorithm import tools
+from ATT.algorithm import vol_roimethod, vol_tools, tools
 from ATT.io import iofiles
 
 class ImageCalculator(object):
@@ -128,7 +127,7 @@ class ImageCalculator(object):
 
 class ExtractSignals(object):
     def __init__(self, atlas, regions = None):
-        masksize = tools.get_masksize(atlas)
+        masksize = vol_tools.get_masksize(atlas)
         
         self.atlas = atlas
         if regions is None:
@@ -157,9 +156,9 @@ class ExtractSignals(object):
         
         for i in range(targ.shape[3]):
             if self.atlas.ndim == 3:
-                signals.append(tools.get_signals(targ[...,i], self.atlas, method, self.regions))
+                signals.append(vol_tools.get_signals(targ[...,i], self.atlas, method, self.regions))
             elif self.atlas.ndim == 4:
-                signals.append(tools.get_signals(targ[...,i], self.atlas[...,i], method, self.regions))
+                signals.append(vol_tools.get_signals(targ[...,i], self.atlas[...,i], method, self.regions))
         self.signals = np.array(signals)
         return np.array(signals)
 
@@ -179,9 +178,9 @@ class ExtractSignals(object):
 
         for i in range(targ.shape[3]):
             if self.atlas.ndim == 3:
-                coordinate[i, ...] = tools.get_coordinate(targ[...,i], self.atlas, size, method, self.regions)
+                coordinate[i, ...] = vol_tools.get_coordinate(targ[...,i], self.atlas, size, method, self.regions)
             elif self.atlas.ndim == 4:
-                coordinate[i, ...] = tools.get_coordinate(targ[...,i], self.atlas[...,i], size, method, self.regions)
+                coordinate[i, ...] = vol_tools.get_coordinate(targ[...,i], self.atlas[...,i], size, method, self.regions)
         self.coordinate = coordinate
         return coordinate
 
@@ -198,7 +197,7 @@ class ExtractSignals(object):
             distmeth: distance method
         """
         if not hasattr(self, 'coordinate'):
-            self.coordinate = tools.get_coordinate(targ, self.atlas, size, coordmeth)
+            self.coordinate = vol_tools.get_coordinate(targ, self.atlas, size, coordmeth)
         dist_point = np.empty((self.coordinate.shape[0], self.coordinate.shape[1]))
         pointloc = np.array(pointloc)
         if pointloc.shape[0] == 1:
