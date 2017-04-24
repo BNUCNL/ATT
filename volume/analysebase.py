@@ -609,9 +609,9 @@ class MVPA(object):
             p: significant level
         """
         assert np.ndim(self._imgdata) == 3, "Dimension of inputdata, imgdata, should be 3 in space mvpa"
-        sphereroi1, _ = roimethod.sphere_roi(voxloc1, radius, 1, datashape = self._imgshape)
+        sphereroi1, _ = vol_roimethod.sphere_roi(voxloc1, radius, 1, datashape = self._imgshape)
         signals1 = vol_tools.get_signals(self._imgdata, sphereroi1, 'voxel')[0]
-        sphereroi2, _ = roimethod.sphere_roi(voxloc2, radius, 1, datashape = self._imgshape)
+        sphereroi2, _ = vol_roimethod.sphere_roi(voxloc2, radius, 1, datashape = self._imgshape)
         signals2 = vol_tools.get_signals(self._imgdata, sphereroi2, 'voxel')[0]
         r, p = stats.pearsonr(signals1, signals2)        
         return r, p
@@ -653,7 +653,7 @@ class MVPA(object):
         assert np.ndim(self._imgdata) == 3, "Dimension of inputdata, imgdata, should be 3 in space mvpa"
         rdata = np.zeros_like(self._imgdata)
         pdata = np.zeros_like(self._imgdata)
-        sphere_org, _ = roimethod.sphere_roi(voxloc, radius, 1, self._imgshape)
+        sphere_org, _ = vol_roimethod.sphere_roi(voxloc, radius, 1, self._imgshape)
         signal_org = vol_tools.get_signals(self._imgdata, sphere_org, 'voxel')[0]
         for i in range(self._imgshape[0]):
             for j in range(self._imgshape[1]):
@@ -661,7 +661,7 @@ class MVPA(object):
                     if np.abs(self._imgdata[i,j,k]) < thr:
                         continue
                     else:
-                        sphere_dest, _ = roimethod.sphere_roi([i,j,k], radius, 1, self._imgshape)
+                        sphere_dest, _ = vol_roimethod.sphere_roi([i,j,k], radius, 1, self._imgshape)
                         if sphere_dest[sphere_dest!=0].shape[0]!=sphere_org[sphere_org!=0].shape[0]:
                             continue
                         signal_dest = vol_tools.get_signals(self._imgdata, sphere_dest, 'voxel')[0]
