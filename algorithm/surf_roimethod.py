@@ -3,7 +3,7 @@
 
 import numpy as np
 
-def make_pm(mask, meth = 'all', labelnum = None):
+def make_pm(mask, meth = 'all', labels = None):
     """
     Compute probabilistic map
     
@@ -14,7 +14,7 @@ def make_pm(mask, meth = 'all', labelnum = None):
     meth: 'all' or 'part'
           'all', all subjects are taken into account
           'part', part subjects are taken into account, except subject with no roi label in specific roi
-    labelnum: label number, by default is None
+    labels: label list, by default is None
 
     Return:
     -------
@@ -29,16 +29,15 @@ def make_pm(mask, meth = 'all', labelnum = None):
         raise Exception('masks should be a 2/4 dimension file to get pm')
     if mask.ndim == 4:
         mask = mask.reshape(mask.shape[0], mask.shape[3])
-    if labelnum is None:
-        labelnum = int(np.max(mask))
-    labels = np.unique(mask)[1:]
-    pm = np.zeros((mask.shape[0],labelnum))
+    if labels is None:
+        labels = range(int(np.max(mask)))
+    pm = np.zeros((mask.shape[0],len(labels)))
     if meth == 'all':
-        for i in range(labelnum):
-            pm[...,i] = np.mean(mask == i+1, axis = 1)
+        for i,e in enumerate(labels):
+            pm[...,i] = np.mean(mask == e, axis = 1)
     elif meth == 'part':
-        for i in range(labelnum):
-            mask_i = mask == i+1
+        for i,e in enumerate(labels):
+            mask_i = mask == e
             subj = np.any(mask_i, axis = 0)
             pm[...,i] = np.mean(mask_i[...,subj],axis = 1)
     else:
