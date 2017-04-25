@@ -77,7 +77,7 @@ def make_mpm(pm, threshold):
     mpm = mpm.reshape((mpm.shape[0], 1, 1))
     return mpm
     
-def get_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=10):
+def cv_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=10):
     """
     Decide the maximum threshold from raw image data.
     Here using the cross validation method to decide threhold using for getting the maximum probabilistic map
@@ -86,6 +86,7 @@ def get_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part', 
     -----------
     imgdata: An 2/4 dimensional data
     label: label number
+    labelnum: by default is None, label number size. We recommend to provide label number here.
     prob_meth: 'all' or 'part' subjects to use to compute probablistic map
     n_fold: split data into n_fold part, using first n_fold-1 part to get probabilistic map, then using rest part to evaluate overlap condition, by default is 2
     thr_range: pre-set threshold range to check the best maximum probabilistic threshold, the best threshold will search in this parameters, by default is [0,1,0.1], as the format of [start, stop, step]
@@ -103,7 +104,7 @@ def get_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part', 
     
     Example:
     --------
-    >>> output_dice = get_maximum_threshold(imgdata, [2,4], labelnum = 4)
+    >>> output_dice = cv_maximum_threshold(imgdata, [2,4], labelnum = 4)
     """        
     assert (imgdata.ndim==2)|(imgdata.ndim==4), "imgdata should be 2/4 dimension"
     if imgdata.ndim == 4:
