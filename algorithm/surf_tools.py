@@ -118,8 +118,7 @@ def caldice(imgdata1, imgdata2, label1, label2):
     try:
         dice = 2.0*len(overlap[overlap==1])/(len(imgdata1[imgdata1==label1])+len(imgdata2[imgdata2==label2]))
     except ZeroDivisionError as e:
-        print(e)
-        return np.nan
+        dice = np.nan
     return dice
 
 def get_n_ring_neighbour(faces, n, option='part'):
