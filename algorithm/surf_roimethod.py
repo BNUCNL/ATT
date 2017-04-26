@@ -77,7 +77,7 @@ def make_mpm(pm, threshold, consider_baseline = False):
     pm_temp[:, range(1,pm.shape[1]+1)] = pm
     pm_temp[pm_temp<threshold] = 0
     if consider_baseline is True:
-        vex_discard = [(np.count_nonzero(pm_temp[i,:])>1)&&((np.sum(pm_temp[i,:]))<0.5) for i in range(pm_temp.shape[0])]
+        vex_discard = [(np.count_nonzero(pm_temp[i,:])>1)&((np.sum(pm_temp[i,:]))<0.5) for i in range(pm_temp.shape[0])]
         vex_disind = [i for i,e in enumerate(vex_discard) if e]
         pm_temp[vex_disind,:] = 0 
     mpm = np.argmax(pm_temp, axis=1)
