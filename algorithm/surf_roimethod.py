@@ -48,7 +48,7 @@ def make_pm(mask, meth = 'all', labelnum = None):
     pm = pm.reshape((pm.shape[0], 1, 1, pm.shape[1]))
     return pm
 
-def make_mpm(pm, threshold):
+def make_mpm(pm, threshold, consider_baseline = False):
     """
     Make maximum probablistic map (mpm)
     
@@ -57,6 +57,9 @@ def make_mpm(pm, threshold):
     pm: probabilistic map
         Note that pm.shape[3] should correspond to specific label of region
     threshold: threshold to filter vertex with low probability
+    consider_baseline: whether consider baseline or not
+                       if True, check vertices that contain several probabilities, if p1+p2+...+pn < 0.5, then discard it
+                       Details see Liang Wang, et al., Probabilistic Maps of Visual Topology in Human Cortex, 2015
     
     Return:
     -------
@@ -73,6 +76,10 @@ def make_mpm(pm, threshold):
     pm_temp = np.zeros((pm.shape[0], pm.shape[1]+1))
     pm_temp[:, range(1,pm.shape[1]+1)] = pm
     pm_temp[pm_temp<threshold] = 0
+    if consider_baseline is True:
+        vex_discard = [(np.count_nonzero(pm_temp[i,:])>1)&&((np.sum(pm_temp[i,:]))<0.5) for i in range(pm_temp.shape[0])]
+        vex_disind = [i for i,e in enumerate(vex_discard) if e]
+        pm_temp[vex_disind,:] = 0 
     mpm = np.argmax(pm_temp, axis=1)
     mpm = mpm.reshape((mpm.shape[0], 1, 1))
     return mpm
