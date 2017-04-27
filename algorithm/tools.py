@@ -33,6 +33,28 @@ def calcdist(u, v, metric = 'euclidean', p = 1):
         dist = distance.pdist(vec, metric)
     return dist
 
+def convert_listvalue_to_ordinal(listdata):
+    """
+    Convert list elements to ordinal values
+    [5, 3, 3, 5, 6] --> [2, 1, 1, 2, 3]
+    
+    Parameters:
+    -----------
+    listdata: list data
+
+    Return:
+    -------
+    ordinals: list with oridinal values
+
+    Example:
+    -------- 
+    >>> ordinals = convert_listvalue_to_ordinal(listdata)
+    """
+    setdata = set(listdata)
+    ordinal_map = {val: i for i, val in enumerate(setdata, 1)}
+    ordinals = [ordinal_map[val] for val in listdata]
+    return ordinals
+
 def regressoutvariable(rawdata, covariate):
     """
     Regress out covariate variables from raw data
