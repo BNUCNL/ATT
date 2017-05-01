@@ -3,6 +3,7 @@
 
 import numpy as np
 from . import tools
+import copy
 
 def extract_edge_from_faces(faces):
     """
@@ -144,7 +145,6 @@ def get_n_ring_neighbour(faces, n, option='part'):
     ---------
     >>> ringlist = get_n_ring_neighbour(faces, n)
     """
-    import copy
     n_vtx = np.max(faces) + 1 
     # find l_ring neighbours' id of each vertex
     n_ring_neighbours = [set() for _ in range(n_vtx)]
@@ -154,6 +154,8 @@ def get_n_ring_neighbour(faces, n, option='part'):
     # remove vertex itself from its neighbour set
     for v_id in range(n_vtx):
         n_ring_neighbours[v_id].remove(v_id)
+    if n == 1:
+        return n_ring_neighbours
     # find n_ring_neighbours
     one_ring_neighbours = copy.deepcopy(n_ring_neighbours)
     n_th_ring_neighbours = copy.deepcopy(n_ring_neighbours)
@@ -303,7 +305,43 @@ def get_vexnumber(atlas, mask, method = 'peak', labelnum = None):
             vexnumber.append(np.array([np.nan]))
     return vexnumber
 
+def surf_dist(vtx_src, vtx_dst, one_ring_neighbour):
+    """
+    Distance between vtx_src and vtx_dst
+    Measured by edge number
+    
+    Parameters:
+    -----------
+    vtx_src: source vertex, int number
+    vtx_dst: destinated vertex, int number
+    one_ring_neighbour: one ring neighbour matrix, computed from get_n_ring_neighbour with n=1
+    the format of this matrix:
+    [{i1,j1,...}, {i2,j2,k2}]
+    each element correspond to a vertex label
 
+    Return:
+    -------
+    dist: distance between vtx_src and vtx_dst
+
+    Example:
+    --------
+    >>> dist = surf_dist(vtx_src, vtx_dst, one_ring_neighbour)
+    """
+    if len(one_ring_neighbour[vtx_dst]) == 1:
+        return np.inf
+    
+    noderep = one_ring_neighbour[vtx_src]
+    dist = 1
+    while vtx_dst not in noderep:
+        temprep = set()
+        for ndlast in noderep:
+            temprep.update(one_ring_neighbour[ndlast])
+        noderep.update(temprep)
+        dist += 1
+    return dist
+    
+    
+    
 
 
 
