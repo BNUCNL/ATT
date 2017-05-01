@@ -330,7 +330,7 @@ def surf_dist(vtx_src, vtx_dst, one_ring_neighbour):
     if len(one_ring_neighbour[vtx_dst]) == 1:
         return np.inf
     
-    noderep = one_ring_neighbour[vtx_src]
+    noderep = copy.deepcopy(one_ring_neighbour[vtx_src])
     dist = 1
     while vtx_dst not in noderep:
         temprep = set()
@@ -340,9 +340,62 @@ def surf_dist(vtx_src, vtx_dst, one_ring_neighbour):
         dist += 1
     return dist
     
+def hausdoff_distance(imgdata1, imgdata2, label1, label2, one_ring_neighbour):
+    """
+    Compute hausdoff distance between imgdata1 and imgdata2
+    h(A,B) = max{max(i->A)min(j->B)d(i,j), max(j->B)min(i->A)d(i,j)}
     
-    
+    Parameters:
+    -----------
+    imgdata1: surface image data1
+    imgdata2: surface image data2
+    label1: label of image data1
+    label2: label of image data2
+    one_ring_neighbour: one ring neighbour matrix, similar description of surf_dist, got from get_n_ring_neighbour
 
+    Return:
+    -------
+    hd: hausdorff distance
+    
+    Example:
+    --------
+    >>> hd = hausdoff_distance(imgdata1, imgdata2, 1, 1, one_ring_neighbour)
+    """
+    h = 0
+    imgdata1 = tools.get_specificroi(imgdata1, label1)
+    imgdata2 = tools.get_specificroi(imgdata2, label2)
+    hd1 = _hausdoff_ab(imgdata1, imgdata2, one_ring_neighbour) 
+    hd2 = _hausdoff_ab(imgdata2, imgdata1, one_ring_neighbour)
+    return max(hd1, hd2)
+ 
+def _hausdoff_ab(a, b, one_ring_neighbour):
+    """
+    Compute hausdoff distance of h(a,b)
+    part unit of function hausdoff_distance
+    
+    Parameters:
+    -----------
+    a: array with 1 label
+    b: array with 1 label
+    one_ring_neighbour: one ring neighbour matrix
+
+    Return:
+    -------
+    h: hausdoff(a,b)
+
+    """
+    a = np.array(a)
+    b = np.array(b)
+    h = 0
+    for i in np.flatnonzero(a):
+        hd = np.inf
+        for j in np.flatnonzero(b):
+            d = surf_dist(i,j, one_ring_neighbour)    
+            if d<hd:
+                hd = copy.deepcopy(d)
+    if hd>h:
+        h = hd
+    return h
 
 
 
