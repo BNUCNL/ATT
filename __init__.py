@@ -18,11 +18,11 @@ Usage:
 
 
 __all__ = []
-from . import algorithm
-from . import volume
-from . import surface
-from . import util
-from . import io
+# from . import algorithm
+# from . import volume
+# from . import surface
+# from . import util
+# from . import io
 
 
 
