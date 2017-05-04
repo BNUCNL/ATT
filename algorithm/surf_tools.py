@@ -361,7 +361,6 @@ def hausdoff_distance(imgdata1, imgdata2, label1, label2, one_ring_neighbour):
     --------
     >>> hd = hausdoff_distance(imgdata1, imgdata2, 1, 1, one_ring_neighbour)
     """
-    h = 0
     imgdata1 = tools.get_specificroi(imgdata1, label1)
     imgdata2 = tools.get_specificroi(imgdata2, label2)
     hd1 = _hausdoff_ab(imgdata1, imgdata2, one_ring_neighbour) 
@@ -393,13 +392,63 @@ def _hausdoff_ab(a, b, one_ring_neighbour):
             d = surf_dist(i,j, one_ring_neighbour)    
             if d<hd:
                 hd = copy.deepcopy(d)
-    if hd>h:
-        h = hd
+        if hd>h:
+            h = hd
     return h
 
+def median_minimal_distance(imgdata1, imgdata2, label1, label2, one_ring_neighbour):
+    """
+    Compute median minimal distance between two images
+    mmd = median{min(i->A)d(i,j), min(j->B)d(i,j)}
+    for detail please read paper:
+    Groupwise whole-brain parcellation from resting-state fMRI data for network node identification
+    
+    Parameters:
+    -----------
+    imgdata1, imgdata2: surface data 1, 2
+    label1, label2: label of surface data 1 and 2 used to comparison
+    one_ring_neighbour: one ring neighbour matrix, similar description of surf_dist, got from get_n_ring_neighbour
+    
+    Return:
+    -------
+    mmd: median minimal distance
 
+    Example:
+    --------
+    >>> mmd = median_minimal_distance(imgdata1, imgdata2, label1, label2, one_ring_neighbour)
+    """
+    imgdata1 = tools.get_specificroi(imgdata1, label1)
+    imgdata2 = tools.get_specificroi(imgdata2, label2)
+    dist1 = _mmd_ab(imgdata1, imgdata2, one_ring_neighbour)
+    dist2 = _mmd_ab(imgdata2, imgdata1, one_ring_neighbour)
+    return np.median(dist1 + dist2)
 
+def _mmd_ab(a, b, one_ring_neighbour):
+    """
+    Compute median minimal distance between a,b
+    
+    part computational completion of median_minimal_distance
 
+    Parameters:
+    -----------
+    a, b: array with 1 label
+    one_ring_neighbour: one ring neighbour matrix
+
+    Return:
+    -------
+    h: minimal distance
+    """
+    a = np.array(a)
+    b = np.array(b)
+    h = []
+    for i in np.flatnonzero(a):
+        hd = np.inf
+        for j in np.flatnonzero(b):
+            d = surf_dist(i, j, one_ring_neighbour)
+            if d<hd:
+                hd = d
+        h.append(hd)
+    return h
 
 
     
