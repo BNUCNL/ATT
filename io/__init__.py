@@ -2,4 +2,4 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 __all__ = []
-from . import iofiles
+# from . import iofiles

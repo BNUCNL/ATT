@@ -3,6 +3,7 @@
 
 import numpy as np
 from . import tools
+import copy
 
 def extract_edge_from_faces(faces):
     """
@@ -144,7 +145,6 @@ def get_n_ring_neighbour(faces, n, option='part'):
     ---------
     >>> ringlist = get_n_ring_neighbour(faces, n)
     """
-    import copy
     n_vtx = np.max(faces) + 1 
     # find l_ring neighbours' id of each vertex
     n_ring_neighbours = [set() for _ in range(n_vtx)]
@@ -154,6 +154,8 @@ def get_n_ring_neighbour(faces, n, option='part'):
     # remove vertex itself from its neighbour set
     for v_id in range(n_vtx):
         n_ring_neighbours[v_id].remove(v_id)
+    if n == 1:
+        return n_ring_neighbours
     # find n_ring_neighbours
     one_ring_neighbours = copy.deepcopy(n_ring_neighbours)
     n_th_ring_neighbours = copy.deepcopy(n_ring_neighbours)
@@ -303,12 +305,150 @@ def get_vexnumber(atlas, mask, method = 'peak', labelnum = None):
             vexnumber.append(np.array([np.nan]))
     return vexnumber
 
+def surf_dist(vtx_src, vtx_dst, one_ring_neighbour):
+    """
+    Distance between vtx_src and vtx_dst
+    Measured by edge number
+    
+    Parameters:
+    -----------
+    vtx_src: source vertex, int number
+    vtx_dst: destinated vertex, int number
+    one_ring_neighbour: one ring neighbour matrix, computed from get_n_ring_neighbour with n=1
+    the format of this matrix:
+    [{i1,j1,...}, {i2,j2,k2}]
+    each element correspond to a vertex label
 
+    Return:
+    -------
+    dist: distance between vtx_src and vtx_dst
 
+    Example:
+    --------
+    >>> dist = surf_dist(vtx_src, vtx_dst, one_ring_neighbour)
+    """
+    if len(one_ring_neighbour[vtx_dst]) == 1:
+        return np.inf
+    
+    noderep = copy.deepcopy(one_ring_neighbour[vtx_src])
+    dist = 1
+    while vtx_dst not in noderep:
+        temprep = set()
+        for ndlast in noderep:
+            temprep.update(one_ring_neighbour[ndlast])
+        noderep.update(temprep)
+        dist += 1
+    return dist
+    
+def hausdoff_distance(imgdata1, imgdata2, label1, label2, one_ring_neighbour):
+    """
+    Compute hausdoff distance between imgdata1 and imgdata2
+    h(A,B) = max{max(i->A)min(j->B)d(i,j), max(j->B)min(i->A)d(i,j)}
+    
+    Parameters:
+    -----------
+    imgdata1: surface image data1
+    imgdata2: surface image data2
+    label1: label of image data1
+    label2: label of image data2
+    one_ring_neighbour: one ring neighbour matrix, similar description of surf_dist, got from get_n_ring_neighbour
 
+    Return:
+    -------
+    hd: hausdorff distance
+    
+    Example:
+    --------
+    >>> hd = hausdoff_distance(imgdata1, imgdata2, 1, 1, one_ring_neighbour)
+    """
+    imgdata1 = tools.get_specificroi(imgdata1, label1)
+    imgdata2 = tools.get_specificroi(imgdata2, label2)
+    hd1 = _hausdoff_ab(imgdata1, imgdata2, one_ring_neighbour) 
+    hd2 = _hausdoff_ab(imgdata2, imgdata1, one_ring_neighbour)
+    return max(hd1, hd2)
+ 
+def _hausdoff_ab(a, b, one_ring_neighbour):
+    """
+    Compute hausdoff distance of h(a,b)
+    part unit of function hausdoff_distance
+    
+    Parameters:
+    -----------
+    a: array with 1 label
+    b: array with 1 label
+    one_ring_neighbour: one ring neighbour matrix
 
+    Return:
+    -------
+    h: hausdoff(a,b)
 
+    """
+    a = np.array(a)
+    b = np.array(b)
+    h = 0
+    for i in np.flatnonzero(a):
+        hd = np.inf
+        for j in np.flatnonzero(b):
+            d = surf_dist(i,j, one_ring_neighbour)    
+            if d<hd:
+                hd = copy.deepcopy(d)
+        if hd>h:
+            h = hd
+    return h
 
+def median_minimal_distance(imgdata1, imgdata2, label1, label2, one_ring_neighbour):
+    """
+    Compute median minimal distance between two images
+    mmd = median{min(i->A)d(i,j), min(j->B)d(i,j)}
+    for detail please read paper:
+    Groupwise whole-brain parcellation from resting-state fMRI data for network node identification
+    
+    Parameters:
+    -----------
+    imgdata1, imgdata2: surface data 1, 2
+    label1, label2: label of surface data 1 and 2 used to comparison
+    one_ring_neighbour: one ring neighbour matrix, similar description of surf_dist, got from get_n_ring_neighbour
+    
+    Return:
+    -------
+    mmd: median minimal distance
+
+    Example:
+    --------
+    >>> mmd = median_minimal_distance(imgdata1, imgdata2, label1, label2, one_ring_neighbour)
+    """
+    imgdata1 = tools.get_specificroi(imgdata1, label1)
+    imgdata2 = tools.get_specificroi(imgdata2, label2)
+    dist1 = _mmd_ab(imgdata1, imgdata2, one_ring_neighbour)
+    dist2 = _mmd_ab(imgdata2, imgdata1, one_ring_neighbour)
+    return np.median(dist1 + dist2)
+
+def _mmd_ab(a, b, one_ring_neighbour):
+    """
+    Compute median minimal distance between a,b
+    
+    part computational completion of median_minimal_distance
+
+    Parameters:
+    -----------
+    a, b: array with 1 label
+    one_ring_neighbour: one ring neighbour matrix
+
+    Return:
+    -------
+    h: minimal distance
+    """
+    a = np.array(a)
+    b = np.array(b)
+    h = []
+    for i in np.flatnonzero(a):
+        hd = np.inf
+        for j in np.flatnonzero(b):
+            d = surf_dist(i, j, one_ring_neighbour)
+            if d<hd:
+                hd = d
+        h.append(hd)
+    return h
 
 
     

@@ -4,7 +4,7 @@
 import numpy as np
 import nibabel as nib
 import os
-import cPickle
+import pickle
 from scipy.io import savemat, loadmat
 import pandas as pd
 
@@ -16,13 +16,13 @@ class IOFactory(object):
         >>>factory = iofiles.IOFactory()
         >>>factory.createfactory('.', 'data.csv')
     """
-    def createfactory(self, filepath, filename):
+    def createfactory(self, filename, filepath = '.'):
         """
         Create your factory
         ----------------------------------------
         Input:
-            filepath: filepath as reading/writing
             filename: filenames
+            filepath: filepath as reading/writing, by default is '.'
         Output: 
             A class
    
@@ -121,7 +121,7 @@ class _PKL(object):
             data: raw data
         """
         output_class = open(self._comp_file, 'wb')
-        cPickle.dump(data, output_class)
+        pickle.dump(data, output_class)
         output_class.close()
 
     def load_pkl(self):
@@ -135,7 +135,7 @@ class _PKL(object):
             data
         """
         pkl_file = open(self._comp_file, 'rb')
-        data = cPickle.load(pkl_file)
+        data = pickle.load(pkl_file)
         pkl_file.close()
         return data
 
