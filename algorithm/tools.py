@@ -492,3 +492,47 @@ class NonUniformity(object):
             >>> values = nu.l2norm()
         """
         return (np.linalg.norm(self._array)*np.sqrt(self._len)-1)/(np.sqrt(self._len)-1)
+
+def threshold_by_vox(imgdata, thr, threshold_type = 'percent', option = 'descend'):
+    """
+    Threshold imgdata by a given percentage
+    parameter option is 'descend', filter from the highest values
+                        'ascend', filter from the lowest non-zero values
+    Parameters:
+        imgdata: image data
+        thr: threshold, could be voxel number or voxel percentage
+        threshold_type: threshold type.
+                        'percent', threshold by percentage
+                        'number', threshold by node numbers
+        option: default, 'descend', filter from the highest values
+                'ascend', filter from the lowest values
+    Return:
+        imgdata_thr: thresholded image data
+    Example:
+        >>> imagedata_thr = threshold_by_voxperc(imgdata, 100, 'number', 'descend')
+    """
+    if threshold_type == 'percent':
+        voxnum = int(imgdata[imgdata!=0].shape[0]*thr)
+    elif threshold_type == 'number':
+        voxnum = thr
+    else:
+        raise Exception('Parameters should be percent or number')
+    data_flat = imgdata.flatten()
+    outdata_flat = np.zeros_like(data_flat)
+    sortlist = np.sort(data_flat)[::-1]
+    if option == 'ascend':
+        data_flat[data_flat == 0] = sortlist[0]
+    if option == 'descend':
+        for i in range(voxnum):
+            loc_flat = np.argmax(data_flat)
+            outdata_flat[loc_flat] = sortlist[i]
+            data_flat[loc_flat] = 0
+    elif option == 'ascend':
+        for i in range(voxnum):
+            loc_flat = np.argmin(data_flat)
+            outdata_flat[loc_flat] = sortlist[-1-i]
+            data_flat[loc_flat] = sortlist[0]
+    else:
+        raise Exception('Wrong option inputed!')
+    outdata = np.reshape(outdata_flat, imgdata.shape)
+    return outdata

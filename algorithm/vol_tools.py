@@ -76,7 +76,7 @@ def caleta2(data1, data2, mask):
     Example:
         >>> eta = caleta2(data1, data2, mask)
     """
-if isinstance(data1, list):
+    if isinstance(data1, list):
         data1 = np.array(data1)
     if isinstance(data2, list):
         data2 = np.array(data2)
@@ -95,42 +95,6 @@ if isinstance(data1, list):
         sumtotal += (flattendata1[i]-M)**2+(flattendata2[i]-M)**2
     eta = 1-float(sumwithin)/sumtotal
     return eta
-
-def threshold_by_voxperc(imgdata, thr, option = 'descend'):
-    """
-    Threshold imgdata by a given percentage
-    parameter option is 'descend', filter from the highest values
-                        'ascend', filter from the lowest non-zero values
-    Parameters:
-        imgdata: image data
-        thr: threshold percentage
-        option: default, 'descend', filter from the highest values
-                'ascend', filter from the lowest values
-    Return:
-        imgdata_thr: thresholded image data
-    Example:
-        >>> imagedata_thr = threshold_by_voxperc(imgdata, percent, 'descend')
-    """
-    voxnum = int(imgdata[imgdata!=0].shape[0]*thr)
-    data_flat = imgdata.flatten()
-    outdata_flat = np.zeros_like(data_flat)
-    sortlist = np.sort(data_flat)[::-1]
-    if option == 'ascend':
-        data_flat[data_flat == 0] = sortlist[0]
-    if option == 'descend':
-        for i in range(voxnum):
-            loc_flat = np.argmax(data_flat)
-            outdata_flat[loc_flat] = sortlist[i]
-            data_flat[loc_flat] = 0
-    elif option == 'ascend':
-        for i in range(voxnum):
-            loc_flat = np.argmin(data_flat)
-            outdata_flat[loc_flat] = sortlist[-1-i]
-            data_flat[loc_flat] = sortlist[0]
-    else:
-        raise Exception('Wrong option inputed!')
-    outdata = np.reshape(outdata_flat, imgdata.shape)
-    return outdata
 
 def get_masksize(mask):
     """
