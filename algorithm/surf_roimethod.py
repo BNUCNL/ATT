@@ -84,25 +84,25 @@ def make_mpm(pm, threshold, consider_baseline = False):
     mpm = mpm.reshape((mpm.shape[0], 1, 1))
     return mpm
     
-def cv_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=10):
+def nfold_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=10):
     """
     Decide the maximum threshold from raw image data.
     Here using the cross validation method to decide threhold using for getting the maximum probabilistic map
     
     Parameters:
     -----------
-    imgdata: An 2/4 dimensional data
-    label: label number
+    imgdata: A 2/4 dimensional data
+    labels: list, label number used to extract dice coefficient
     labelnum: by default is None, label number size. We recommend to provide label number here.
     prob_meth: 'all' or 'part' subjects to use to compute probablistic map
     n_fold: split data into n_fold part, using first n_fold-1 part to get probabilistic map, then using rest part to evaluate overlap condition, by default is 2
-    thr_range: pre-set threshold range to check the best maximum probabilistic threshold, the best threshold will search in this parameters, by default is [0,1,0.1], as the format of [start, stop, step]
+    thr_range: pre-set threshold range to find the best maximum probabilistic threshold, the best threshold will search in this parameters, by default is [0,1,0.1], as the format of [start, stop, step]
     n_permuation: times of permutation, by default is 10
 
     Return:
     -------
     output_dice: all dice coefficient computed from function
-                 output_dice consists as a 4 dimension array
+                 output_dice consists of a 4 dimension array
                  permutation x threhold x subjects x regions
                  the first dimension permutation means the results of each permutation
                  the second dimension threhold means the results of pre-set threshold
@@ -111,7 +111,7 @@ def cv_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part', n
     
     Example:
     --------
-    >>> output_dice = cv_maximum_threshold(imgdata, [2,4], labelnum = 4)
+    >>> output_dice = nfold_maximum_threshold(imgdata, [2,4], labelnum = 4)
     """        
     assert (imgdata.ndim==2)|(imgdata.ndim==4), "imgdata should be 2/4 dimension"
     if imgdata.ndim == 4:
@@ -140,7 +140,43 @@ def cv_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part', n
     output_dice = np.array(output_dice)
     return output_dice
 
+def leave1out_maximum_threhold(imgdata, labels, labelnum = None, prob_meth = 'part', thr_range = [0,1,0.1]):
+    """
+    A leave one out cross validation metho for threshold to best overlapping in probabilistic map
+    
+    Parameters:
+    -----------
+    imgdata: A 2/4 dimensional data
+    labels: list, label number used to extract dice coefficient
+    labelnum: by default is None, label number size. We recommend to provide label number here.
+    prob_meth: 'all' or 'part' subjects to use to compute probablistic map
+    thr_range: pre-set threshold range to find the best maximum probabilistic threshold
 
+    Return:
+    -------
+    output_dice: dice coefficient computed from function
+                outputdice consists of a 3 dimension array
+                subjects x threhold x regions
+                the first dimension means the values of each leave one out (leave one subject out)
+                the second dimension means the results of pre-set threshold
+                the third dimension means the results of each region
+
+    Example:
+    --------
+    >>> output_dice = leave1out_maximum_threhold(imgdata, [2,4], labelnum = 4)
+    """
+    if imgdata.ndim == 4:
+        data = data.reshape(data.shape[0], data.shape[3])
+    output_dice = []
+    for i in range(data.shape[1]):
+        data_temp = np.delete(data, i, axis=1)
+        pm = make_pm(data_temp, prob_meth, labelnum)
+        mpm_temp = []
+        for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
+            mpm = make_mpm(pm, e)
+            mpm_temp.append([caldice(mpm, imgdata[:,i], lbl, lbl) for lbl in labels])
+        output_dice.append(mpm_temp)
+    return np.array(output_dice)
 
 
 
