@@ -31,7 +31,7 @@ def make_pm(mask, meth = 'all', labelnum = None):
     if mask.ndim == 4:
         mask = mask.reshape(mask.shape[0], mask.shape[3])
     if labelnum is None:
-        labels = range(int(np.max(mask)))
+        labels = range(1, int(np.max(mask))+1)
     else:
         labels = range(1, labelnum+1)
     pm = np.zeros((mask.shape[0],len(labels)))
@@ -177,6 +177,49 @@ def leave1out_maximum_threhold(imgdata, labels, labelnum = None, prob_meth = 'pa
             mpm_temp.append([caldice(mpm, imgdata[:,i], lbl, lbl) for lbl in labels])
         output_dice.append(mpm_temp)
     return np.array(output_dice)
+
+def pm_overlap(pm, test_data, labels, thr_range = [0, 1, 0.1])
+    """
+    Compute overlap(dice) between probabilistic map and test data
+    
+    Parameters:
+    -----------
+    pm: probabilistic map
+    test_data: subject specific label data used as test data
+    labels: list, label number used to extract overlap values 
+    thr_range: pre-set threshold range to find the best maximum probabilistic threshold
+
+    Return:
+    -------
+    output_dice: dice coefficient
+                 outputdice consists of a 3 dimension array
+                 subjects x thr_range x regions
+                 the first dimension means the values of each leave one out (leave one subject out)
+                 the second dimension means the results of pre-set threshold
+                 the third dimension means the results of each region
+                 
+    Example:
+    --------
+    >>> output_dice = pm_overlap(pm, test_data, [2,4])
+    """
+    if test_data.ndim == 4:
+        test_data = test_data.reshape(test_data.shape[0], test_data.shape[-1])
+    output_dice = []
+    for i in range(test_data.shape[-1]):
+        mpm_temp = []
+        for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])
+)
+            mpm = make_mpm(pm, e)
+            mpm_temp.append([caldice(mpm, test_data[:,i], lbl, lbl) for lbl in labels])
+        output_dice.append(mpm_temp)
+    return np.array(output_dice)
+
+
+
+
+
+
+
 
 
 
