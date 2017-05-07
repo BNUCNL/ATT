@@ -178,7 +178,7 @@ def leave1out_maximum_threhold(imgdata, labels, labelnum = None, prob_meth = 'pa
         output_dice.append(mpm_temp)
     return np.array(output_dice)
 
-def pm_overlap(pm, test_data, labels, thr_range = [0, 1, 0.1]):
+def pm_overlap(pm, test_data, labels_template, labels_testdata, thr_range = [0, 1, 0.1]):
     """
     Compute overlap(dice) between probabilistic map and test data
     
@@ -186,7 +186,8 @@ def pm_overlap(pm, test_data, labels, thr_range = [0, 1, 0.1]):
     -----------
     pm: probabilistic map
     test_data: subject specific label data used as test data
-    labels: list, label number used to extract overlap values 
+    labels_template: list, label number of template (pm) used to extract overlap values 
+    label_testdata: list, label number of test data used to extract overlap values
     thr_range: pre-set threshold range to find the best maximum probabilistic threshold
 
     Return:
@@ -200,7 +201,7 @@ def pm_overlap(pm, test_data, labels, thr_range = [0, 1, 0.1]):
                  
     Example:
     --------
-    >>> output_dice = pm_overlap(pm, test_data, [2,4])
+    >>> output_dice = pm_overlap(pm, test_data, [2,4], [2,4])
     """
     if test_data.ndim == 4:
         test_data = test_data.reshape(test_data.shape[0], test_data.shape[-1])
@@ -209,7 +210,7 @@ def pm_overlap(pm, test_data, labels, thr_range = [0, 1, 0.1]):
         mpm_temp = []
         for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
             mpm = make_mpm(pm, e)
-            mpm_temp.append([caloverlap(mpm, test_data[:,i], lbl, lbl) for lbl in labels])
+            mpm_temp.append([caloverlap(mpm, test_data[:,i], lbltmp, lbltst) for lbltmp in labels_template for lbltst in labels_testdata])
         output_dice.append(mpm_temp)
     return np.array(output_dice)
 
