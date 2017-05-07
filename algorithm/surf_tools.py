@@ -231,6 +231,9 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
         atlas = atlas[:,0,0]
     if mask.ndim == 3:
         mask = mask[:,0,0]
+    if np.sum(mask) == 0:
+        raise Exception('value in mask should not all be zero')# in case value in mask are all zeros
+    
     labels = np.unique(mask)[1:]
     if labelnum is None:
         labelnum = int(np.max(labels))
@@ -339,8 +342,51 @@ def surf_dist(vtx_src, vtx_dst, one_ring_neighbour):
         noderep.update(temprep)
         dist += 1
     return dist
+  
     
+def generate_mask_by_labelid(labelId,labeldata):
+    """
+    you can genereate  mask using a lable ID 
     
+    labelId: it can be a int or a list of label 
+    labeldata: a mask with all label id in it 
+      
+    Example:
+        generate_mask_by_labelid([1,2],labeldata)
+    """
+    mask = np.zeros_like(labeldata)
+    if type(labelId) == int:
+        mask[labeldata == labelId] = 1
+    elif type(labelId) == list:
+        for i in labelId:
+            mask[labeldata == i] = 1
+    else:
+        raise Exception('not correte data type of labelId, please input an int or a list of labelId')
+        
+    return mask
+
+def generate_mask_by_vernum(vertex_num,data,correspodig_matrix=None):
+    """
+    generate a mask by vertex number 
+    
+    vertex_num: a list or an array contain your vertex number of your ROI
+    data: you should provide a one-dimensional data matrix as blueprint. stucture of mask generated will be just like your input data
+    corresponding_matrix: consider there may be some mismathc between index of data matrix and vertex num (due to delete of some vertex from data matix),
+    a correspond_matrix should be provided, if there is no missing vertex in your data, please ingore this parameters 
+    
+    Example:
+        generate_mask_by_vertex(vertex_num,data,corresponding_matrix)
+    """
+    mask = np.zeros_like(data)
+    if correspodig_matrix is None:
+        for i in vertex_num:
+            mask[i] = 1 
+    else:
+        for i,e in enumerate(correspodig_matrix):
+            if e in vertex_num:
+                mask[i] = 1
+                    
+    return mask    
     
 
 
