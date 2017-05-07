@@ -94,22 +94,23 @@ class GenAdjacentMatrix(object):
                 adjmatrix[i,j] = 1
         return adjmatrix
 
-def caldice(imgdata1, imgdata2, label1, label2):
+def caloverlap(imgdata1, imgdata2, label1, label2, index = 'dice'):
     """
-    Compute dice coefficient in surface format data
+    Compute overlap (dice coefficient or percentage) in surface format data
     
     Parameters:
     ----------
     imgdata1, imgdata2: two image data in surface format
-    label1, label2: label in correspond imgdata that used for dice coefficient
+    label1, label2: label in correspond imgdata that used for overlap
+    index: output index, dice or percent
 
     Return:
     ----------
-    dice: dice value
+    overlapidx: overlap values
     
     Example: 
     ---------
-    >>> dice = caldice(imgdata1, imgdata2, label1, label2)
+    >>> overlapidx = caloverlap(imgdata1, imgdata2, label1, label2)
     """
     if imgdata1.ndim == 3:
         imgdata1 = imgdata1[:,0,0]
@@ -117,10 +118,15 @@ def caldice(imgdata1, imgdata2, label1, label2):
         imgdata2 = imgdata2[:,0,0]
     overlap = np.logical_and(imgdata1==label1, imgdata2==label2)
     try:
-        dice = 2.0*len(overlap[overlap==1])/(len(imgdata1[imgdata1==label1])+len(imgdata2[imgdata2==label2]))
+        if index == 'dice':
+            overlapidx = 2.0*len(overlap[overlap==1])/(len(imgdata1[imgdata1==label1])+len(imgdata2[imgdata2==label2]))
+        elif index == 'percent':
+            overlapidx = 1.0*len(overlap[overlap==1])/(len(imgdata1[imgdata1==label1]))
+        else:
+            raise Exception('please input dice or percent as parameters')
     except ZeroDivisionError as e:
-        dice = np.nan
-    return dice
+        overlapidx = np.nan
+    return overlapidx
 
 def get_n_ring_neighbour(faces, n, option='part'):
     """

@@ -2,7 +2,7 @@
 # vi: set ft=python sts=4 sw=4 et:
 
 import numpy as np
-from surf_tools import caldice
+from surf_tools import caloverlap
 
 def make_pm(mask, meth = 'all', labelnum = None):
     """
@@ -134,7 +134,7 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part'
             mpm = make_mpm(pm, e)
             mpm_temp = []
             for j, vs in enumerate(verify_subj):
-                mpm_temp.append([caldice(mpm, verify_data[:,j], lbl, lbl) for lbl in labels])
+                mpm_temp.append([caloverlap(mpm, verify_data[:,j], lbl, lbl) for lbl in labels])
             pm_temp.append(mpm_temp)
         output_dice.append(pm_temp)
     output_dice = np.array(output_dice)
@@ -174,11 +174,11 @@ def leave1out_maximum_threhold(imgdata, labels, labelnum = None, prob_meth = 'pa
         mpm_temp = []
         for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
             mpm = make_mpm(pm, e)
-            mpm_temp.append([caldice(mpm, imgdata[:,i], lbl, lbl) for lbl in labels])
+            mpm_temp.append([caloverlap(mpm, imgdata[:,i], lbl, lbl) for lbl in labels])
         output_dice.append(mpm_temp)
     return np.array(output_dice)
 
-def pm_overlap(pm, test_data, labels, thr_range = [0, 1, 0.1])
+def pm_overlap(pm, test_data, labels, thr_range = [0, 1, 0.1]):
     """
     Compute overlap(dice) between probabilistic map and test data
     
@@ -207,10 +207,9 @@ def pm_overlap(pm, test_data, labels, thr_range = [0, 1, 0.1])
     output_dice = []
     for i in range(test_data.shape[-1]):
         mpm_temp = []
-        for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])
-)
+        for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
             mpm = make_mpm(pm, e)
-            mpm_temp.append([caldice(mpm, test_data[:,i], lbl, lbl) for lbl in labels])
+            mpm_temp.append([caloverlap(mpm, test_data[:,i], lbl, lbl) for lbl in labels])
         output_dice.append(mpm_temp)
     return np.array(output_dice)
 
