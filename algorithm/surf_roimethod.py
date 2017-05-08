@@ -84,7 +84,7 @@ def make_mpm(pm, threshold, consider_baseline = False):
     mpm = mpm.reshape((mpm.shape[0], 1, 1))
     return mpm
     
-def nfold_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=10):
+def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=10):
     """
     Decide the maximum threshold from raw image data.
     Here using the cross validation method to decide threhold using for getting the maximum probabilistic map
@@ -94,6 +94,7 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part'
     imgdata: A 2/4 dimensional data
     labels: list, label number used to extract dice coefficient
     labelnum: by default is None, label number size. We recommend to provide label number here.
+    index: 'dice' or 'percent'
     prob_meth: 'all' or 'part' subjects to use to compute probablistic map
     n_fold: split data into n_fold part, using first n_fold-1 part to get probabilistic map, then using rest part to evaluate overlap condition, by default is 2
     thr_range: pre-set threshold range to find the best maximum probabilistic threshold, the best threshold will search in this parameters, by default is [0,1,0.1], as the format of [start, stop, step]
@@ -101,17 +102,17 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part'
 
     Return:
     -------
-    output_dice: all dice coefficient computed from function
-                 output_dice consists of a 4 dimension array
-                 permutation x threhold x subjects x regions
-                 the first dimension permutation means the results of each permutation
-                 the second dimension threhold means the results of pre-set threshold
-                 the third dimension subjects means the results of each subject
-                 the fourth dimension regions means the result of each region
+    output_overlap: dice coefficient/percentage computed from function
+                    output_dice consists of a 4 dimension array
+                    permutation x threhold x subjects x regions
+                    the first dimension permutation means the results of each permutation
+                    the second dimension threhold means the results of pre-set threshold
+                    the third dimension subjects means the results of each subject
+                    the fourth dimension regions means the result of each region
     
     Example:
     --------
-    >>> output_dice = nfold_maximum_threshold(imgdata, [2,4], labelnum = 4)
+    >>> output_overlap = nfold_maximum_threshold(imgdata, [2,4], labelnum = 4)
     """        
     assert (imgdata.ndim==2)|(imgdata.ndim==4), "imgdata should be 2/4 dimension"
     if imgdata.ndim == 4:
@@ -120,7 +121,7 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part'
     if labelnum is None:
         labelnum = int(np.max(np.unique(imgdata)))
     assert (np.max(labels)<labelnum+1), "the maximum of labels should smaller than labelnum"
-    output_dice = []
+    output_overlap = []
     for n in range(n_permutation):
         print("permutation {} starts".format(n+1))
         test_subj = np.sort(np.random.choice(range(n_subj), n_subj-n_subj/n_fold, replace = False)).tolist()
@@ -134,13 +135,13 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part'
             mpm = make_mpm(pm, e)
             mpm_temp = []
             for j, vs in enumerate(verify_subj):
-                mpm_temp.append([caloverlap(mpm, verify_data[:,j], lbl, lbl) for lbl in labels])
+                mpm_temp.append([caloverlap(mpm, verify_data[:,j], lbl, lbl, index) for lbl in labels])
             pm_temp.append(mpm_temp)
-        output_dice.append(pm_temp)
-    output_dice = np.array(output_dice)
-    return output_dice
+        output_overlap.append(pm_temp)
+    output_overlap = np.array(output_overlap)
+    return output_overlap
 
-def leave1out_maximum_threhold(imgdata, labels, labelnum = None, prob_meth = 'part', thr_range = [0,1,0.1]):
+def leave1out_maximum_threhold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', thr_range = [0,1,0.1]):
     """
     A leave one out cross validation metho for threshold to best overlapping in probabilistic map
     
@@ -149,36 +150,37 @@ def leave1out_maximum_threhold(imgdata, labels, labelnum = None, prob_meth = 'pa
     imgdata: A 2/4 dimensional data
     labels: list, label number used to extract dice coefficient
     labelnum: by default is None, label number size. We recommend to provide label number here.
+    index: 'dice' or 'percent'
     prob_meth: 'all' or 'part' subjects to use to compute probablistic map
     thr_range: pre-set threshold range to find the best maximum probabilistic threshold
 
     Return:
     -------
-    output_dice: dice coefficient computed from function
-                outputdice consists of a 3 dimension array
-                subjects x threhold x regions
-                the first dimension means the values of each leave one out (leave one subject out)
-                the second dimension means the results of pre-set threshold
-                the third dimension means the results of each region
+    output_overlap: dice coefficient/percentage computed from function
+                    outputdice consists of a 3 dimension array
+                    subjects x threhold x regions
+                    the first dimension means the values of each leave one out (leave one subject out)
+                    the second dimension means the results of pre-set threshold
+                    the third dimension means the results of each region
 
     Example:
     --------
-    >>> output_dice = leave1out_maximum_threhold(imgdata, [2,4], labelnum = 4)
+    >>> output_overlap = leave1out_maximum_threhold(imgdata, [2,4], labelnum = 4)
     """
     if imgdata.ndim == 4:
         data = data.reshape(data.shape[0], data.shape[3])
-    output_dice = []
+    output_overlap = []
     for i in range(data.shape[1]):
         data_temp = np.delete(data, i, axis=1)
         pm = make_pm(data_temp, prob_meth, labelnum)
         mpm_temp = []
         for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
             mpm = make_mpm(pm, e)
-            mpm_temp.append([caloverlap(mpm, imgdata[:,i], lbl, lbl) for lbl in labels])
-        output_dice.append(mpm_temp)
-    return np.array(output_dice)
+            mpm_temp.append([caloverlap(mpm, imgdata[:,i], lbl, lbl, index) for lbl in labels])
+        output_overlap.append(mpm_temp)
+    return np.array(output_overlap)
 
-def pm_overlap(pm, test_data, labels, thr_range = [0, 1, 0.1]):
+def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', thr_range = [0, 1, 0.1]):
     """
     Compute overlap(dice) between probabilistic map and test data
     
@@ -186,32 +188,34 @@ def pm_overlap(pm, test_data, labels, thr_range = [0, 1, 0.1]):
     -----------
     pm: probabilistic map
     test_data: subject specific label data used as test data
-    labels: list, label number used to extract overlap values 
+    labels_template: list, label number of template (pm) used to extract overlap values 
+    label_testdata: list, label number of test data used to extract overlap values
+    index: 'dice' or 'percent'
     thr_range: pre-set threshold range to find the best maximum probabilistic threshold
 
     Return:
     -------
-    output_dice: dice coefficient
-                 outputdice consists of a 3 dimension array
-                 subjects x thr_range x regions
-                 the first dimension means the values of each leave one out (leave one subject out)
-                 the second dimension means the results of pre-set threshold
-                 the third dimension means the results of each region
+    output_overlap: dice coefficient/percentage
+                    outputdice consists of a 3 dimension array
+                    subjects x thr_range x regions
+                    the first dimension means the values of each leave one out (leave one subject out)
+                    the second dimension means the results of pre-set threshold
+                    the third dimension means the results of each region
                  
     Example:
     --------
-    >>> output_dice = pm_overlap(pm, test_data, [2,4])
+    >>> output_overlap = pm_overlap(pm, test_data, [2,4], [2,4])
     """
     if test_data.ndim == 4:
         test_data = test_data.reshape(test_data.shape[0], test_data.shape[-1])
-    output_dice = []
+    output_overlap = []
     for i in range(test_data.shape[-1]):
         mpm_temp = []
         for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
             mpm = make_mpm(pm, e)
-            mpm_temp.append([caloverlap(mpm, test_data[:,i], lbl, lbl) for lbl in labels])
-        output_dice.append(mpm_temp)
-    return np.array(output_dice)
+            mpm_temp.append([caloverlap(mpm, test_data[:,i], lbltmp, lbltst, index) for lbltmp in labels_template for lbltst in labels_testdata])
+        output_overlap.append(mpm_temp)
+    return np.array(output_overlap)
 
 
 
