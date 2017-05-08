@@ -3,6 +3,7 @@
 
 import numpy as np
 import nibabel as nib
+from nibabel import cifti2 as ci
 import os
 import pickle
 from scipy.io import savemat, loadmat
@@ -198,10 +199,55 @@ class _NIFTI(object):
         else:
             raise Exception('Wrong datatype input')
         return outdata
-                
 
-
-
-
-
-
+class CIFTI(object):
+    def __init__(self,path):
+        if path[-3:]=='nii':
+            self.path = path
+        else:
+            raise Exception('incorrect file type is inputed, please choose a file with name ended with nii')                
+    
+    def read_cifti(self,contrast=None):
+        """
+        read cifti data. If your cifti data contains multiple contrast, you can input your contrast number and get value of this contrast.
+        parameters:
+        --------------
+        contrast: the number of your contrast
+        e.g.,
+        if your target contrast in your cifti file is 20,
+        """
+        img = ci.load(self.path)
+        
+        if contrast is None:
+            data = img.get_data()
+        elif type(contrast) == int:
+            data = img.get_data()[contrast-1]
+        else:
+            raise Exception('contrast should be an int or None')
+        return data
+   
+    
+    def save_cifti(self):
+        pass
+ 
+class GIFTI(object):
+    def __init__(self,path):
+        if path[-3:]=='gii':
+            self.path = path
+        else:
+            raise Exception('incorrect file type is inputed, please choose a file with name ended with gii')
+        
+    def read_gifti(self):
+        """
+        read gifti data
+        """
+        img = nib.load(self.path)
+        if len(img.darrays) == 1:
+            data = img.darrays[0].data
+        else:
+            data = []
+            for i in range(0,len(img.darrays)):#files named *.midthickness may have two elements in darrays. one represents the mesh, and one represents the coordinates of vertex
+                data.append(img.darrays[i].data)
+        return data
+    def sava_gifti(self):
+        pass

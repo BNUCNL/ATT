@@ -237,12 +237,15 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
         atlas = atlas[:,0,0]
     if mask.ndim == 3:
         mask = mask[:,0,0]
-    if np.sum(mask) == 0:
-        raise Exception('value in mask should not all be zero')# in case value in mask are all zeros
+    
     
     labels = np.unique(mask)[1:]
     if labelnum is None:
-        labelnum = int(np.max(labels))
+        try:
+            labelnum = int(np.max(labels))
+        except ValueError as e:
+            print('value in mask are all zeros')
+            labelnum = 0
     if method == 'mean':
         calfunc = np.nanmean
     elif method == 'std':
@@ -503,4 +506,4 @@ def generate_mask_by_vernum(vertex_num,data,correspodig_matrix=None):
                     
     return mask    
 
-    
+ 
