@@ -9,7 +9,7 @@ Modules
 volume: volume operation modules
 surface: surface operation modules
 algorithm: algorithm storehouse of ATT. Main completion in corefunc comes from here
-io: input/output package, used for load/save files
+io2: input/output package, used for load/save files
 util: utility package, contains figure module (plotfig), file operation module (fileoperate) and decorator
 
 Usage:
@@ -22,7 +22,7 @@ __all__ = []
 # from . import volume
 # from . import surface
 # from . import util
-# from . import io
+# from . import io2
 
 
 

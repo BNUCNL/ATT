@@ -4,7 +4,11 @@
 import math
 import numpy as np
 import os
-from . import io
+import csv
+from ATT.io2 import iofiles
+from ATT.algorithm import surf_tools
+from ATT.algorithm import hcp_tools
+
 
 HCP_TEST_DATA = 'e:\\projects\\genetic_imaging\\HCPdata\\HCP900\\'
 data_out_file = 'E:\\projects\\genetic_imaging\\HCPdata\\data\\HCPExtracted\\'
@@ -187,29 +191,32 @@ class get_hcp_data(object):
             raise Exception('please input the right file type: func, stru, other')
         return path_list
     
-    def getsave_certain_data(self,file_type,output,output_path):
+    def getsave_certain_data(self,file_type,label_data,output,output_path):
         '''
         '''
-        path_list = self.__get_file_path_list(file_type)
-       
-        if file_type == 'func' or file_type == 'stru':
-            data_list = []
-            for i in path_list[0:10]:
-                data = read_data('cii',i)[0]
-                data_list.append(get_roi_data(data,self.label_data,'all'))#get roi mean value of each roi of each subject
+        path_list = self.get_file_path_list(file_type)
+        data_list = []
+        if file_type == 'func' or file_type=='stru':
+            for i in path_list:
+                data = iofiles.CIFTI(i).read_cifti()
+                data_list.append(surf_tools.get_signals(data,label_data))#get roi mean value of each roi of each subject
             out_file_name = output_path+file_type+'\\'+self.catagory+'\\'+output+'.csv'
-           
         elif file_type == 'other':
             data_list = []
             if self.other_type == 'motion':
-                data_list.append(motion_RMS(path_list[0:10]))
-                data_list.append(motion_FD(path_list[0:10]))
+                data_list.append(hcp_tools.motion_RMS(path_list))
+                data_list.append(hcp_tools.motion_FD(path_list))
             elif self.other_type == 'brain_size':
-                data_list.append(get_brainsize(path_list[0:10]))
+                data_list.append(hcp_tools.get_brainsize(path_list))
                 
             out_file_name = output_path+file_type+'\\'+output+'.csv'
         with open(out_file_name,'w',newline = '') as f:
                 f_csv = csv.writer(f)
                 f_csv.writerows(data_list)
-        
-    
+if __name__=='__main__':
+    labelpath = 'E:\projects\genetic_imaging\HCPdata\VanEssenMap\HCP_PhaseTwo\Q1-Q6_RelatedParcellation210\MNINonLinear\\fsaverage_LR32k\\Q1-Q6_RelatedParcellation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii'
+
+    labeldata =  iofiles.CIFTI(labelpath).read_cifti()
+    getdata = get_hcp_data(HCP_TEST_DATA)
+    #pathlist = getdata.get_file_path_list('func')
+    roidata = getdata.getsave_certain_data('other',labeldata,'test1',data_out_file)

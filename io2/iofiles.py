@@ -219,7 +219,7 @@ class CIFTI(object):
         img = ci.load(self.path)
         
         if contrast is None:
-            data = img.get_data()
+            data = img.get_data()[0]
         elif type(contrast) == int:
             data = img.get_data()[contrast-1]
         else:
@@ -251,3 +251,8 @@ class GIFTI(object):
         return data
     def sava_gifti(self):
         pass
+
+if __name__ == '__main__':
+    labelpath = 'E:\projects\genetic_imaging\HCPdata\VanEssenMap\HCP_PhaseTwo\Q1-Q6_RelatedParcellation210\MNINonLinear\\fsaverage_LR32k\\Q1-Q6_RelatedParcellation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii'
+    data= CIFTI(labelpath).read_cifti()
+    print(data,data.shape)
