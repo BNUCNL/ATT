@@ -493,7 +493,7 @@ class NonUniformity(object):
         """
         return (np.linalg.norm(self._array)*np.sqrt(self._len)-1)/(np.sqrt(self._len)-1)
 
-def threshold_by_vox(imgdata, thr, threshold_type = 'percent', option = 'descend'):
+def threshold_by_vox(imgdata, thr, threshold_type = 'number', option = 'descend'):
     """
     Threshold imgdata by a given percentage
     parameter option is 'descend', filter from the highest values
