@@ -5,7 +5,7 @@ import math
 import numpy as np
 import os
 import csv
-from ATT.io2 import iofiles
+from ATT.iofunc import iofiles
 from ATT.algorithm import surf_tools
 from ATT.algorithm import hcp_tools
 
