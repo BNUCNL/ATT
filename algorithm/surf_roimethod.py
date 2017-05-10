@@ -3,6 +3,7 @@
 
 import numpy as np
 from surf_tools import caloverlap
+import tools
 
 def make_pm(mask, meth = 'all', labelnum = None):
     """
@@ -216,6 +217,50 @@ def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', 
                 mpm_temp.append([caloverlap(mpm, test_data[:,i], labels_template[i], e, index) for i,e in enumerate(labels_testdata)])
         output_overlap.append(mpm_temp)
     return np.array(output_overlap)
+
+class GetLblRegion(object):
+    """
+    A class to get template label regions
+    
+    Parameters:
+    -----------
+    template: template
+    """
+    def __init__(self, template):
+        self._template = template
+
+    def by_lblimg(self, lbldata):
+        """
+        Get specific template regions by rois given by user
+        All regions overlapped with a specific label region will be covered
+
+        Parameters:
+        -----------
+        lbldata: rois given by user
+
+        Return:
+        -------
+        out_template: new template contains part of regions
+                      if lbldata has multiple different rois, then new template will extract regions with each of roi given by user
+
+        Example:
+        --------
+        >>> glr_cls = GetLblRegion(template)
+        >>> out_template = glr_cls.by_lblimg(lbldata)
+        """
+        assert lbldata.shape == self._template.shape, "the shape of template should be equal to the shape of lbldata"
+        labels = np.sort(np.unique(lbldata)[1:]).astype('int')
+        out_template = np.zeros_like(lbldata)
+        out_template = out_template[...,np.newaxis]
+        out_template = np.tile(out_template, (1, len(labels)))
+        for i,lbl in enumerate(labels):
+            lbldata_tmp = tools.get_specificroi(lbldata, lbl)
+            lbldata_tmp[lbldata_tmp!=0] = 1
+            part_template = self._template*lbldata_tmp
+            template_lbl = np.sort(np.unique(part_template)[1:])
+            out_template[...,i] = tools.get_specificroi(self._template, template_lbl)
+        return out_template
+
 
 
 
