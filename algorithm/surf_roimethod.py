@@ -135,7 +135,7 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', pr
     output_overlap = np.array(output_overlap)
     return output_overlap
 
-def leave1out_maximum_threhold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', thr_range = [0,1,0.1]):
+def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', thr_range = [0,1,0.1]):
     """
     A leave one out cross validation metho for threshold to best overlapping in probabilistic map
     
@@ -159,13 +159,13 @@ def leave1out_maximum_threhold(imgdata, labels, labelnum = None, index = 'dice',
 
     Example:
     --------
-    >>> output_overlap = leave1out_maximum_threhold(imgdata, [2,4], labelnum = 4)
+    >>> output_overlap = leave1out_maximum_threshold(imgdata, [2,4], labelnum = 4)
     """
     if imgdata.ndim == 4:
-        data = data.reshape(data.shape[0], data.shape[3])
+        imgdata = imgdata.reshape(imgdata.shape[0], imgdata.shape[3])
     output_overlap = []
-    for i in range(data.shape[1]):
-        data_temp = np.delete(data, i, axis=1)
+    for i in range(imgdata.shape[1]):
+        data_temp = np.delete(imgdata, i, axis=1)
         pm = make_pm(data_temp, prob_meth, labelnum)
         pm_temp = pm_overlap(pm, imgdata[:,i], labels, labels, index = index, cmpalllbl = False)
         output_overlap.append(pm_temp)
