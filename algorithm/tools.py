@@ -250,7 +250,7 @@ def listwise_clean(data):
     clean_data = pd.DataFrame(data).dropna().values
     return clean_data    
 
-def ste(data):
+def ste(data, axis=None):
     """
     Calculate standard error
     --------------------------------
@@ -260,13 +260,13 @@ def ste(data):
         standard error
     """
     if isinstance(data, float) | isinstance(data, int):
-        return np.nanstd(data)/np.sqrt(1)
+        return np.nanstd(data,axis)/np.sqrt(1)
     else:
-        n = len(data[~np.isnan(data)])
-        if n != 0:
-            return np.nanstd(data)/np.sqrt(n)
-        else: 
-            return np.nan
+        n = np.sum(~np.isnan(data),axis)
+        ste = np.nanstd(data,axis)/np.sqrt(n)
+        if isinstance(ste, np.ndarray):
+            ste[np.isinf(ste)] = np.nan
+        return ste
 
 def get_specificroi(image, labellist):
     """
