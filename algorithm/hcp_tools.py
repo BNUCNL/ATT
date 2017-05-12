@@ -45,10 +45,10 @@ class get_hcp_data(object):
 
         for i in path_list:
             try:
-                with open(i + '\\tfMRI_WM_LR\\Movement_Regressors.txt', 'r') as f:
+                with open(i + '/tfMRI_WM_LR/Movement_Regressors.txt', 'r') as f:
                     s = f.readlines()
                     regre_LR = np.array([j.rstrip().split() for j in s])
-                with open(i + '\\tfMRI_WM_RL\\Movement_Regressors.txt', 'r') as f:
+                with open(i + '/tfMRI_WM_RL/Movement_Regressors.txt', 'r') as f:
                     s = f.readlines()
                     regre_RL = np.array([j.rstrip().split() for j in s])
                 indi_FD_mean = (cal_relaFD_mean(regre_LR) + cal_relaFD_mean(regre_RL)) / 2
@@ -58,14 +58,14 @@ class get_hcp_data(object):
                 power_rela_fd_mean.append([])
         for i in path_list:
             try:
-                with open(i + '\\tfMRI_WM_LR\\Movement_Regressors_dt.txt', 'r') as f:
+                with open(i + '/tfMRI_WM_LR/Movement_Regressors_dt.txt', 'r') as f:
                     s = f.readlines()
                     tmp = np.array([j.rstrip().split() for j in s])
                     regre_LR = []
                     for j in tmp:
                         j = list(map(lambda x:float(x),j))
                         regre_LR.append(j)
-                with open(i + '\\tfMRI_WM_RL\\Movement_Regressors_dt.txt', 'r') as f:
+                with open(i + '/tfMRI_WM_RL/Movement_Regressors_dt.txt', 'r') as f:
                     s = f.readlines()
                     tmp = np.array([j.rstrip().split() for j in s])
                     regre_RL = []
@@ -128,22 +128,22 @@ class get_hcp_data(object):
             '''))
             if catagory == 1:
                 self.catagory = 'hp200_s12_level12.feat'
-                FUNC_STEM_PATH= 'MNINonLinear\\Results\\tfMRI_WM\\tfMRI_WM_hp200_s12_level2.feat\\'
+                FUNC_STEM_PATH= 'MNINonLinear/Results/tfMRI_WM/tfMRI_WM_hp200_s12_level2.feat/'
             elif catagory == 2:
                 self.catagory = 'hp200_s2_level2.feat'
-                FUNC_STEM_PATH= 'MNINonLinear\\Results\\tfMRI_WM\\tfMRI_WM_hp200_s2_level2.feat\\'
+                FUNC_STEM_PATH= 'MNINonLinear/Results/tfMRI_WM/tfMRI_WM_hp200_s2_level2.feat/'
             elif catagory == 3:
                 self.catagory = 'hp200_s2_level2_MSMALL.feat'
-                FUNC_STEM_PATH= 'MNINonLinear\\Results\\tfMRI_WM\\tfMRI_WM_hp200_s2_level2_MSMALL.feat\\'
+                FUNC_STEM_PATH= 'MNINonLinear/Results/tfMRI_WM/tfMRI_WM_hp200_s2_level2_MSMALL.feat/'
             elif catagory == 4:
                 self.catagory = 'hp200_s4_level2.feat'
-                FUNC_STEM_PATH= 'MNINonLinear\\Results\\tfMRI_WM\\tfMRI_WM_hp200_s4_level2.feat\\' 
+                FUNC_STEM_PATH= 'MNINonLinear/Results/tfMRI_WM/tfMRI_WM_hp200_s4_level2.feat/'
             elif catagory == 5:
                 self.catagory = 'hp200_s4_level2_MSMALL.feat'
-                FUNC_STEM_PATH= 'MNINonLinear\\Results\\tfMRI_WM\\tfMRI_WM_hp200_s4_level2_MSMALL.feat\\'
+                FUNC_STEM_PATH= 'MNINonLinear/Results/tfMRI_WM/tfMRI_WM_hp200_s4_level2_MSMALL.feat/'
             elif catagory == 6:
                 self.catagory = 'hp200_s8_level2.feat'
-                FUNC_STEM_PATH= 'MNINonLinear\\Results\\tfMRI_WM\\tfMRI_WM_hp200_s8_level2.feat\\'
+                FUNC_STEM_PATH= 'MNINonLinear/Results/tfMRI_WM/tfMRI_WM_hp200_s8_level2.feat/'
             
             data_type = int(input('please input the number of your data type:\n:1.t value 2.beta\n--'))
             contrast_type = int(input('''
@@ -156,25 +156,25 @@ class get_hcp_data(object):
             if data_type == 1:
                 
                 if  contrast_type == 1:
-                    FILE_NAME = 'GrayordinatesStats\\cope19.feat\\tstat1.dtseries.nii'
+                    FILE_NAME = 'GrayordinatesStats/cope19.feat/tstat1.dtseries.nii'
                 elif  contrast_type == 2:
-                    FILE_NAME = 'GrayordinatesStats\\cope20.feat\\tstat1.dtseries.nii'
+                    FILE_NAME = 'GrayordinatesStats/cope20.feat/tstat1.dtseries.nii'
                 elif  contrast_type == 3:
-                    FILE_NAME = 'GrayordinatesStats\\cope21.feat\\tstat1.dtseries.nii'
+                    FILE_NAME = 'GrayordinatesStats/cope21.feat/tstat1.dtseries.nii'
                 elif  contrast_type == 4:
-                    FILE_NAME = 'GrayordinatesStats\\cope22.feat\\tstat1.dtseries.nii'
-                path_list = [HCP_TEST_DATA+i+'\\'+FUNC_STEM_PATH+ FILE_NAME for i in self.subid]
+                    FILE_NAME = 'GrayordinatesStats/cope22.feat/tstat1.dtseries.nii'
+                path_list = [HCP_TEST_DATA+i+'/'+FUNC_STEM_PATH+ FILE_NAME for i in self.subid]
               
             if data_type == 2:
                 if  contrast_type == 1:
-                    FILE_NAME = 'GrayordinatesStats\\cope19.feat\\cope1.dtseries.nii'
+                    FILE_NAME = 'GrayordinatesStats/cope19.feat/cope1.dtseries.nii'
                 elif  contrast_type == 2:
-                    FILE_NAME = 'GrayordinatesStats\\cope20.feat\\cope1.dtseries.nii'
+                    FILE_NAME = 'GrayordinatesStats/cope20.feat/cope1.dtseries.nii'
                 elif  contrast_type == 3:
-                    FILE_NAME = 'GrayordinatesStats\\cope21.feat\\cope1.dtseries.nii'
+                    FILE_NAME = 'GrayordinatesStats/cope21.feat/cope1.dtseries.nii'
                 elif  contrast_type == 4:
-                    FILE_NAME = 'GrayordinatesStats\\cope22.feat\\cope1.dtseries.nii'
-                path_list = [self.stem_path+i+'\\'+FUNC_STEM_PATH+ FILE_NAME for i in self.subid]
+                    FILE_NAME = 'GrayordinatesStats/cope22.feat/cope1.dtseries.nii'
+                path_list = [self.stem_path+i+'/'+FUNC_STEM_PATH+ FILE_NAME for i in self.subid]
         elif file_type == 'stru':
             self.catagory = ''
     #        stru_type = ['*.MyelinMap_MSMAll.32k_fs_LR.dscalar.nii',
@@ -200,11 +200,11 @@ class get_hcp_data(object):
     --
              '''))
             if brain_region_num ==3:
-                path_list  = [self.stem_path+i+'\\'+'MNINonLinear\\fsaverage_LR32k\\'+i+stru_type for i in self.subid]
+                path_list  = [self.stem_path+i+'/'+'MNINonLinear/fsaverage_LR32k/'+i+stru_type for i in self.subid]
             if brain_region_num ==1:
-                path_list  = [self.stem_path+i+'\\'+'MNINonLinear\\fsaverage_LR32k\\'+i+'.L'+stru_type for i in self.subid]
+                path_list  = [self.stem_path+i+'/'+'MNINonLinear/fsaverage_LR32k/'+i+'.L'+stru_type for i in self.subid]
             if brain_region_num ==2:
-                path_list  = [self.stem_path+i+'\\'+'MNINonLinear\\fsaverage_LR32k\\'+i+'.R'+stru_type for i in self.subid]
+                path_list  = [self.stem_path+i+'/'+'MNINonLinear/fsaverage_LR32k/'+i+'.R'+stru_type for i in self.subid]
                 
         elif file_type == 'other':
             other_type = int(input('''
@@ -214,10 +214,10 @@ class get_hcp_data(object):
             '''))
             if other_type == 1:
                 self.other_type ='motion'
-                path_list = [self.stem_path+i+'\\'+'MNINonLinear\\Results' for i in self.subid]
+                path_list = [self.stem_path+i+'/'+'MNINonLinear/Results' for i in self.subid]
             elif other_type == 2:
                 self.other_type = 'brain_size'
-                path_list = [self.stem_path+i+'\\'+'T1w\\'+i+'\\'+'stats\\aseg.stats' for i in self.subid]
+                path_list = [self.stem_path+i+'/'+'T1w/'+i+'/'+'stats/aseg.stats' for i in self.subid]
         else:
             raise Exception('please input the right file type: func, stru, other')
         return path_list
@@ -238,7 +238,7 @@ class get_hcp_data(object):
                     data_list.append([])
 
 
-            out_file_name = output_path+file_type+'\\'+self.catagory+'\\'+output+'.csv'
+            out_file_name = output_path+file_type+'/'+self.catagory+'/'+output+'.csv'
         elif file_type == 'other':
             data_list = []
             if self.other_type == 'motion':
@@ -250,20 +250,21 @@ class get_hcp_data(object):
 
             data_list=np.array(data_list).T
                 
-            out_file_name = output_path+file_type+'\\'+output+'.csv'
+            out_file_name = output_path+file_type+'/'+output+'.csv'
 
         pd_data_list = pd.DataFrame(data_list,index=self.subid)
         pd_data_list.to_csv(out_file_name)
         # with open(out_file_name,'w',newline = '') as f:
-        #         f_csv = csv.writer(f)
+        #         f_csv = csv.writer(f)path
         #         f_csv.writerows(data_list)1
 if __name__=='__main__':
-    labelpath = 'E:\projects\genetic_imaging\HCPdata\VanEssenMap\HCP_PhaseTwo\Q1-Q6_RelatedParcellation210\MNINonLinear\\fsaverage_LR32k\\Q1-Q6_RelatedParcellation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii'
+    # labelpath = 'E:\projects\genetic_imaging\HCPdata\VanEssenMap\HCP_PhaseTwo\Q1-Q6_RelatedParcellation210\MNINonLinear\\fsaverage_LR32k\\Q1-Q6_RelatedParcellation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii'
 
-    labeldata =  iofiles.CIFTI(labelpath).read_cifti()
+    # labeldata =  iofiles.CIFTI(labelpath).read_cifti()
     getdata = get_hcp_data(HCP_TEST_DATA)
-    #pathlist = getdata.get_file_path_list('func')
-    getdata.getsave_certain_data('other',labeldata,'brainsize_test',data_out_file)
+    pathlist = getdata.get_file_path_list('func')
+    print(pathlist)
+    # getdata.getsave_certain_data('other',labeldata,'brainsize_test',data_out_file)
     # print('now we are getting s2 beta value data')2
     # getdata.getsave_certain_data('func',labeldata,'beta_value',data_out_file)
     # print('now we are getting s2 msmall beta value data')
