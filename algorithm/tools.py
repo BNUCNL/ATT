@@ -493,9 +493,9 @@ class NonUniformity(object):
         """
         return (np.linalg.norm(self._array)*np.sqrt(self._len)-1)/(np.sqrt(self._len)-1)
 
-def threshold_by_vox(imgdata, thr, threshold_type = 'number', option = 'descend'):
+def threshold_by_number(imgdata, thr, threshold_type = 'number', option = 'descend'):
     """
-    Threshold imgdata by a given percentage
+    Threshold imgdata by a given number
     parameter option is 'descend', filter from the highest values
                         'ascend', filter from the lowest non-zero values
     Parameters:
@@ -512,6 +512,8 @@ def threshold_by_vox(imgdata, thr, threshold_type = 'number', option = 'descend'
         >>> imagedata_thr = threshold_by_voxperc(imgdata, 100, 'number', 'descend')
     """
     if threshold_type == 'percent':
+        if thr>1:
+            thr = 1.0*thr/100
         voxnum = int(imgdata[imgdata!=0].shape[0]*thr)
     elif threshold_type == 'number':
         voxnum = thr
@@ -536,3 +538,54 @@ def threshold_by_vox(imgdata, thr, threshold_type = 'number', option = 'descend'
         raise Exception('Wrong option inputed!')
     outdata = np.reshape(outdata_flat, imgdata.shape)
     return outdata
+
+def threshold_by_values(imgdata, thr, threshold_type = 'values', option = 'descend'):
+    """
+    Threshold image data by values
+    
+    Parameters:
+    -----------
+    imgdata: activation image data
+    thr: threshold, correponding to threshold_type
+    threshold_type: 'value', threshold by absolute (not relative) values
+                    'percent', threshold by percentage
+    option: 'descend', by default is 'descend', filter from the highest values
+            'ascend', filter from the lowest values
+
+    Return:
+    -------
+    imgdata_thr: thresholded image data
+    
+    Example:
+    --------
+    >>> imgdata_thr = threshold_by_values(imgdata, 2.3, 'values', 'descend')
+    """
+    if threshold_type == 'percent':
+        if thr>1:
+            thr = 1.0*thr/100
+        if option == 'descend':
+            thr_val = np.max(imgdata) - thr*(np.max(imgdata) - np.min(imgdata))
+        elif option == 'ascend':
+            thr_val = np.min(imgdata) + thr*(np.max(imgdata) - np.min(imgdata))
+        else:
+            raise Exception('No such parameter in option')
+    elif threshold_type == 'value':
+        thr_val = thr
+    else:
+        raise Exception('Parameters should be value or percent')
+    imgdata_thr = np.zeros_like(imgdata)
+    if option == 'descend':
+        imgdata_thr = imgdata*[imgdata>thr_val]
+    elif option == 'ascend':
+        imgdata_thr = imgdata*[imgdata<thr_val]
+    else:
+        raise Exception('No such parameter in option')
+    return imgdata_thr
+
+        
+
+
+
+
+
+
