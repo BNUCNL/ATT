@@ -302,7 +302,10 @@ def lin_betafit(estimator, X, y, c, tail = 'both'):
         f: f values of model test
         fpval: p values of f test 
     """
-    from sklearn import preprocessing
+    try:
+        from sklearn import preprocessing
+    except ImportError:
+        raise Exception('To call this function, please install sklearn')
     if isinstance(c, list):
         c = np.array(c)
     if c.ndim == 1:
@@ -350,7 +353,10 @@ def permutation_cross_validation(estimator, X, y, n_fold=3, isshuffle = True, cv
         permutation_scores: model scores when permutation labels
         pvalues: p value of permutation scores
     """
-    from sklearn import cross_validation
+    try:
+        from sklearn import cross_validation
+    except ImportError:
+        raise Exception('To call this function, please install sklearn')
     if X.ndim == 1:
         X = np.expand_dims(X, axis = 1)
     if y.ndim == 1:
