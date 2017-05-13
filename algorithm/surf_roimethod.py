@@ -261,15 +261,3 @@ class GetLblRegion(object):
             out_template[...,i] = tools.get_specificroi(self._template, template_lbl)
         return out_template
 
-
-
-
-
-
-
-
-
-
-
-
-

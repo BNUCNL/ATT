@@ -6,8 +6,6 @@ from scipy import stats
 from scipy.spatial import distance
 import copy
 import pandas as pd
-from sklearn import preprocessing
-from sklearn import cross_validation
 
 def calcdist(u, v, metric = 'euclidean', p = 1):
     """
@@ -304,6 +302,7 @@ def lin_betafit(estimator, X, y, c, tail = 'both'):
         f: f values of model test
         fpval: p values of f test 
     """
+    from sklearn import preprocessing
     if isinstance(c, list):
         c = np.array(c)
     if c.ndim == 1:
@@ -351,6 +350,7 @@ def permutation_cross_validation(estimator, X, y, n_fold=3, isshuffle = True, cv
         permutation_scores: model scores when permutation labels
         pvalues: p value of permutation scores
     """
+    from sklearn import cross_validation
     if X.ndim == 1:
         X = np.expand_dims(X, axis = 1)
     if y.ndim == 1:
@@ -502,18 +502,16 @@ def threshold_by_number(imgdata, thr, threshold_type = 'number', option = 'desce
         imgdata: image data
         thr: threshold, could be voxel number or voxel percentage
         threshold_type: threshold type.
-                        'percent', threshold by percentage
+                        'percent', threshold by percentage (fraction)
                         'number', threshold by node numbers
         option: default, 'descend', filter from the highest values
                 'ascend', filter from the lowest values
     Return:
         imgdata_thr: thresholded image data
     Example:
-        >>> imagedata_thr = threshold_by_voxperc(imgdata, 100, 'number', 'descend')
+        >>> imagedata_thr = threshold_by_number(imgdata, 100, 'number', 'descend')
     """
     if threshold_type == 'percent':
-        if thr>1:
-            thr = 1.0*thr/100
         voxnum = int(imgdata[imgdata!=0].shape[0]*thr)
     elif threshold_type == 'number':
         voxnum = thr
@@ -539,7 +537,7 @@ def threshold_by_number(imgdata, thr, threshold_type = 'number', option = 'desce
     outdata = np.reshape(outdata_flat, imgdata.shape)
     return outdata
 
-def threshold_by_values(imgdata, thr, threshold_type = 'values', option = 'descend'):
+def threshold_by_value(imgdata, thr, threshold_type = 'value', option = 'descend'):
     """
     Threshold image data by values
     
@@ -548,7 +546,7 @@ def threshold_by_values(imgdata, thr, threshold_type = 'values', option = 'desce
     imgdata: activation image data
     thr: threshold, correponding to threshold_type
     threshold_type: 'value', threshold by absolute (not relative) values
-                    'percent', threshold by percentage
+                    'percent', threshold by percentage (fraction)
     option: 'descend', by default is 'descend', filter from the highest values
             'ascend', filter from the lowest values
 
@@ -558,11 +556,9 @@ def threshold_by_values(imgdata, thr, threshold_type = 'values', option = 'desce
     
     Example:
     --------
-    >>> imgdata_thr = threshold_by_values(imgdata, 2.3, 'values', 'descend')
+    >>> imgdata_thr = threshold_by_values(imgdata, 2.3, 'value', 'descend')
     """
     if threshold_type == 'percent':
-        if thr>1:
-            thr = 1.0*thr/100
         if option == 'descend':
             thr_val = np.max(imgdata) - thr*(np.max(imgdata) - np.min(imgdata))
         elif option == 'ascend':
@@ -573,7 +569,6 @@ def threshold_by_values(imgdata, thr, threshold_type = 'values', option = 'desce
         thr_val = thr
     else:
         raise Exception('Parameters should be value or percent')
-    imgdata_thr = np.zeros_like(imgdata)
     if option == 'descend':
         imgdata_thr = imgdata*[imgdata>thr_val]
     elif option == 'ascend':
@@ -582,7 +577,42 @@ def threshold_by_values(imgdata, thr, threshold_type = 'values', option = 'desce
         raise Exception('No such parameter in option')
     return imgdata_thr
 
-        
+def control_lbl_size(labeldata, actdata, thr, option = 'num'):
+    """
+    Threshold label data using activation mask (threshold activation data then binarized it to get mask to restrained raw label data range)
+    
+    Parameters:
+    -----------
+    labeldata: label data
+    actdata: activation data, the activation data should correspond to label data
+    thr: threshold, corresponding to parameter of option
+    option: 'num', threshold value as vertex numbers, get mask with the largest values of thr-th vertices, by default is 'num' 
+            'value', threshold with activation values, anywhere values smaller than thr will not be covered
+            'percent_num', percentage of vertex numbers with the largest activation values
+            'percent_value', percentage of activation values with the largest activation values
+
+    Return:
+    -------
+    out_lbldata: new label data with region been thresholded        
+
+    Example:
+    --------
+    >>> out_lbldata = control_lbl_size(labeldata, actdata, 125, 'num')
+    """
+    # threshold activation data
+    if option == 'num':
+        outactdata = threshold_by_number(actdata, thr, 'number')
+    elif option == 'value':
+        outactdata = threshold_by_value(actdata, thr, 'value')
+    elif option == 'percent_num':
+        outactdata = threshold_by_number(actdata, thr, 'percent')
+    elif option == 'percent_value':
+        outactdata = threshold_by_value(actdata, thr, 'percent')
+    else:
+        raise Exception('No such option')
+
+    out_lbldata = labeldata*(outactdata!=0)
+    return out_lbldata
 
 
 
