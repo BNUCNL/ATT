@@ -131,8 +131,12 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', pr
         verify_subj = [val for val in range(n_subj) if val not in test_subj]
         test_data = imgdata[:,test_subj]
         verify_data = imgdata[:,verify_subj]
+        if actdata is not None:
+            verify_actdata = actdata[...,verify_subj]
+        else:
+            verify_actdata = None
         pm = make_pm(test_data, prob_meth, labelnum)
-        pm_temp = pm_overlap(pm, verify_data, labels, labels, index = index, cmpalllbl = False)
+        pm_temp = pm_overlap(pm, verify_data, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = verify_actdata)
         output_overlap.append(pm_temp)
     output_overlap = np.array(output_overlap)
     return output_overlap
@@ -168,12 +172,13 @@ def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice'
     if imgdata.ndim == 4:
         imgdata = imgdata.reshape(imgdata.shape[0], imgdata.shape[3])
     output_overlap = []
-    for i in range(imgdata.shape[1]):
+    for i in range(imgdata.shape[-1]):
         data_temp = np.delete(imgdata, i, axis=1)
         pm = make_pm(data_temp, prob_meth, labelnum)
-        pm_temp = pm_overlap(pm, imgdata[:,i], labels, labels, index = index, cmpalllbl = False)
+        pm_temp = pm_overlap(pm, imgdata[:,i], labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = actdata)
         output_overlap.append(pm_temp)
-    return np.array(output_overlap)
+    output_array = np.array(output_overlap)
+    return output_array.reshape(output_array.shape[0], output_array.shape[2], output_array.shape[3])
 
 def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', thr_range = [0, 1, 0.1], cmpalllbl = True, controlsize = False, actdata = None):
     """
@@ -217,13 +222,17 @@ def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', 
     output_overlap = []
     for i in range(test_data.shape[-1]):
         mpm_temp = []
+        if actdata is not None:
+            verify_actdata = actdata[:,i]
+        else:
+            verify_actdata = None
         for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
             print("threshold {} is verifing".format(e))
             mpm = make_mpm(pm, e)
             if cmpalllbl is True:
-                mpm_temp.append([caloverlap(mpm, test_data[:,i], lbltmp, lbltst, index, controlsize = controlsize, actdata = actdata[:,i]) for lbltmp in labels_template for lbltst in labels_testdata])
+                mpm_temp.append([caloverlap(mpm, test_data[:,i], lbltmp, lbltst, index, controlsize = controlsize, actdata = verify_actdata) for lbltmp in labels_template for lbltst in labels_testdata])
             else:
-                mpm_temp.append([caloverlap(mpm, test_data[:,i], labels_template[i], e, index, controlsize = controlsize, actdata = actdata[:,i]) for i,e in enumerate(labels_testdata)])
+                mpm_temp.append([caloverlap(mpm, test_data[:,i], labels_template[idx], lbld, index, controlsize = controlsize, actdata = verify_actdata) for idx, lbld in enumerate(labels_testdata)])
         output_overlap.append(mpm_temp)
     return np.array(output_overlap)
 
