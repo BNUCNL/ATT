@@ -211,6 +211,9 @@ def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', 
         assert len(labels_template) == len(labels_testdata), "Notice that labels_template should have same length of labels_testdata if cmpalllbl is False"
     if test_data.ndim == 4:
         test_data = test_data.reshape(test_data.shape[0], test_data.shape[-1])
+    if actdata is not None:
+        if actdata.ndim == 4:
+            actdata = actdata.reshape(actdata.shape[0], actdata.shape[-1])
     output_overlap = []
     for i in range(test_data.shape[-1]):
         mpm_temp = []
@@ -218,9 +221,9 @@ def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', 
             print("threshold {} is verifing".format(e))
             mpm = make_mpm(pm, e)
             if cmpalllbl is True:
-                mpm_temp.append([caloverlap(mpm, test_data[:,i], lbltmp, lbltst, index, controlsize = controlsize, actdata = actdata) for lbltmp in labels_template for lbltst in labels_testdata])
+                mpm_temp.append([caloverlap(mpm, test_data[:,i], lbltmp, lbltst, index, controlsize = controlsize, actdata = actdata[:,i]) for lbltmp in labels_template for lbltst in labels_testdata])
             else:
-                mpm_temp.append([caloverlap(mpm, test_data[:,i], labels_template[i], e, index, controlsize = controlsize, actdata = actdata) for i,e in enumerate(labels_testdata)])
+                mpm_temp.append([caloverlap(mpm, test_data[:,i], labels_template[i], e, index, controlsize = controlsize, actdata = actdata[:,i]) for i,e in enumerate(labels_testdata)])
         output_overlap.append(mpm_temp)
     return np.array(output_overlap)
 
