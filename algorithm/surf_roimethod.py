@@ -170,13 +170,16 @@ def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice'
     >>> output_overlap = leave1out_maximum_threshold(imgdata, [2,4], labelnum = 4)
     """
     if imgdata.ndim == 4:
-        imgdata = imgdata.reshape(imgdata.shape[0], imgdata.shape[3])
+        imgdata = imgdata.reshape(imgdata.shape[0], imgdata.shape[-1])
+    if actdata.ndim == 4:
+        actdata = actdata.reshape(actdata.shape[0], actdata.shape[-1])
     output_overlap = []
     for i in range(imgdata.shape[-1]):
         data_temp = np.delete(imgdata, i, axis=1)
         testdata = np.expand_dims(imgdata[:,i],axis=1)
+        test_actdata = np.expand_dims(actdata[:,i],axis=1)
         pm = make_pm(data_temp, prob_meth, labelnum)
-        pm_temp = pm_overlap(pm, testdata, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = actdata)
+        pm_temp = pm_overlap(pm, testdata, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = test_actdata)
         output_overlap.append(pm_temp)
     output_array = np.array(output_overlap)
     return output_array.reshape(output_array.shape[0], output_array.shape[2], output_array.shape[3])
