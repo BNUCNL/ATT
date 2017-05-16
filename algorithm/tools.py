@@ -31,6 +31,40 @@ def calcdist(u, v, metric = 'euclidean', p = 1):
         dist = distance.pdist(vec, metric)
     return dist
 
+def eta2(a, b):
+    """
+    Compute eta2 between list a and list b
+    
+    eta2 = 1-sum((ai-mi)^2+(bi-mi)^2)/sum((ai-M)^2+(bi-M)^2)
+    ai, value of each element in a
+    bi, value of each element in b
+    mi, 0.5*(ai+bi)
+    M, average of sum (mean(mi))
+    eta2 measures similarity between two lists/arrays (1 dim), note they need to comparable.
+         higher eta2 means higher similarity
+    
+    Parameters:
+    -----------
+    a: list a 
+    b: list b
+       note that a, b should have the same length
+
+    Output:
+    -------
+    eta: eta2
+
+    Example:
+    --------
+    >>> eta = eta2(a, b)
+    """
+    a = np.array(a)
+    b = np.array(b)
+    mi = (a+b)/2
+    M = np.mean(mi)
+    sumwithin = np.sum((a-mi)**2+(b-mi)**2)
+    sumtotal = np.sum((a-M)**2+(b-M)**2)
+    return 1-1.0*(sumwithin)/sumtotal
+
 def convert_listvalue_to_ordinal(listdata):
     """
     Convert list elements to ordinal values
