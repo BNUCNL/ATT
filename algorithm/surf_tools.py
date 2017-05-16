@@ -94,7 +94,7 @@ class GenAdjacentMatrix(object):
                 adjmatrix[i,j] = 1
         return adjmatrix
 
-def caloverlap(imgdata1, imgdata2, label1, label2, index = 'dice'):
+def caloverlap(imgdata1, imgdata2, label1, label2, index = 'dice', controlsize = False, actdata = None):
     """
     Compute overlap (dice coefficient or percentage) in surface format data
     
@@ -103,6 +103,8 @@ def caloverlap(imgdata1, imgdata2, label1, label2, index = 'dice'):
     imgdata1, imgdata2: two image data in surface format
     label1, label2: label in correspond imgdata that used for overlap
     index: output index, dice or percent
+    controlsize: whether control roi size of label in imgdata2 to roi size of label in imgdata1 or not, the method is to extract region with highest activation and paired them with region size of imgdata1
+    actdata: by default is None, if controlsize is True, it's better to give actdata in this function
 
     Return:
     ----------
@@ -116,6 +118,12 @@ def caloverlap(imgdata1, imgdata2, label1, label2, index = 'dice'):
         imgdata1 = imgdata1[:,0,0]
     if imgdata2.ndim == 3:
         imgdata2 = imgdata2[:,0,0]
+    if controlsize is True:
+        imgsize1 = imgdata1[imgdata1==label1].shape[0]
+        try:
+            imgdata2 = tools.control_lbl_size(imgdata2, actdata, imgsize1)   
+        except AttributeError:
+            raise Exception('We haven''t make it clear whether allow actdata as None when size need to be controlled, please input actdata here')
     overlap = np.logical_and(imgdata1==label1, imgdata2==label2)
     try:
         if index == 'dice':
@@ -462,48 +470,3 @@ def _mmd_ab(a, b, one_ring_neighbour):
         h.append(hd)
     return h
 
-def generate_mask_by_labelid(labelId,labeldata):
-    """
-    you can genereate  mask using a lable ID 
-    
-    labelId: it can be a int or a list of label 
-    labeldata: a mask with all label id in it 
-      
-    Example:
-        generate_mask_by_labelid([1,2],labeldata)
-    """
-    mask = np.zeros_like(labeldata)
-    if type(labelId) == int:
-        mask[labeldata == labelId] = 1
-    elif type(labelId) == list:
-        for i in labelId:
-            mask[labeldata == i] = 1
-    else:
-        raise Exception('not correte data type of labelId, please input an int or a list of labelId')
-        
-    return mask
-
-def generate_mask_by_vernum(vertex_num,data,correspodig_matrix=None):
-    """
-    generate a mask by vertex number 
-    
-    vertex_num: a list or an array contain your vertex number of your ROI
-    data: you should provide a one-dimensional data matrix as blueprint. stucture of mask generated will be just like your input data
-    corresponding_matrix: consider there may be some mismathc between index of data matrix and vertex num (due to delete of some vertex from data matix),
-    a correspond_matrix should be provided, if there is no missing vertex in your data, please ingore this parameters 
-    
-    Example:
-        generate_mask_by_vertex(vertex_num,data,corresponding_matrix)
-    """
-    mask = np.zeros_like(data)
-    if correspodig_matrix is None:
-        for i in vertex_num:
-            mask[i] = 1 
-    else:
-        for i,e in enumerate(correspodig_matrix):
-            if e in vertex_num:
-                mask[i] = 1
-                    
-    return mask    
-
- 

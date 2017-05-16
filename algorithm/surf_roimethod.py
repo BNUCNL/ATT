@@ -85,7 +85,7 @@ def make_mpm(pm, threshold, consider_baseline = False):
     mpm = mpm.reshape((mpm.shape[0], 1, 1))
     return mpm
     
-def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=10):
+def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=1, controlsize = False, actdata = None):
     """
     Decide the maximum threshold from raw image data.
     Here using the cross validation method to decide threhold using for getting the maximum probabilistic map
@@ -100,6 +100,8 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', pr
     n_fold: split data into n_fold part, using first n_fold-1 part to get probabilistic map, then using rest part to evaluate overlap condition, by default is 2
     thr_range: pre-set threshold range to find the best maximum probabilistic threshold, the best threshold will search in this parameters, by default is [0,1,0.1], as the format of [start, stop, step]
     n_permuation: times of permutation, by default is 10
+    controlsize: whether control label data size with template mpm label size or not, by default is False.
+    actdata: if controlsize is True, please input actdata as a parameter. By default is None.
 
     Return:
     -------
@@ -129,13 +131,17 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', pr
         verify_subj = [val for val in range(n_subj) if val not in test_subj]
         test_data = imgdata[:,test_subj]
         verify_data = imgdata[:,verify_subj]
+        if actdata is not None:
+            verify_actdata = actdata[...,verify_subj]
+        else:
+            verify_actdata = None
         pm = make_pm(test_data, prob_meth, labelnum)
-        pm_temp = pm_overlap(pm, verify_data, labels, labels, index = index, cmpalllbl = False)
+        pm_temp = pm_overlap(pm, verify_data, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = verify_actdata)
         output_overlap.append(pm_temp)
     output_overlap = np.array(output_overlap)
     return output_overlap
 
-def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', thr_range = [0,1,0.1]):
+def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', thr_range = [0,1,0.1], controlsize = False, actdata = None):
     """
     A leave one out cross validation metho for threshold to best overlapping in probabilistic map
     
@@ -147,6 +153,8 @@ def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice'
     index: 'dice' or 'percent'
     prob_meth: 'all' or 'part' subjects to use to compute probablistic map
     thr_range: pre-set threshold range to find the best maximum probabilistic threshold
+    controlsize: whether control label data size with template mpm label size or not, by default is False.
+    actdata: if controlsize is True, please input actdata as a parameter. By default is None.
 
     Return:
     -------
@@ -164,14 +172,16 @@ def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice'
     if imgdata.ndim == 4:
         imgdata = imgdata.reshape(imgdata.shape[0], imgdata.shape[3])
     output_overlap = []
-    for i in range(imgdata.shape[1]):
+    for i in range(imgdata.shape[-1]):
         data_temp = np.delete(imgdata, i, axis=1)
+        testdata = np.expand_dims(imgdata[:,i],axis=1)
         pm = make_pm(data_temp, prob_meth, labelnum)
-        pm_temp = pm_overlap(pm, imgdata[:,i], labels, labels, index = index, cmpalllbl = False)
+        pm_temp = pm_overlap(pm, testdata, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = actdata)
         output_overlap.append(pm_temp)
-    return np.array(output_overlap)
+    output_array = np.array(output_overlap)
+    return output_array.reshape(output_array.shape[0], output_array.shape[2], output_array.shape[3])
 
-def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', thr_range = [0, 1, 0.1], cmpalllbl = True):
+def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', thr_range = [0, 1, 0.1], cmpalllbl = True, controlsize = False, actdata = None):
     """
     Compute overlap(dice) between probabilistic map and test data
     
@@ -187,6 +197,8 @@ def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', 
                e.g. labels_template = [2,4], labels_testdata = [2,4]
                     if True, get dice coefficient of (2,2), (2,4), (4,2), (4,4)
                     else, get dice coefficient of (2,2), (4,4)
+    controlsize: whether control label data size with template mpm label size or not, by default is False.
+    actdata: if controlsize is True, please input actdata as a parameter. By default is None.
 
     Return:
     -------
@@ -205,16 +217,23 @@ def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', 
         assert len(labels_template) == len(labels_testdata), "Notice that labels_template should have same length of labels_testdata if cmpalllbl is False"
     if test_data.ndim == 4:
         test_data = test_data.reshape(test_data.shape[0], test_data.shape[-1])
+    if actdata is not None:
+        if actdata.ndim == 4:
+            actdata = actdata.reshape(actdata.shape[0], actdata.shape[-1])
     output_overlap = []
     for i in range(test_data.shape[-1]):
         mpm_temp = []
+        if actdata is not None:
+            verify_actdata = actdata[:,i]
+        else:
+            verify_actdata = None
         for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
             print("threshold {} is verifing".format(e))
             mpm = make_mpm(pm, e)
             if cmpalllbl is True:
-                mpm_temp.append([caloverlap(mpm, test_data[:,i], lbltmp, lbltst, index) for lbltmp in labels_template for lbltst in labels_testdata])
+                mpm_temp.append([caloverlap(mpm, test_data[:,i], lbltmp, lbltst, index, controlsize = controlsize, actdata = verify_actdata) for lbltmp in labels_template for lbltst in labels_testdata])
             else:
-                mpm_temp.append([caloverlap(mpm, test_data[:,i], labels_template[i], e, index) for i,e in enumerate(labels_testdata)])
+                mpm_temp.append([caloverlap(mpm, test_data[:,i], labels_template[idx], lbld, index, controlsize = controlsize, actdata = verify_actdata) for idx, lbld in enumerate(labels_testdata)])
         output_overlap.append(mpm_temp)
     return np.array(output_overlap)
 
@@ -260,16 +279,4 @@ class GetLblRegion(object):
             template_lbl = np.sort(np.unique(part_template)[1:])
             out_template[...,i] = tools.get_specificroi(self._template, template_lbl)
         return out_template
-
-
-
-
-
-
-
-
-
-
-
-
 
