@@ -30,6 +30,7 @@ class IOFactory(object):
             What support now is .csv, .pkl, .mat and .nifti
         """
         _comp_file = pjoin(filepath, filename)
+        _lbl_cifti = False
         if _comp_file.endswith('csv'):
             return _CSV(_comp_file)
         elif _comp_file.endswith('txt'):
@@ -38,8 +39,13 @@ class IOFactory(object):
             return _PKL(_comp_file)
         elif _comp_file.endswith('mat'):
             return _MAT(_comp_file)
-        elif _comp_file.endswith('gz') | _comp_file.endswith('nii'):
+        elif _comp_file.endswith('dscalar.nii') | _comp_file.endswith('dtseries.nii') | _comp_file.endswith('ptseries.nii') | _comp_file.endswith('dlabel.nii'):
+            _lbl_cifti = True
+            return _CIFTI(_comp_file)
+        elif _comp_file.endswith('nii.gz') | (_comp_file.endswith('nii') & (_lbl_cifti is False)):
             return _NIFTI(_comp_file)
+        elif _comp_file.endswith('gii'):
+            return _GIFTI(_comp_file)
         else:
             return None
 
@@ -198,10 +204,56 @@ class _NIFTI(object):
         else:
             raise Exception('Wrong datatype input')
         return outdata
-                
 
+class _CIFTI(object):
 
+    try:
+        from nibabel import cifti2 as ci
+    except ImportError:
+        raise Exception('Need to install the newest version of nibabel which contains cifti2 module')
 
+    def __init__(self, _comp_file):
+        self._comp_file = _comp_file
+    
+    def read_cifti(self,contrast=None):
+        """
+        Read cifti data. If your cifti data contains multiple contrast, you can input your contrast number and get value of this contrast.
+ 
+        Parameters:
+        --------------
+        contrast: the number of your contrasts
 
+        """
+        img = ci.load(self._comp_file)
+        
+        if contrast is None:
+            data = img.get_data()[0]
+        elif type(contrast) == int:
+            data = img.get_data()[contrast-1]
+        else:
+            raise Exception('contrast should be an int or None')
+        return data
+   
+    def save_cifti(self):
+        pass
+ 
+class _GIFTI(object):
+    def __init__(self, _comp_file):
+        self._comp_file = _comp_file
+        
+    def read_gifti(self):
+        """
+        read gifti data
+        """
+        img = nib.load(self._comp_file)
+        if len(img.darrays) == 1:
+            data = img.darrays[0].data
+        else:
+            data = []
+            for i in range(0,len(img.darrays)):#files named *.midthickness may have two elements in darrays. one represents the mesh, and one represents the coordinates of vertex
+                data.append(img.darrays[i].data)
+        return data
 
+    def save_gifti(self):
+        pass
 

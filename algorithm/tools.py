@@ -6,8 +6,6 @@ from scipy import stats
 from scipy.spatial import distance
 import copy
 import pandas as pd
-from sklearn import preprocessing
-from sklearn import cross_validation
 
 def calcdist(u, v, metric = 'euclidean', p = 1):
     """
@@ -250,7 +248,7 @@ def listwise_clean(data):
     clean_data = pd.DataFrame(data).dropna().values
     return clean_data    
 
-def ste(data):
+def ste(data, axis=None):
     """
     Calculate standard error
     --------------------------------
@@ -260,13 +258,13 @@ def ste(data):
         standard error
     """
     if isinstance(data, float) | isinstance(data, int):
-        return np.nanstd(data)/np.sqrt(1)
+        return np.nanstd(data,axis)/np.sqrt(1)
     else:
-        n = len(data[~np.isnan(data)])
-        if n != 0:
-            return np.nanstd(data)/np.sqrt(n)
-        else: 
-            return np.nan
+        n = np.sum(~np.isnan(data),axis)
+        ste = np.nanstd(data,axis)/np.sqrt(n)
+        if isinstance(ste, np.ndarray):
+            ste[np.isinf(ste)] = np.nan
+        return ste
 
 def get_specificroi(image, labellist):
     """
@@ -285,6 +283,34 @@ def get_specificroi(image, labellist):
         logic_array += (image == e)
     specific_data = image*logic_array
     return specific_data
+
+def make_lblmask_by_loc(image, loclist, correspond_matrix = None):
+    """
+    Generate a mask by loclist
+
+    Parameters:
+    -----------
+    image: Provide a matrix as template, program will generate a same-shape mask as image
+    loclist: location list
+    correspond_matrix: In case of mismatching between index of image and loclist. The shape of correspond_matrix should be similar to image
+
+    Return:
+    -------
+    mask: output label mask
+
+    Example:
+    --------
+    >>> mask = make_lblmask_by_loc(image, loclist)
+    """
+    mask = np.zeros_like(image)
+    if correspond_matrix is None:
+        for i in vertex_num:
+            mask[tuple(i)] = 1
+    else:
+        for i,e in enumerate(correspond_matrix):
+            if e in vertex_num:
+                mask[i] = 1
+    return mask
     
 def lin_betafit(estimator, X, y, c, tail = 'both'):
     """
@@ -304,6 +330,10 @@ def lin_betafit(estimator, X, y, c, tail = 'both'):
         f: f values of model test
         fpval: p values of f test 
     """
+    try:
+        from sklearn import preprocessing
+    except ImportError:
+        raise Exception('To call this function, please install sklearn')
     if isinstance(c, list):
         c = np.array(c)
     if c.ndim == 1:
@@ -351,6 +381,10 @@ def permutation_cross_validation(estimator, X, y, n_fold=3, isshuffle = True, cv
         permutation_scores: model scores when permutation labels
         pvalues: p value of permutation scores
     """
+    try:
+        from sklearn import cross_validation
+    except ImportError:
+        raise Exception('To call this function, please install sklearn')
     if X.ndim == 1:
         X = np.expand_dims(X, axis = 1)
     if y.ndim == 1:
@@ -493,23 +527,23 @@ class NonUniformity(object):
         """
         return (np.linalg.norm(self._array)*np.sqrt(self._len)-1)/(np.sqrt(self._len)-1)
 
-def threshold_by_vox(imgdata, thr, threshold_type = 'percent', option = 'descend'):
+def threshold_by_number(imgdata, thr, threshold_type = 'number', option = 'descend'):
     """
-    Threshold imgdata by a given percentage
+    Threshold imgdata by a given number
     parameter option is 'descend', filter from the highest values
                         'ascend', filter from the lowest non-zero values
     Parameters:
         imgdata: image data
         thr: threshold, could be voxel number or voxel percentage
         threshold_type: threshold type.
-                        'percent', threshold by percentage
+                        'percent', threshold by percentage (fraction)
                         'number', threshold by node numbers
         option: default, 'descend', filter from the highest values
                 'ascend', filter from the lowest values
     Return:
         imgdata_thr: thresholded image data
     Example:
-        >>> imagedata_thr = threshold_by_voxperc(imgdata, 100, 'number', 'descend')
+        >>> imagedata_thr = threshold_by_number(imgdata, 100, 'number', 'descend')
     """
     if threshold_type == 'percent':
         voxnum = int(imgdata[imgdata!=0].shape[0]*thr)
@@ -536,3 +570,86 @@ def threshold_by_vox(imgdata, thr, threshold_type = 'percent', option = 'descend
         raise Exception('Wrong option inputed!')
     outdata = np.reshape(outdata_flat, imgdata.shape)
     return outdata
+
+def threshold_by_value(imgdata, thr, threshold_type = 'value', option = 'descend'):
+    """
+    Threshold image data by values
+    
+    Parameters:
+    -----------
+    imgdata: activation image data
+    thr: threshold, correponding to threshold_type
+    threshold_type: 'value', threshold by absolute (not relative) values
+                    'percent', threshold by percentage (fraction)
+    option: 'descend', by default is 'descend', filter from the highest values
+            'ascend', filter from the lowest values
+
+    Return:
+    -------
+    imgdata_thr: thresholded image data
+    
+    Example:
+    --------
+    >>> imgdata_thr = threshold_by_values(imgdata, 2.3, 'value', 'descend')
+    """
+    if threshold_type == 'percent':
+        if option == 'descend':
+            thr_val = np.max(imgdata) - thr*(np.max(imgdata) - np.min(imgdata))
+        elif option == 'ascend':
+            thr_val = np.min(imgdata) + thr*(np.max(imgdata) - np.min(imgdata))
+        else:
+            raise Exception('No such parameter in option')
+    elif threshold_type == 'value':
+        thr_val = thr
+    else:
+        raise Exception('Parameters should be value or percent')
+    if option == 'descend':
+        imgdata_thr = imgdata*[imgdata>thr_val]
+    elif option == 'ascend':
+        imgdata_thr = imgdata*[imgdata<thr_val]
+    else:
+        raise Exception('No such parameter in option')
+    return imgdata_thr
+
+def control_lbl_size(labeldata, actdata, thr, option = 'num'):
+    """
+    Threshold label data using activation mask (threshold activation data then binarized it to get mask to restrained raw label data range)
+    
+    Parameters:
+    -----------
+    labeldata: label data
+    actdata: activation data, the activation data should correspond to label data
+    thr: threshold, corresponding to parameter of option
+    option: 'num', threshold value as vertex numbers, get mask with the largest values of thr-th vertices, by default is 'num' 
+            'value', threshold with activation values, anywhere values smaller than thr will not be covered
+            'percent_num', percentage of vertex numbers with the largest activation values
+            'percent_value', percentage of activation values with the largest activation values
+
+    Return:
+    -------
+    out_lbldata: new label data with region been thresholded        
+
+    Example:
+    --------
+    >>> out_lbldata = control_lbl_size(labeldata, actdata, 125, 'num')
+    """
+    # threshold activation data
+    if option == 'num':
+        outactdata = threshold_by_number(actdata, thr, 'number')
+    elif option == 'value':
+        outactdata = threshold_by_value(actdata, thr, 'value')
+    elif option == 'percent_num':
+        outactdata = threshold_by_number(actdata, thr, 'percent')
+    elif option == 'percent_value':
+        outactdata = threshold_by_value(actdata, thr, 'percent')
+    else:
+        raise Exception('No such option')
+
+    out_lbldata = labeldata*(outactdata!=0)
+    return out_lbldata
+
+
+
+
+
+

@@ -6,7 +6,7 @@ import os
 import nibabel as nib
 import copy
 from ATT.algorithm import vol_roimethod, vol_tools, tools
-from ATT.io import iofiles
+from ATT.iofunc import iofiles
 
 class ImageCalculator(object):
     def __init__(self):

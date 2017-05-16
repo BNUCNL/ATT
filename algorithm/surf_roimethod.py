@@ -2,7 +2,8 @@
 # vi: set ft=python sts=4 sw=4 et:
 
 import numpy as np
-from surf_tools import caldice
+from surf_tools import caloverlap
+import tools
 
 def make_pm(mask, meth = 'all', labelnum = None):
     """
@@ -31,7 +32,7 @@ def make_pm(mask, meth = 'all', labelnum = None):
     if mask.ndim == 4:
         mask = mask.reshape(mask.shape[0], mask.shape[3])
     if labelnum is None:
-        labels = range(int(np.max(mask)))
+        labels = range(1, int(np.max(mask))+1)
     else:
         labels = range(1, labelnum+1)
     pm = np.zeros((mask.shape[0],len(labels)))
@@ -84,34 +85,37 @@ def make_mpm(pm, threshold, consider_baseline = False):
     mpm = mpm.reshape((mpm.shape[0], 1, 1))
     return mpm
     
-def cv_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=10):
+def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=1, controlsize = False, actdata = None):
     """
     Decide the maximum threshold from raw image data.
     Here using the cross validation method to decide threhold using for getting the maximum probabilistic map
     
     Parameters:
     -----------
-    imgdata: An 2/4 dimensional data
-    label: label number
+    imgdata: A 2/4 dimensional data
+    labels: list, label number used to extract dice coefficient
     labelnum: by default is None, label number size. We recommend to provide label number here.
+    index: 'dice' or 'percent'
     prob_meth: 'all' or 'part' subjects to use to compute probablistic map
     n_fold: split data into n_fold part, using first n_fold-1 part to get probabilistic map, then using rest part to evaluate overlap condition, by default is 2
-    thr_range: pre-set threshold range to check the best maximum probabilistic threshold, the best threshold will search in this parameters, by default is [0,1,0.1], as the format of [start, stop, step]
+    thr_range: pre-set threshold range to find the best maximum probabilistic threshold, the best threshold will search in this parameters, by default is [0,1,0.1], as the format of [start, stop, step]
     n_permuation: times of permutation, by default is 10
+    controlsize: whether control label data size with template mpm label size or not, by default is False.
+    actdata: if controlsize is True, please input actdata as a parameter. By default is None.
 
     Return:
     -------
-    output_dice: all dice coefficient computed from function
-                 output_dice consists as a 4 dimension array
-                 permutation x threhold x subjects x regions
-                 the first dimension permutation means the results of each permutation
-                 the second dimension threhold means the results of pre-set threshold
-                 the third dimension subjects means the results of each subject
-                 the fourth dimension regions means the result of each region
+    output_overlap: dice coefficient/percentage computed from function
+                    output_dice consists of a 4 dimension array
+                    permutation x threhold x subjects x regions
+                    the first dimension permutation means the results of each permutation
+                    the second dimension threhold means the results of pre-set threshold
+                    the third dimension subjects means the results of each subject
+                    the fourth dimension regions means the result of each region
     
     Example:
     --------
-    >>> output_dice = cv_maximum_threshold(imgdata, [2,4], labelnum = 4)
+    >>> output_overlap = nfold_maximum_threshold(imgdata, [2,4], labelnum = 4)
     """        
     assert (imgdata.ndim==2)|(imgdata.ndim==4), "imgdata should be 2/4 dimension"
     if imgdata.ndim == 4:
@@ -120,29 +124,159 @@ def cv_maximum_threshold(imgdata, labels, labelnum = None, prob_meth = 'part', n
     if labelnum is None:
         labelnum = int(np.max(np.unique(imgdata)))
     assert (np.max(labels)<labelnum+1), "the maximum of labels should smaller than labelnum"
-    output_dice = []
+    output_overlap = []
     for n in range(n_permutation):
         print("permutation {} starts".format(n+1))
         test_subj = np.sort(np.random.choice(range(n_subj), n_subj-n_subj/n_fold, replace = False)).tolist()
         verify_subj = [val for val in range(n_subj) if val not in test_subj]
         test_data = imgdata[:,test_subj]
         verify_data = imgdata[:,verify_subj]
+        if actdata is not None:
+            verify_actdata = actdata[...,verify_subj]
+        else:
+            verify_actdata = None
         pm = make_pm(test_data, prob_meth, labelnum)
-        pm_temp = []
-        for i,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
+        pm_temp = pm_overlap(pm, verify_data, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = verify_actdata)
+        output_overlap.append(pm_temp)
+    output_overlap = np.array(output_overlap)
+    return output_overlap
+
+def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', thr_range = [0,1,0.1], controlsize = False, actdata = None):
+    """
+    A leave one out cross validation metho for threshold to best overlapping in probabilistic map
+    
+    Parameters:
+    -----------
+    imgdata: A 2/4 dimensional data
+    labels: list, label number used to extract dice coefficient
+    labelnum: by default is None, label number size. We recommend to provide label number here.
+    index: 'dice' or 'percent'
+    prob_meth: 'all' or 'part' subjects to use to compute probablistic map
+    thr_range: pre-set threshold range to find the best maximum probabilistic threshold
+    controlsize: whether control label data size with template mpm label size or not, by default is False.
+    actdata: if controlsize is True, please input actdata as a parameter. By default is None.
+
+    Return:
+    -------
+    output_overlap: dice coefficient/percentage computed from function
+                    outputdice consists of a 3 dimension array
+                    subjects x threhold x regions
+                    the first dimension means the values of each leave one out (leave one subject out)
+                    the second dimension means the results of pre-set threshold
+                    the third dimension means the results of each region
+
+    Example:
+    --------
+    >>> output_overlap = leave1out_maximum_threshold(imgdata, [2,4], labelnum = 4)
+    """
+    if imgdata.ndim == 4:
+        imgdata = imgdata.reshape(imgdata.shape[0], imgdata.shape[3])
+    output_overlap = []
+    for i in range(imgdata.shape[-1]):
+        data_temp = np.delete(imgdata, i, axis=1)
+        testdata = np.expand_dims(imgdata[:,i],axis=1)
+        pm = make_pm(data_temp, prob_meth, labelnum)
+        pm_temp = pm_overlap(pm, testdata, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = actdata)
+        output_overlap.append(pm_temp)
+    output_array = np.array(output_overlap)
+    return output_array.reshape(output_array.shape[0], output_array.shape[2], output_array.shape[3])
+
+def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', thr_range = [0, 1, 0.1], cmpalllbl = True, controlsize = False, actdata = None):
+    """
+    Compute overlap(dice) between probabilistic map and test data
+    
+    Parameters:
+    -----------
+    pm: probabilistic map
+    test_data: subject specific label data used as test data
+    labels_template: list, label number of template (pm) used to extract overlap values 
+    label_testdata: list, label number of test data used to extract overlap values
+    index: 'dice' or 'percent'
+    thr_range: pre-set threshold range to find the best maximum probabilistic threshold
+    cmpalllbl: compute all overlap label one to one or not.
+               e.g. labels_template = [2,4], labels_testdata = [2,4]
+                    if True, get dice coefficient of (2,2), (2,4), (4,2), (4,4)
+                    else, get dice coefficient of (2,2), (4,4)
+    controlsize: whether control label data size with template mpm label size or not, by default is False.
+    actdata: if controlsize is True, please input actdata as a parameter. By default is None.
+
+    Return:
+    -------
+    output_overlap: dice coefficient/percentage
+                    outputdice consists of a 3 dimension array
+                    subjects x thr_range x regions
+                    the first dimension means the values of each leave one out (leave one subject out)
+                    the second dimension means the results of pre-set threshold
+                    the third dimension means the results of each region
+                 
+    Example:
+    --------
+    >>> output_overlap = pm_overlap(pm, test_data, [2,4], [2,4])
+    """
+    if cmpalllbl is False:
+        assert len(labels_template) == len(labels_testdata), "Notice that labels_template should have same length of labels_testdata if cmpalllbl is False"
+    if test_data.ndim == 4:
+        test_data = test_data.reshape(test_data.shape[0], test_data.shape[-1])
+    if actdata is not None:
+        if actdata.ndim == 4:
+            actdata = actdata.reshape(actdata.shape[0], actdata.shape[-1])
+    output_overlap = []
+    for i in range(test_data.shape[-1]):
+        mpm_temp = []
+        if actdata is not None:
+            verify_actdata = actdata[:,i]
+        else:
+            verify_actdata = None
+        for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
             print("threshold {} is verifing".format(e))
             mpm = make_mpm(pm, e)
-            mpm_temp = []
-            for j, vs in enumerate(verify_subj):
-                mpm_temp.append([caldice(mpm, verify_data[:,j], lbl, lbl) for lbl in labels])
-            pm_temp.append(mpm_temp)
-        output_dice.append(pm_temp)
-    output_dice = np.array(output_dice)
-    return output_dice
+            if cmpalllbl is True:
+                mpm_temp.append([caloverlap(mpm, test_data[:,i], lbltmp, lbltst, index, controlsize = controlsize, actdata = verify_actdata) for lbltmp in labels_template for lbltst in labels_testdata])
+            else:
+                mpm_temp.append([caloverlap(mpm, test_data[:,i], labels_template[idx], lbld, index, controlsize = controlsize, actdata = verify_actdata) for idx, lbld in enumerate(labels_testdata)])
+        output_overlap.append(mpm_temp)
+    return np.array(output_overlap)
 
+class GetLblRegion(object):
+    """
+    A class to get template label regions
+    
+    Parameters:
+    -----------
+    template: template
+    """
+    def __init__(self, template):
+        self._template = template
 
+    def by_lblimg(self, lbldata):
+        """
+        Get specific template regions by rois given by user
+        All regions overlapped with a specific label region will be covered
 
+        Parameters:
+        -----------
+        lbldata: rois given by user
 
+        Return:
+        -------
+        out_template: new template contains part of regions
+                      if lbldata has multiple different rois, then new template will extract regions with each of roi given by user
 
-
+        Example:
+        --------
+        >>> glr_cls = GetLblRegion(template)
+        >>> out_template = glr_cls.by_lblimg(lbldata)
+        """
+        assert lbldata.shape == self._template.shape, "the shape of template should be equal to the shape of lbldata"
+        labels = np.sort(np.unique(lbldata)[1:]).astype('int')
+        out_template = np.zeros_like(lbldata)
+        out_template = out_template[...,np.newaxis]
+        out_template = np.tile(out_template, (1, len(labels)))
+        for i,lbl in enumerate(labels):
+            lbldata_tmp = tools.get_specificroi(lbldata, lbl)
+            lbldata_tmp[lbldata_tmp!=0] = 1
+            part_template = self._template*lbldata_tmp
+            template_lbl = np.sort(np.unique(part_template)[1:])
+            out_template[...,i] = tools.get_specificroi(self._template, template_lbl)
+        return out_template
 

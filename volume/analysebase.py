@@ -9,7 +9,7 @@ from scipy.spatial.distance import pdist
 
 from ATT.algorithm import vol_tools, tools, vol_roimethod
 from ATT.util import plotfig
-from ATT.io import iofiles
+from ATT.iofunc import iofiles
 
 pjoin = os.path.join
 
