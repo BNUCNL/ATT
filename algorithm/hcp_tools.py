@@ -7,8 +7,10 @@ import os
 import csv
 from ATT.iofunc import iofiles
 from ATT.algorithm import surf_tools
-from ATT.algorithm import hcp_tools
 import pandas as pd
+from ATT.util import decorators
+from memory_profiler import profile
+from memory_profiler import memory_usage
 
 HCP_TEST_DATA = 'e:\\projects\\genetic_imaging\\HCPdata\\HCP900\\'
 data_out_file = 'E:\\projects\\genetic_imaging\\HCPdata\\data\\HCPExtracted\\'
@@ -28,18 +30,19 @@ class get_hcp_data(object):
             """
             relative_fd = 0
             for i in range(0, 3):
-                relative_fd += abs(float(re1[i]) - float(re2[i]))
+                relative_fd += abs(re1[i] - re2[i])
             for i in range(3, 6):
-                relative_fd += 50 * math.pi / 150 * (abs(float(re1[i]) - float(re2[i])))
+                relative_fd += 50 * math.pi / 150 * (abs(re1[i] - re2[i]))
 
             return math.sqrt(relative_fd)
 
         def cal_relaFD_mean(ls):
             """
             """
+            ls_float = [list(map(lambda x: float(x), j)) for j in ls]
             rela_fd = []
-            for i in range(1, len(ls)):
-                rela_fd.append(cal_relaFD(regre_LR[i], regre_LR[i - 1]))
+            for i in range(1, len(ls_float)):
+                rela_fd.append(cal_relaFD(ls_float[i], ls_float[i - 1]))
             indi_fd_mean = np.mean(np.array(rela_fd))
             return indi_fd_mean
 
@@ -53,29 +56,21 @@ class get_hcp_data(object):
                     regre_RL = np.array([j.rstrip().split() for j in s])
                 indi_FD_mean = (cal_relaFD_mean(regre_LR) + cal_relaFD_mean(regre_RL)) / 2
                 power_rela_fd_mean.append(indi_FD_mean)
-            except FileNotFoundError as e:
+            except IOError as e:
                 print(e)
                 power_rela_fd_mean.append([])
         for i in path_list:
             try:
                 with open(i + '/tfMRI_WM_LR/Movement_Regressors_dt.txt', 'r') as f:
                     s = f.readlines()
-                    tmp = np.array([j.rstrip().split() for j in s])
-                    regre_LR = []
-                    for j in tmp:
-                        j = list(map(lambda x:float(x),j))
-                        regre_LR.append(j)
+                    regre_LR = regre_LR = np.array([j.rstrip().split() for j in s])
                 with open(i + '/tfMRI_WM_RL/Movement_Regressors_dt.txt', 'r') as f:
                     s = f.readlines()
-                    tmp = np.array([j.rstrip().split() for j in s])
-                    regre_RL = []
-                    for j in tmp:
-                        j = list(map(lambda x: float(x), j))
-                        regre_RL.append(j)
+                    regre_RL = np.array([j.rstrip().split() for j in s])
 
-                indi_FD_mean = (np.mean(np.array(regre_RL))+np.mean(np.array(regre_LR)))/2
+                indi_FD_mean = (cal_relaFD_mean(regre_LR) + cal_relaFD_mean(regre_RL)) / 2
                 dt_rela_fd_mean.append(indi_FD_mean)
-            except FileNotFoundError as e:
+            except IOError as e:
                 print(e)
                 dt_rela_fd_mean.append([])
 
@@ -88,7 +83,7 @@ class get_hcp_data(object):
                 with open(i, 'r') as f:
                     s = f.readlines()[33][-21:-7]
                 etiv_size_list.append(float(s))
-            except FileNotFoundError as e:
+            except IOError as e:
                 print(e)
                 etiv_size_list.append([])
         return etiv_size_list
@@ -102,7 +97,7 @@ class get_hcp_data(object):
                 with open(i + '\\tfMRI_WM_RL\\Movement_RelativeRMS_mean.txt', 'r') as f:
                     relative_RL = f.readline()
                 relative_meanRMS.append((float(relative_LR) + float(relative_RL) / 2))
-            except FileNotFoundError as e:
+            except IOError as e:
                 print(e)
                 relative_meanRMS.append([])
         return relative_meanRMS
@@ -163,7 +158,7 @@ class get_hcp_data(object):
                     FILE_NAME = 'GrayordinatesStats/cope21.feat/tstat1.dtseries.nii'
                 elif  contrast_type == 4:
                     FILE_NAME = 'GrayordinatesStats/cope22.feat/tstat1.dtseries.nii'
-                path_list = [HCP_TEST_DATA+i+'/'+FUNC_STEM_PATH+ FILE_NAME for i in self.subid]
+                path_list = [self.stem_path+i+'/'+FUNC_STEM_PATH+ FILE_NAME for i in self.subid]
               
             if data_type == 2:
                 if  contrast_type == 1:
@@ -221,7 +216,9 @@ class get_hcp_data(object):
         else:
             raise Exception('please input the right file type: func, stru, other')
         return path_list
-    
+
+    @decorators.timer
+    #@profile
     def getsave_certain_data(self,file_type,label_data,output,output_path):
         '''
         '''
@@ -233,7 +230,7 @@ class get_hcp_data(object):
                     data = iofiles.CIFTI(i).read_cifti()
                     data_list.append(
                     surf_tools.get_signals(data, label_data))  # get roi mean value of each roi of each subject
-                except FileNotFoundError as e:
+                except IOError as e:
                     print(e)
                     data_list.append([])
 
@@ -258,34 +255,14 @@ class get_hcp_data(object):
         #         f_csv = csv.writer(f)path
         #         f_csv.writerows(data_list)1
 if __name__=='__main__':
-    # labelpath = 'E:\projects\genetic_imaging\HCPdata\VanEssenMap\HCP_PhaseTwo\Q1-Q6_RelatedParcellation210\MNINonLinear\\fsaverage_LR32k\\Q1-Q6_RelatedParcellation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii'
+    labelpath = 'E:\projects\genetic_imaging\HCPdata\VanEssenMap\HCP_PhaseTwo\Q1-Q6_RelatedParcellation210\MNINonLinear\\fsaverage_LR32k\\Q1-Q6_RelatedParcellation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii'
 
-    # labeldata =  iofiles.CIFTI(labelpath).read_cifti()
-    getdata = get_hcp_data(HCP_TEST_DATA)
-    pathlist = getdata.get_file_path_list('func')
-    print(pathlist)
-    # getdata.getsave_certain_data('other',labeldata,'brainsize_test',data_out_file)
-    # print('now we are getting s2 beta value data')2
-    # getdata.getsave_certain_data('func',labeldata,'beta_value',data_out_file)
-    # print('now we are getting s2 msmall beta value data')
-    # getdata.getsave_certain_data('func', labeldata, 'beta_value', data_out_file)
-    # print('now we are getting s4 beta value data')
-    # getdata.getsave_certain_data('func',labeldata,'beta_value',data_out_file)
-    # print('now we are getting s4 msmall beta value data')
-    # getdata.getsave_certain_data('func', labeldata, 'beta_value', data_out_file)
-    # print('now we are getting s8 beta value data')
-    # getdata.getsave_certain_data('func',labeldata,'beta_value',data_out_file)
-    # print('now we are getting s12  beta value data')
-    # getdata.getsave_certain_data('func', labeldata, 'beta_value', data_out_file)
-    # print('now we are getting thickness data')
-    # getdata.getsave_certain_data('stru', labeldata, 'thickness_msmall', data_out_file)
-    # print('now we are getting curvature data')
-    # getdata.getsave_certain_data('stru', labeldata, 'cruvature_msmall', data_out_file)
-    # print('now we are getting myelinmap data')
-    # getdata.getsave_certain_data('stru', labeldata, 'myelinmap_msmall', data_out_file)
-    # print('now we are getting brain_size data')
-    # getdata.getsave_certain_data('other', labeldata, 'brain_size', data_out_file)
-    # print('now we are getting RMS and FD data')
-    # getdata.getsave_certain_data('other', labeldata, 'head_motion', data_out_file)
+    labeldata =  iofiles.CIFTI(labelpath).read_cifti()
+    getdata=get_hcp_data(HCP_TEST_DATA)
+    # pathlist = getdata.get_file_path_list('other')
+    # print(getdata.motion_FD(pathlist))
+    # print(memory_usage(getdata.getsave_certain_data('func',labeldata,'testfortime',data_out_file)))
+    getdata.getsave_certain_data('other', labeldata, 'testfortime', data_out_file)
+
 
 
