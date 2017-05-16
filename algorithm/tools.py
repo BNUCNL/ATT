@@ -283,6 +283,34 @@ def get_specificroi(image, labellist):
         logic_array += (image == e)
     specific_data = image*logic_array
     return specific_data
+
+def make_lblmask_by_loc(image, loclist, correspond_matrix = None):
+    """
+    Generate a mask by loclist
+
+    Parameters:
+    -----------
+    image: Provide a matrix as template, program will generate a same-shape mask as image
+    loclist: location list
+    correspond_matrix: In case of mismatching between index of image and loclist. The shape of correspond_matrix should be similar to image
+
+    Return:
+    -------
+    mask: output label mask
+
+    Example:
+    --------
+    >>> mask = make_lblmask_by_loc(image, loclist)
+    """
+    mask = np.zeros_like(image)
+    if correspond_matrix is None:
+        for i in vertex_num:
+            mask[tuple(i)] = 1
+    else:
+        for i,e in enumerate(correspond_matrix):
+            if e in vertex_num:
+                mask[i] = 1
+    return mask
     
 def lin_betafit(estimator, X, y, c, tail = 'both'):
     """
