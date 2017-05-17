@@ -9,8 +9,7 @@ from ATT.iofunc import iofiles
 from ATT.algorithm import surf_tools
 import pandas as pd
 from ATT.util import decorators
-from memory_profiler import profile
-from memory_profiler import memory_usage
+
 
 HCP_TEST_DATA = 'e:\\projects\\genetic_imaging\\HCPdata\\HCP900\\'
 data_out_file = 'E:\\projects\\genetic_imaging\\HCPdata\\data\\HCPExtracted\\'
@@ -63,7 +62,7 @@ class get_hcp_data(object):
             try:
                 with open(i + '/tfMRI_WM_LR/Movement_Regressors_dt.txt', 'r') as f:
                     s = f.readlines()
-                    regre_LR = regre_LR = np.array([j.rstrip().split() for j in s])
+                    regre_LR = np.array([j.rstrip().split() for j in s])
                 with open(i + '/tfMRI_WM_RL/Movement_Regressors_dt.txt', 'r') as f:
                     s = f.readlines()
                     regre_RL = np.array([j.rstrip().split() for j in s])
@@ -101,6 +100,8 @@ class get_hcp_data(object):
                 print(e)
                 relative_meanRMS.append([])
         return relative_meanRMS
+
+    @decorators.timer
     def get_file_path_list(self,file_type):
         """
         generate a list containing needed file path
@@ -218,7 +219,6 @@ class get_hcp_data(object):
         return path_list
 
     @decorators.timer
-    #@profile
     def getsave_certain_data(self,file_type,label_data,output,output_path):
         '''
         '''
@@ -227,7 +227,7 @@ class get_hcp_data(object):
         if file_type == 'func' or file_type=='stru':
             for i in path_list:
                 try:
-                    data = iofiles.CIFTI(i).read_cifti()
+                    data = iofiles._CIFTI(i).load()
                     data_list.append(
                     surf_tools.get_signals(data, label_data))  # get roi mean value of each roi of each subject
                 except IOError as e:
@@ -254,15 +254,10 @@ class get_hcp_data(object):
         # with open(out_file_name,'w',newline = '') as f:
         #         f_csv = csv.writer(f)path
         #         f_csv.writerows(data_list)1
-if __name__=='__main__':
-    labelpath = 'E:\projects\genetic_imaging\HCPdata\VanEssenMap\HCP_PhaseTwo\Q1-Q6_RelatedParcellation210\MNINonLinear\\fsaverage_LR32k\\Q1-Q6_RelatedParcellation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii'
 
-    labeldata =  iofiles.CIFTI(labelpath).read_cifti()
-    getdata=get_hcp_data(HCP_TEST_DATA)
-    # pathlist = getdata.get_file_path_list('other')
-    # print(getdata.motion_FD(pathlist))
-    # print(memory_usage(getdata.getsave_certain_data('func',labeldata,'testfortime',data_out_file)))
-    getdata.getsave_certain_data('other', labeldata, 'testfortime', data_out_file)
+
+
+
 
 
 

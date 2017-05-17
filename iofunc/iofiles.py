@@ -7,7 +7,7 @@ import os
 import pickle
 from scipy.io import savemat, loadmat
 import pandas as pd
-from nibabel import cifti2 as ci
+
 
 pjoin = os.path.join
 class IOFactory(object):
@@ -224,7 +224,7 @@ class _CIFTI(object):
         data = img.get_data()
 
         # when reading data with old version of nibabel, data may have 5 or 6 dimensions. Use command below to downsize dimension to 2
-        while data.nidm >2:
+        while data.ndim >2:
             data = data[0]
 
         if contrast is None:
@@ -246,9 +246,6 @@ class _GIFTI(object):
         """
         read gifti data
         """
-        # when reading data with old version of nibabel, data may have 5 or 6 dimensions. Use command below to downsize dimension to 2
-        while data.nidm > 2:
-            data = data[0]
         img = nib.load(self._comp_file)
         if len(img.darrays) == 1:
             data = img.darrays[0].data
