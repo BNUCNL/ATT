@@ -7,6 +7,7 @@ import os
 import pickle
 from scipy.io import savemat, loadmat
 import pandas as pd
+from nibabel import cifti2 as ci
 
 pjoin = os.path.join
 class IOFactory(object):
@@ -207,11 +208,6 @@ class _NIFTI(object):
 
 class _CIFTI(object):
 
-    try:
-        from nibabel import cifti2 as ci
-    except ImportError:
-        raise Exception('Need to install the newest version of nibabel which contains cifti2 module')
-
     def __init__(self, _comp_file):
         self._comp_file = _comp_file
     
@@ -224,12 +220,17 @@ class _CIFTI(object):
         contrast: the number of your contrasts
 
         """
-        img = ci.load(self._comp_file)
-        
+        img = nib.load(self._comp_file)
+        data = img.get_data()
+
+        # when reading data with old version of nibabel, data may have 5 or 6 dimensions. Use command below to downsize dimension to 2
+        while data.nidm >2:
+            data = data[0]
+
         if contrast is None:
-            data = img.get_data()[0]
+            data = data[0]
         elif type(contrast) == int:
-            data = img.get_data()[contrast-1]
+            data = data[contrast-1]
         else:
             raise Exception('contrast should be an int or None')
         return data
@@ -245,6 +246,9 @@ class _GIFTI(object):
         """
         read gifti data
         """
+        # when reading data with old version of nibabel, data may have 5 or 6 dimensions. Use command below to downsize dimension to 2
+        while data.nidm > 2:
+            data = data[0]
         img = nib.load(self._comp_file)
         if len(img.darrays) == 1:
             data = img.darrays[0].data
