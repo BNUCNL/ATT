@@ -28,11 +28,6 @@ mt_analyzer = Analyzer(meas, meas_type, meas_name, roi_name, subj_id, subj_gende
 # remove outlier
 mt_analyzer.outlier_remove(meth='std', figure=True)
 
-# uni-variate  behavior predict
-beh_meas = np.mean(meas, axis=1) # fake behavior use mean brain meas
-r2, n_samples = mt_analyzer.behavior_predict3(beh_meas, ['fakeBeh'], figure=True)
-print r2, n_samples
-
 """
 # merge data from two hemisphere
 mt_analyzer.hemi_merge()

@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
 from atlas import UserDefinedException
-from sklearn import linear_model, cross_validation
+from sklearn.linear_model import LinearRegression
 
 
 def plot_mat(mat, title, xlabels, ylabels):
@@ -457,7 +457,7 @@ class Analyzer(object):
             dof = np.count_nonzero(sel) - contrast.shape[0]
             x = stats.zscore(self.meas[np.ix_(sel, feat_sel)], axis=0)
             y = np.expand_dims(beh_meas[sel, b], axis=1)
-            glm = linear_model.LinearRegression(copy_X=True, fit_intercept=True, normalize=False)
+            glm = LinearRegression(copy_X=True, fit_intercept=True, normalize=False)
             glm.fit(x, y)
             y_pred = glm.predict(x)
             # total sum of squares
@@ -483,53 +483,6 @@ class Analyzer(object):
 
         return slope_stats, r2, dof
 
-    def behavior_predict3(self, beh_meas, beh_name, feat_sel=None, figure=False):
-        """
-        Univariate feature-wise predict for behavior
-        Parameters
-        ----------
-        beh_meas: behavior measures, nSubj x nBeh np.array
-        beh_name: behavior name, a list
-        feat_sel: feature selection, index for feature of interest, a np.array
-        figure: true or false
-
-        Returns
-        -------
-        corr: correlation matrix between brain measurements and behavior measurements,
-        nFeat x nBeh np.array
-        p: p value matrix
-        n_sample: number of samples
-
-        """
-
-        if feat_sel is None:
-            feat_sel = np.arange(self.meas.shape[1])
-        elif isinstance(feat_sel, list):
-            feat_sel = np.array(feat_sel)
-
-        if beh_meas.ndim == 1:
-            beh_meas = np.expand_dims(beh_meas, axis=1)
-
-        r2 = np.zeros((feat_sel.shape[0], beh_meas.shape[1]))
-        n_sample = np.copy(r2)
-        for f in np.arange(feat_sel.shape[0]):
-            for b in np.arange(beh_meas.shape[1]):
-                meas = self.meas[:, feat_sel[f]]
-                beh = beh_meas[:, b]
-                samp_sel = ~np.isnan(meas * beh)
-                n_sample[f, b] = np.count_nonzero(samp_sel)
-                glm = linear_model.LinearRegression(copy_X=True, fit_intercept=True, normalize=False)
-                X = np.expand_dims(meas[samp_sel], axis=1)
-                y = np.expand_dims(beh[samp_sel], axis=1)
-                scores = cross_validation.cross_val_score(glm, X, y, cv=2, scoring='r2')
-                r2[f, b] = np.mean(scores)
-
-        if figure:
-            beh_labels = beh_name
-            feat_labels = [self.feat_name[i] for i in feat_sel]
-            plot_mat(r2, 'R2 for brain and beh regression using split-half CV', beh_labels, feat_labels)
-
-        return r2, n_sample
 
     def hemi_asymmetry(self, feat_sel=None, figure=False):
         """
