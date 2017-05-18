@@ -2,6 +2,7 @@
 # vi: set ft=python sts=4 ts=4 et:
 
 import numpy as np
+from scipy import sparse
 from . import tools
 import copy
 
@@ -136,65 +137,7 @@ def caloverlap(imgdata1, imgdata2, label1, label2, index = 'dice', controlsize =
         overlapidx = np.nan
     return overlapidx
 
-def get_n_ring_neighbour(faces, n, option='part'):
-    """
-    Get n ring neighbour from faces array
 
-    Parameters:
-    ---------
-    faces: faces array
-    n: ring number
-    option: 'part' or 'all'
-            'part' means get the n_th ring neighbour
-            'all' means get the n ring neighbour
-
-    Return:
-    ---------
-    ringlist: array of ring node of each vertex
-              The format of output will like below
-              [{i1,j1,k1,...}, {i2,j2,k2,...}, ...]
-              each element correspond to a vertex label
-
-    Example:
-    ---------
-    >>> ringlist = get_n_ring_neighbour(faces, n)
-    """
-    n_vtx = np.max(faces) + 1 
-    # find l_ring neighbours' id of each vertex
-    n_ring_neighbours = [set() for _ in range(n_vtx)]
-    for face in faces:
-        for v_id in face:
-            n_ring_neighbours[v_id].update(set(face))
-    # remove vertex itself from its neighbour set
-    for v_id in range(n_vtx):
-        n_ring_neighbours[v_id].remove(v_id)
-    if n == 1:
-        return n_ring_neighbours
-    # find n_ring_neighbours
-    one_ring_neighbours = copy.deepcopy(n_ring_neighbours)
-    n_th_ring_neighbours = copy.deepcopy(n_ring_neighbours)
-    # n>1, go for further neighbours
-    for i in range(n-1):
-        for neighbour_set in n_th_ring_neighbours:
-            neighbour_set_tmp = neighbour_set.copy()
-            for v_id in neighbour_set_tmp:
-                neighbour_set.update(one_ring_neighbours[v_id])
-        if i == 0:
-            for v_id in range(n_vtx):
-                n_th_ring_neighbours[v_id].remove(v_id)
-        for v_id in range(n_vtx):
-            # get the (i+2)th ring neighbours
-            n_th_ring_neighbours[v_id] -= n_ring_neighbours[v_id]
-            # get the (i+2) ring neighbours
-            n_ring_neighbours[v_id] |= n_th_ring_neighbours[v_id]
-        
-    if option == 'part':
-        return n_th_ring_neighbours
-    elif option == 'all':
-        return n_ring_neighbours
-    else:
-        raise Exception('bad option!')
-       
 def get_masksize(mask, labelnum = None):
     """
     Compute mask size in surface space
@@ -470,3 +413,93 @@ def _mmd_ab(a, b, one_ring_neighbour):
         h.append(hd)
     return h
 
+
+def mesh_edges(faces):
+    """
+    Copy from FreeROI! Not writed by myself!
+    Returns sparse matrix with edges as an adjacency matrix
+
+    Parameters
+    ----------
+    faces : array of shape [n_triangles x 3]
+        The mesh faces
+
+    Returns
+    -------
+    edges : sparse matrix
+        The adjacency matrix
+    """
+    npoints = np.max(faces) + 1
+    nfaces = len(faces)
+    a, b, c = faces.T
+    edges = sparse.coo_matrix((np.ones(nfaces), (a, b)),
+                              shape=(npoints, npoints))
+    edges = edges + sparse.coo_matrix((np.ones(nfaces), (b, c)),
+                                      shape=(npoints, npoints))
+    edges = edges + sparse.coo_matrix((np.ones(nfaces), (c, a)),
+                                      shape=(npoints, npoints))
+    edges = edges + edges.T
+    edges = edges.tocoo()
+    return edges
+
+
+def get_n_ring_neighbor(faces, n=1, ordinal=False):
+    """
+    Get n ring neighbour from faces array
+
+    Parameters:
+    ---------
+    faces : the array of shape [n_triangles, 3]
+    n : integer
+        specify which ring should be got
+    ordinal : bool
+        True: get the n_th ring neighbor
+        False: get the n ring neighbor
+
+    Return:
+    ---------
+    ringlist: array of ring nodes of each vertex
+              The format of output will like below
+              [{i1,j1,k1,...}, {i2,j2,k2,...}, ...]
+			  each index of the list represents a vertex number
+              each element is a set which includes neighbors of corresponding vertex
+
+    Example:
+    ---------
+    >>> ringlist = get_n_ring_neighbour(faces, n)
+    """
+    n_vtx = np.max(faces) + 1  # get the number of vertices
+
+    # find 1_ring neighbors' id for each vertex
+    coo_w = mesh_edges(faces)
+    csr_w = coo_w.tocsr()
+    n_ring_neighbors = [csr_w.indices[csr_w.indptr[i]:csr_w.indptr[i+1]] for i in range(n_vtx)]
+    n_ring_neighbors = [set(i) for i in n_ring_neighbors]
+
+    if n > 1:
+        # find n_ring neighbors
+        one_ring_neighbors = [i.copy() for i in n_ring_neighbors]
+        n_th_ring_neighbors = [i.copy() for i in n_ring_neighbors]
+        # if n>1, go to get more neighbors
+        for i in range(n-1):
+            for neighbor_set in n_th_ring_neighbors:
+                neighbor_set_tmp = neighbor_set.copy()
+                for v_id in neighbor_set_tmp:
+                    neighbor_set.update(one_ring_neighbors[v_id])
+
+            if i == 0:
+                for v_id in range(n_vtx):
+                    n_th_ring_neighbors[v_id].remove(v_id)
+
+            for v_id in range(n_vtx):
+                n_th_ring_neighbors[v_id] -= n_ring_neighbors[v_id]  # get the (i+2)_th ring neighbors
+                n_ring_neighbors[v_id] |= n_th_ring_neighbors[v_id]  # get the (i+2) ring neighbors
+    elif n == 1:
+        n_th_ring_neighbors = n_ring_neighbors
+    else:
+        raise RuntimeError("The number of rings should be equal or greater than 1!")
+
+    if ordinal:
+        return n_th_ring_neighbors
+    else:
+        return n_ring_neighbors

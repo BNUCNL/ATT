@@ -8,6 +8,7 @@ import pickle
 from scipy.io import savemat, loadmat
 import pandas as pd
 
+
 pjoin = os.path.join
 class IOFactory(object):
     """
@@ -53,7 +54,7 @@ class _CSV(object):
     def __init__(self, _comp_file):
 	    self._comp_file = _comp_file
 
-    def save_csv(self, data, labels = None):
+    def save(self, data, labels = None):
         """
         Save a np array into a csv file.
         ---------------------------------------------
@@ -81,7 +82,7 @@ class _CSV(object):
         else:
             raise Exception('Input must be a numpy array.')
 
-    def read_csv(self):
+    def load(self):
         """
         Read data from .csv
         ----------------------------------
@@ -98,7 +99,7 @@ class _TXT(object):
     def __init__(self, _comp_file):
         self._comp_file = _comp_file
     
-    def save_txt(self, data):
+    def save(self, data):
 
         """
         Save data to .txt
@@ -108,7 +109,7 @@ class _TXT(object):
         """
         np.savetxt(self._comp_file, data)
     
-    def load_txt(self):
+    def load(self):
         """
         Load .txt data
         ------------------------
@@ -119,7 +120,7 @@ class _PKL(object):
     def __init__(self, _comp_file):
         self._comp_file = _comp_file
 
-    def save_pkl(self, data):
+    def save(self, data):
         """
         Save data to .pkl
         ----------------------------
@@ -130,7 +131,7 @@ class _PKL(object):
         pickle.dump(data, output_class)
         output_class.close()
 
-    def load_pkl(self):
+    def load(self):
         """
         Load data from .pkl
         ------------------------------
@@ -150,7 +151,7 @@ class _MAT(object):
     def __init__(self, _comp_file):
         self._comp_file = _comp_file
 
-    def save_mat(self, data):
+    def save(self, data):
         """
         Save data to .mat
         ---------------------------------------
@@ -159,7 +160,7 @@ class _MAT(object):
         """
         savemat(self._comp_file, data)     
 
-    def load_mat(self):
+    def load(self):
         """
         Load data from .mat
         ---------------------------------------
@@ -172,7 +173,7 @@ class _NIFTI(object):
     def __init__(self, _comp_file):
         self._comp_file = _comp_file
 
-    def save_nifti(self, data, header):
+    def save(self, data, header):
         """
         Save nifti data
 	Parameters:
@@ -181,7 +182,7 @@ class _NIFTI(object):
         img = nib.Nifti1Image(data, None, header)
         nib.save(img, self._comp_file)
 
-    def load_nifti(self, datatype = 'data'):
+    def load(self, datatype = 'data'):
         """
         Load nifti data.
         Parameters:
@@ -207,15 +208,10 @@ class _NIFTI(object):
 
 class _CIFTI(object):
 
-    try:
-        from nibabel import cifti2 as ci
-    except ImportError:
-        raise Exception('Need to install the newest version of nibabel which contains cifti2 module')
-
     def __init__(self, _comp_file):
         self._comp_file = _comp_file
     
-    def read_cifti(self,contrast=None):
+    def load(self,contrast=None):
         """
         Read cifti data. If your cifti data contains multiple contrast, you can input your contrast number and get value of this contrast.
  
@@ -224,24 +220,29 @@ class _CIFTI(object):
         contrast: the number of your contrasts
 
         """
-        img = ci.load(self._comp_file)
-        
+        img = nib.load(self._comp_file)
+        data = img.get_data()
+
+        # when reading data with old version of nibabel, data may have 5 or 6 dimensions. Use command below to downsize dimension to 2
+        while data.ndim >2:
+            data = data[0]
+
         if contrast is None:
-            data = img.get_data()[0]
+            data = data[0]
         elif type(contrast) == int:
-            data = img.get_data()[contrast-1]
+            data = data[contrast-1]
         else:
             raise Exception('contrast should be an int or None')
         return data
    
-    def save_cifti(self):
+    def save(self):
         pass
  
 class _GIFTI(object):
     def __init__(self, _comp_file):
         self._comp_file = _comp_file
         
-    def read_gifti(self):
+    def load(self):
         """
         read gifti data
         """
@@ -254,6 +255,6 @@ class _GIFTI(object):
                 data.append(img.darrays[i].data)
         return data
 
-    def save_gifti(self):
+    def save(self):
         pass
 
