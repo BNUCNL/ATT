@@ -472,8 +472,11 @@ class PCorrection(object):
         Holm-Bonferroni correction method
         p(k)<=alpha/(m+1-k)
         """
-        bool_array = [e>(alpha/(self._n-(i+1))) for i,e in enumerate(self._parray)]
-        return self._parray[np.argmax(bool_array)]
+        bool_array = [e>(alpha/(self._n-i)) for i,e in enumerate(self._parray)]
+        if ~np.any(bool_array):
+            return self._parray[~np.isnan(self._parray)][-1]
+        else:
+            return self._parray[np.argmax(bool_array)]
     
     def holm_sidak(self, alpha = 0.05):
         """
@@ -481,8 +484,11 @@ class PCorrection(object):
         When the hypothesis tests are not negatively dependent
         p(k)<=1-(1-alpha)**(1/(m+1-k))
         """
-        bool_array = [e>(1-(1-alpha)**(1.0/(self._n-(i+1)))) for i,e in enumerate(self._parray)]
-        return self._parray[np.argmax(bool_array)]
+        bool_array = [e>(1-(1-alpha)**(1.0/(self._n-i))) for i,e in enumerate(self._parray)]
+        if ~np.any(bool_array):
+            return self._parray[~np.isnan(self._parray)][-1]
+        else:
+            return self._parray[np.argmax(bool_array)]
 
     def fdr_bh(self, alpha = 0.05):
         """
@@ -492,7 +498,10 @@ class PCorrection(object):
         FSL by-default option
         """
         bool_array = [e>(1.0*(i+1)*alpha/self._n) for i,e in enumerate(self._parray)]
-        return self._parray[np.argmax(bool_array)]
+        if ~np.any(bool_array):
+            return self._parray[~np.isnan(self._parray)][-1]
+        else:
+            return self._parray[np.argmax(bool_array)]
 
     def fdr_bhy(self, alpha = 0.05, arb_depend = True):
         """
@@ -507,7 +516,10 @@ class PCorrection(object):
             gamma = 0.577216
             cm = np.log(self._n) + gamma + 1.0/(2*self._n)
         bool_array = [e>(1.0*(i+1)*alpha/(self._n*cm)) for i,e in enumerate(self._parray)] 
-        return self._parray[np.argmax(bool_array)]       
+        if ~np.any(bool_array):
+            return self._parray[~np.isnan(self._parray)][-1]
+        else:
+            return self._parray[np.argmax(bool_array)]
 
 class NonUniformity(object):
     """
