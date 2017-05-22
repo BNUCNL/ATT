@@ -474,7 +474,7 @@ class PCorrection(object):
         """
         bool_array = [e>(alpha/(self._n-i)) for i,e in enumerate(self._parray)]
         if ~np.any(bool_array):
-            return self._parray[~np.isnan(self._parray)][-1]
+            return alpha
         else:
             return self._parray[np.argmax(bool_array)]
     
@@ -486,7 +486,7 @@ class PCorrection(object):
         """
         bool_array = [e>(1-(1-alpha)**(1.0/(self._n-i))) for i,e in enumerate(self._parray)]
         if ~np.any(bool_array):
-            return self._parray[~np.isnan(self._parray)][-1]
+            return alpha
         else:
             return self._parray[np.argmax(bool_array)]
 
@@ -499,7 +499,7 @@ class PCorrection(object):
         """
         bool_array = [e>(1.0*(i+1)*alpha/self._n) for i,e in enumerate(self._parray)]
         if ~np.any(bool_array):
-            return self._parray[~np.isnan(self._parray)][-1]
+            return alpha
         else:
             return self._parray[np.argmax(bool_array)]
 
@@ -517,7 +517,7 @@ class PCorrection(object):
             cm = np.log(self._n) + gamma + 1.0/(2*self._n)
         bool_array = [e>(1.0*(i+1)*alpha/(self._n*cm)) for i,e in enumerate(self._parray)] 
         if ~np.any(bool_array):
-            return self._parray[~np.isnan(self._parray)][-1]
+            return alpha
         else:
             return self._parray[np.argmax(bool_array)]
 
