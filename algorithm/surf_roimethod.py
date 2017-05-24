@@ -136,7 +136,7 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', pr
         else:
             verify_actdata = None
         pm = make_pm(test_data, prob_meth, labelnum)
-        pm_temp = pm_overlap(pm, verify_data, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = verify_actdata)
+        pm_temp = cv_pm_overlap(pm, verify_data, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = verify_actdata)
         output_overlap.append(pm_temp)
     output_overlap = np.array(output_overlap)
     return output_overlap
@@ -179,12 +179,59 @@ def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice'
         testdata = np.expand_dims(imgdata[:,i],axis=1)
         test_actdata = np.expand_dims(actdata[:,i],axis=1)
         pm = make_pm(data_temp, prob_meth, labelnum)
-        pm_temp = pm_overlap(pm, testdata, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = test_actdata)
+        pm_temp = cv_pm_overlap(pm, testdata, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = test_actdata)
         output_overlap.append(pm_temp)
     output_array = np.array(output_overlap)
     return output_array.reshape(output_array.shape[0], output_array.shape[2], output_array.shape[3])
 
-def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', thr_range = [0, 1, 0.1], cmpalllbl = True, controlsize = False, actdata = None):
+def pm_overlap(pm1, pm2, thr_range, option = 'number', index = 'dice'):
+    """
+    Analysis for probabilistic map overlap without using test data 
+    The idea of this analysis is to control vertices number/threshold same among pm1 and pm2, binaried them then compute overlap
+    
+    Parameters:
+    -----------
+    pm1: probablistic map 1
+    pm2: probabilistic map 2
+    thr_range: threshold range, format as [min, max, step], which could be vertex numbers or probablistic threshold
+    option: 'number', compute overlap between probablistic maps by multiple vertex numbers
+            'threshold', compute overlap between probablistic maps by multiple thresholds
+    index: 'dice', overlap indices as dice coefficient
+           'percent', overlap indices as percent
+    """
+    assert (pm1.ndim == 1)|(pm1.ndim == 3), "pm1 should not contain multiple probablistic map"
+    assert (pm2.ndim == 1)|(pm2.ndim == 3), "pm2 should not contain multiple probablistic map" 
+    if pm1.ndim == 3:
+        pm1 = pm1.reshape(pm1.shape[0], pm1.shape[-1])
+    if pm1.ndim == 1:
+        pm1 = np.expand_dims(pm1, axis=0)
+    if pm2.ndim == 3:
+        pm2 = pm2.reshape(pm2.shape[0], pm2.shape[-1])
+    if pm2.ndim == 1:
+        pm2 = np.expand_dims(pm2, axis=0)
+
+    assert len(thr_range) == 3, "thr_range should be a 3 elements list, as [min, max, step]"
+    if option == 'number':
+        thre_func = tools.threshold_by_number
+    elif option == 'threshold':
+        thre_func = tools.threshold_by_values
+    else:
+        raise Exception('Missing option')
+
+    output_overlap = []
+    for i in np.arange(thr_range[0], thr_range[1], thr_range[2]):
+        print('Computing overlap of vertices {}'.format(i))
+        pm1_thr = thre_func(pm1, i)
+        pm2_thr = thre_func(pm2, i)
+        pm1_thr[pm1_thr!=0] = 1
+        pm2_thr[pm2_thr!=0] = 1
+        output_overlap.append(caloverlap(pm1_thr, pm2_thr, 1, 1))
+    output_overlap = np.array(output_overlap)
+    output_overlap[np.isnan(output_overlap)] = 0
+    return output_overlap
+         
+
+def cv_pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', thr_range = [0, 1, 0.1], cmpalllbl = True, controlsize = False, actdata = None):
     """
     Compute overlap(dice) between probabilistic map and test data
     
@@ -214,7 +261,7 @@ def pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', 
                  
     Example:
     --------
-    >>> output_overlap = pm_overlap(pm, test_data, [2,4], [2,4])
+    >>> output_overlap = cv_pm_overlap(pm, test_data, [2,4], [2,4])
     """
     if cmpalllbl is False:
         assert len(labels_template) == len(labels_testdata), "Notice that labels_template should have same length of labels_testdata if cmpalllbl is False"
