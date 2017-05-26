@@ -8,14 +8,35 @@ import pickle
 from scipy.io import savemat, loadmat
 import pandas as pd
 
-
 pjoin = os.path.join
-class IOFactory(object):
+
+def make_ioinstance(filename, filepath = '.'):
+    """
+    A function to pack IO factory, make it easier to use
+
+    Parameters:
+    -----------
+    filename: filename
+    filepath: filepath, by default is '.'
+
+    Return:
+    -------
+    ioinstance: input/output instance contain save and load method
+
+    Example:
+    --------
+    >>> ioinstance = make_ioinstance('data.csv')
+    >>> ioinstance.save(data)
+    """
+    factory = _IOFactory()
+    return factory.createfactory(filename, filepath)
+
+class _IOFactory(object):
     """
     Make a factory for congruent read/write data
     Usage:
         >>>factory = iofiles.IOFactory()
-        >>>factory.createfactory('.', 'data.csv')
+        >>>factory.createfactory('data.csv')
     """
     def createfactory(self, filename, filepath = '.'):
         """

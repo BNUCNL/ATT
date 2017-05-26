@@ -7,7 +7,32 @@ from scipy import stats
 import numpy as np
 from scipy.cluster.hierarchy import linkage, dendrogram
 
-class FigureFactory(object):
+def make_figfunction(figuretype):
+    """
+    A function to pack figure factory, make it easier to use
+ 
+    Parameters:
+    -----------
+    figuretype: 'corr', correlation plots
+                'mat', matrix plot
+                'bar', plot bar
+                'hist', histogram
+                'hierarchy', hierarchy maps
+                'line', line maps
+                'scatter', scatter maps
+
+    Return:
+    -------
+    figinstance: figure function
+
+    Example:
+    --------
+    >>> plotcorr = make_figfunction('corr')
+    """
+    figFact = _FigureFactory()
+    return figFact.createfactory(figuretype)
+
+class _FigureFactory(object):
     """
     A Factory for Figures
     ----------------------------

@@ -230,7 +230,6 @@ def pm_overlap(pm1, pm2, thr_range, option = 'number', index = 'dice'):
     output_overlap[np.isnan(output_overlap)] = 0
     return output_overlap
          
-
 def cv_pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', thr_range = [0, 1, 0.1], cmpalllbl = True, controlsize = False, actdata = None):
     """
     Compute overlap(dice) between probabilistic map and test data
@@ -286,6 +285,45 @@ def cv_pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice
                 mpm_temp.append([caloverlap(mpm, test_data[:,i], labels_template[idx], lbld, index, controlsize = controlsize, actdata = verify_actdata) for idx, lbld in enumerate(labels_testdata)])
         output_overlap.append(mpm_temp)
     return np.array(output_overlap)
+
+def overlap_bysubject(imgdata, labels, subj_range, labelnum = None, prob_meth = 'part', index = 'dice'):
+    """
+    A function used for computing overlap between template (probilistic map created by all subjects) and probabilistic map of randomly chosen subjects.
+    
+    Parameters:
+    -----------
+    imgdata: label image data
+    labels: list, label number indicated regions
+    subj_range: range of subjects, the format as [minsubj, maxsubj, step]
+    labelnum: label numbers, by default is None
+    prob_meth: method for probabilistic map, 'all' to compute all subjects that contains non-regions, 'part' to compute part subjects that ignore subjects with non-regions.
+
+    Returns:
+    --------
+    overlap_subj: overlap indices of each amount of subjects
+
+    Example:
+    --------
+    >>> overlap_subj = overlap_bysubject(imgdata, [4], [0,100,10], labelnum = 4) 
+    """
+    nsubj = imgdata.shape[-1]
+    pm = make_pm(imgdata, meth = prob_meth, labelnum = labelnum)
+    overlap_subj = []
+    for i in np.arange(subj_range[0], subj_range[1], subj_range[2]):
+        subj_num = np.random.choice(nsubj, i, replace=True)        
+        sub_imgdata = imgdata[...,subj_num]
+        if sub_imgdata.ndim == 3:
+            sub_imgdata = np.expand_dims(sub_imgdata, axis=-1)
+        pm_sub = make_pm(sub_imgdata, meth = prob_meth, labelnum = labelnum)
+        overlap_lbl = []
+        for lbl in labels:
+            pm_lbl = pm[...,lbl-1]
+            pm_sub_lbl = pm_sub[...,lbl-1]
+            pm_lbl[pm_lbl!=0] = 1
+            pm_sub_lbl[pm_sub_lbl!=0] = 1
+            overlap_lbl.append(caloverlap(pm_lbl, pm_sub_lbl, 1, 1, index = index))
+        overlap_subj.append(overlap_lbl)
+    return np.array(overlap_subj)
 
 class GetLblRegion(object):
     """
