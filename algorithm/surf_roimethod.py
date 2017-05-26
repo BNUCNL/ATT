@@ -304,7 +304,7 @@ def overlap_bysubject(imgdata, labels, subj_range, labelnum = None, prob_meth = 
 
     Example:
     --------
-    >>> overlap_subj = overlap_bysubject(imgdata, [4], [0,100,10]) 
+    >>> overlap_subj = overlap_bysubject(imgdata, [4], [0,100,10], labelnum = 4) 
     """
     nsubj = imgdata.shape[-1]
     pm = make_pm(imgdata, meth = prob_meth, labelnum = labelnum)
