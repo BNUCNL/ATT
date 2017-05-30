@@ -249,7 +249,7 @@ class _FigureFactory(object):
                 ylim: By default is None, if ylim exists, limit y values of figure
                 scaling: whether do rescaling or not to show multiple lines
             Example:
-                >>> plotline(dataarray)
+                >>> plotline(x, y, yerr)
             """
             plt.rc('xtick', labelsize = 14)
             plt.rc('ytick', labelsize = 14)
