@@ -310,7 +310,7 @@ def overlap_bysubject(imgdata, labels, subj_range, labelnum = None, prob_meth = 
     pm = make_pm(imgdata, meth = prob_meth, labelnum = labelnum)
     overlap_subj = []
     for i in np.arange(subj_range[0], subj_range[1], subj_range[2]):
-        subj_num = np.random.choice(nsubj, i, replace=True)        
+        subj_num = np.random.choice(nsubj, i, replace=False)        
         sub_imgdata = imgdata[...,subj_num]
         if sub_imgdata.ndim == 3:
             sub_imgdata = np.expand_dims(sub_imgdata, axis=-1)

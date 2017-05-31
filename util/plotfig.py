@@ -139,7 +139,7 @@ class _FigureFactory(object):
             sns.heatmap(data, xticklabels = xlabel, yticklabels = ylabel)
             plt.show()
 
-        def _bar_plotting(self, data, title, xlabels, ylabels, legendname, legendpos = 'upper left', err=None):
+        def _bar_plotting(self, data, title = '', xlabels = '', ylabels = '', legendname = None, legendpos = 'upper left', err=None):
             """
             Do barplot
             --------------------------
@@ -165,7 +165,10 @@ class _FigureFactory(object):
             rects = []
             if err is None:
                 for i in range(data.shape[1]):
-                    rects = ax.bar(ind + i*width, data[:,i], width, color = color[i%5], label = legendname[i])
+                    if legendname is None:
+                        rects = ax.bar(ind + i*width, data[:,i], width, color = color[i%5])
+                    else:
+                        rects = ax.bar(ind + i*width, data[:,i], width, color = color[i%5], label = legendname[i])
                     ax.legend(loc=legendpos) 
             else:
                 for i in range(data.shape[1]):
@@ -235,44 +238,42 @@ class _FigureFactory(object):
 
             plt.show()
 
-        def _simpleline_plotting(self, dataarray, xlabel='', ylabel='', xlim = None, ylim = None, xticklabel = None, scaling = False):
+        def _simpleline_plotting(self, x, y, yerr = None, xlabel='', ylabel='', xlim = None, ylim = None, scaling = False):
             """
             Plot an array using simple lines
             For better showing, rescaling each array into range of 0 to 1
             --------------------------------------
             Parameters:
-                dataarray: data array, a x*y array, y means number of lines
+                x: range of x-axis
+                y: data array, a x*y array, y means number of lines
                 xlabel: xlabel
                 ylabel: ylabel
                 xlim: By default is None, if ylim exists, limit x values of figure
                 ylim: By default is None, if ylim exists, limit y values of figure
-                xticklabel: axis x labels
                 scaling: whether do rescaling or not to show multiple lines
             Example:
-                >>> plotline(dataarray)
+                >>> plotline(x, y, yerr)
             """
             plt.rc('xtick', labelsize = 14)
             plt.rc('ytick', labelsize = 14)
             fig, ax = plt.subplots()
             ax.set_color_cycle(['red', 'blue', 'yellow', 'black', 'green'])
-            if dataarray.ndim == 1:
-                dataarray = np.expand_dims(dataarray, axis = 1)
+            if y.ndim == 1:
+                y = np.expand_dims(y, axis = 1)
             if scaling is True:
-                dataarray_scaling = np.zeros_like(dataarray)
-                for i in range(dataarray.shape[1]):
-                    dataarray_scaling[:,i] = (dataarray[:,i]-np.min(dataarray[:,i]))/(np.max(dataarray[:,i])-np.min(dataarray[:,i]))
+                y_scaling = np.zeros_like(y)
+                for i in range(y.shape[1]):
+                    y_scaling[:,i] = (y[:,i]-np.min(y[:,i]))/(np.max(y[:,i])-np.min(y[:,i]))
             else:
-                dataarray_scaling = dataarray
-            plt.plot(dataarray_scaling)
+                y_scaling = y
+            for i in range(y_scaling.shape[-1]):
+                plt.errorbar(x, y_scaling[:,i], yerr = yerr)
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
             if xlim is not None:
                 plt.xlim(xlim)
             if ylim is not None:
                 plt.ylim(ylim)
-            if xticklabel is not None:
-                plt.xticks(range(dataarray.shape[0]), xticklabel)
-
             plt.show()
 
         def _scatter_plotting(self, array1, array2, xlabel='', ylabel='', colors = ['red'], xlim = None, ylim = None):
