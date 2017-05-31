@@ -139,7 +139,7 @@ class _FigureFactory(object):
             sns.heatmap(data, xticklabels = xlabel, yticklabels = ylabel)
             plt.show()
 
-        def _bar_plotting(self, data, title, xlabels, ylabels, legendname, legendpos = 'upper left', err=None):
+        def _bar_plotting(self, data, title = '', xlabels = '', ylabels = '', legendname = None, legendpos = 'upper left', err=None):
             """
             Do barplot
             --------------------------
@@ -165,7 +165,10 @@ class _FigureFactory(object):
             rects = []
             if err is None:
                 for i in range(data.shape[1]):
-                    rects = ax.bar(ind + i*width, data[:,i], width, color = color[i%5], label = legendname[i])
+                    if legendname is None:
+                        rects = ax.bar(ind + i*width, data[:,i], width, color = color[i%5])
+                    else:
+                        rects = ax.bar(ind + i*width, data[:,i], width, color = color[i%5], label = legendname[i])
                     ax.legend(loc=legendpos) 
             else:
                 for i in range(data.shape[1]):
