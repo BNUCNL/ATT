@@ -31,30 +31,6 @@ def MNI2vox(mni, affine):
     vox = np.dot(mni, np.linalg.inv(affine.T))
     return vox[:3]
 
-def caldice(data1, data2, label):
-    """
-    Compute dice coefficient
-    ---------------------------------
-    Parameters:
-        data1, data2: matrix data with labels
-                      data is 3 dimension
-        label: class(region) labels
-    Output:
-        dice: dice values
-    Example:
-        >>> dice = caldice(data1, data2, [1,2,3,4])
-    """
-    if isinstance(label, list):
-        label = np.array(label)
-    dice = []
-    for i in range(label.shape[0]):
-        data_mul = (data1 == (i+1)) * (data2 == (i+1))
-        data_sum = (data1 == (i+1)) + (data2 == (i+1))
-        if not np.any(data_sum[data_sum!=0]):
-            dice.append(np.nan)
-        else:
-            dice.append(2.0*np.sum(data_mul)/(np.sum(data1 == (i+1)) + np.sum(data2 == (i+1))))
-    return dice
 
 def get_masksize(mask):
     """
