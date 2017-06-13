@@ -70,6 +70,10 @@ def calc_overlap(data1, data2, label1=None, label2=None, index='dice', controlsi
     ------
     overlap : float
         The overlap of data1 and data2
+
+    Example:
+    --------
+    >>> overlap = calc_overlap(data1, data2, label1, label2, index = 'dice', controlsize = True, actdata = actdata)
     """
     if controlsize is True:
         if label1 is not None and label2 is not None:
