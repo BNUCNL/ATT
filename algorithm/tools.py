@@ -26,15 +26,17 @@ def _overlap(c1, c2, index='dice'):
     set1 = set(c1)
     set2 = set(c2)
     intersection_num = float(len(set1 & set2))
-    if index == 'dice':
-        total_num = len(set1 | set2) + intersection_num
-        overlap = 2 * intersection_num / total_num
-    elif index == 'percent':
-        overlap = intersection_num / len(set1)
-    else:
-        raise Exception("Only support 'dice' and 'percent' as overlap indices at present.")
+    try:
+        if index == 'dice':
+            total_num = len(set1 | set2) + intersection_num
+            overlap = 2.0 * intersection_num / total_num
+        elif index == 'percent':
+            overlap = 1.0 * intersection_num / len(set1)
+        else:
+            raise Exception("Only support 'dice' and 'percent' as overlap indices at present.")
+    except ZeroDivisionError as e:
+        overlap = np.nan
     return overlap
-
 
 def calc_overlap(data1, data2, label1=None, label2=None, index='dice', controlsize = False, actdata = None):
     """
