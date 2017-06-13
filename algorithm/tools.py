@@ -36,7 +36,7 @@ def _overlap(c1, c2, index='dice'):
     return overlap
 
 
-def calc_overlap(data1, data2, label1=None, label2=None, index='dice'):
+def calc_overlap(data1, data2, label1=None, label2=None, index='dice', controlsize = False, actdata = None):
     """
     Calculate overlap between two sets.
     The sets are acquired from data1 and data2 respectively.
@@ -46,31 +46,45 @@ def calc_overlap(data1, data2, label1=None, label2=None, index='dice'):
     data1, data2 : collection or numpy array
         label1 is corresponding with data1
         label2 is corresponding with data2
+    
     label1, label2 : None or labels
         If label1 or label2 is None, the corresponding data is supposed to be
         a collection of members such as vertices and voxels.
         If label1 or label2 is a label, the corresponding data is always a numpy array with same shape and meaning.
         And we will acquire set1 elements whose labels are equal to label1 from data1
         and set2 elements whose labels are equal to label2 from data2.
+    
     index : string ('dice' | 'percent')
         This parameter is used to specify index which is used to measure overlap.
+    controlsize: True or False
+        Whether control roi size or not when computing overlap index
+        If controlsize is True, please give global image data, but not a collection
+        Besides, actdata should be given.
+    
+    actdata: None or global image data
+        If controlsize is True, please input actdata that correspond to data2
 
     Return
     ------
     overlap : float
-        The overlap of set1 and set2
+        The overlap of data1 and data2
     """
-    # Transform data to collections
-    if label1 is not None and label2 is None:
+    if controlsize is True:
+        if label1 is not None and label2 is not None:
+            datasize1 = data1[data1==label1].shape[0]
+            try:
+                data2 = control_lbl_size(data2, actdata, datasize1, label = label2)
+            except AttributeError:
+                raise Exception('Please give actdata here!')
+        else:
+            raise Exception('Not support to control size of collection data')
+
+    if label1 is not None:
         positions1 = np.where(data1 == label1)
-        data1 = zip(*positions1)
-    elif label1 is None and label2 is not None:
+        data1 = zip(*positions1)    
+
+    if label2 is not None:
         positions2 = np.where(data2 == label2)
-        data2 = zip(*positions2)
-    elif label1 is not None and label2 is not None:
-        positions1 = np.where(data1 == label1)
-        positions2 = np.where(data2 == label2)
-        data1 = zip(*positions1)
         data2 = zip(*positions2)
 
     # calculate overlap
@@ -729,7 +743,7 @@ def threshold_by_value(imgdata, thr, threshold_type = 'value', option = 'descend
         raise Exception('No such parameter in option')
     return imgdata_thr
 
-def control_lbl_size(labeldata, actdata, thr, option = 'num'):
+def control_lbl_size(labeldata, actdata, thr,label = None,  option = 'num'):
     """
     Threshold label data using activation mask (threshold activation data then binarized it to get mask to restrained raw label data range)
     
@@ -752,6 +766,8 @@ def control_lbl_size(labeldata, actdata, thr, option = 'num'):
     >>> out_lbldata = control_lbl_size(labeldata, actdata, 125, 'num')
     """
     # threshold activation data
+    actdata = actdata*(labeldata == label)
+
     if option == 'num':
         outactdata = threshold_by_number(actdata, thr, 'number')
     elif option == 'value':
