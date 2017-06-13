@@ -743,7 +743,7 @@ def threshold_by_value(imgdata, thr, threshold_type = 'value', option = 'descend
         raise Exception('No such parameter in option')
     return imgdata_thr
 
-def control_lbl_size(labeldata, actdata, thr,label = None,  option = 'num'):
+def control_lbl_size(labeldata, actdata, thr, label = None,  option = 'num'):
     """
     Threshold label data using activation mask (threshold activation data then binarized it to get mask to restrained raw label data range)
     
@@ -763,7 +763,7 @@ def control_lbl_size(labeldata, actdata, thr,label = None,  option = 'num'):
 
     Example:
     --------
-    >>> out_lbldata = control_lbl_size(labeldata, actdata, 125, 'num')
+    >>> out_lbldata = control_lbl_size(labeldata, actdata, 125, label = 1, 'num')
     """
     # threshold activation data
     actdata = actdata*(labeldata == label)
