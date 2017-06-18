@@ -99,11 +99,11 @@ def discretisation(eigen_vec):
     while (svd_restarts < 30) and (exitLoop == 0):
         c = np.zeros((n,1))
         R = np.matrix(np.zeros((k,k)))
-        R[:,0] = eigen_vec[int(rand(1)*(n-1)),:].transpose()
+        R[:,0] = eigen_vec[int(rand(1)*(n-1)),:].T
     
         for j in range(1,k):
             c = c + np.abs(eigen_vec*R[:,j-1])
-            R[:,j] = eigen_vec[c.argmin(),:].transpose()
+            R[:,j] = eigen_vec[c.argmin(),:].T
     
         last_objvalue = 0
         n_iter_discrete = 0
@@ -117,7 +117,7 @@ def discretisation(eigen_vec):
             j = np.reshape(np.asarray(t_discrete.argmax(1)), n)
             eigenvec_discrete = sparse.csc_matrix((np.ones(len(j)),(range(0,n),\
             np.array(j))), shape=(n,k))
-            tSVD = eigenvec_discrete.transpose()*eigen_vec
+            tSVD = eigenvec_discrete.T*eigen_vec
             try:
                 U, S, Vh = linalg.svd(tSVD)            
             except LinAlgError:
@@ -129,7 +129,7 @@ def discretisation(eigen_vec):
             exitLoop = 1
         else:
             lastObjectiveValue = NcutValue
-            R = np.matrix(Vh).transpose()*np.matrix(U).transpose()
+            R = np.matrix(Vh).T*np.matrix(U).T
     
     if exitLoop == 0:
         raise SVDError("SVD didn't converge after 30 retries")
