@@ -123,13 +123,14 @@ def discretisation(eigen_vec):
             except LinAlgError:
                 print('SVD didn''t converged, randomizing and trying again')
                 break
-        # test for convergence
-        NcutValue = 2*(n-S.sum())
-        if((np.abs(NcutValue - lastObjectValue)<eps) or (nbIterationsDiscretisation > nbIteraionsDiscretisationMax)):
-            exitLoop = 1
-        else:
-            lastObjectiveValue = NcutValue
-            R = np.matrix(Vh).T*np.matrix(U).T
+
+            # test for convergence
+            NcutValue = 2*(n-S.sum())
+            if((np.abs(NcutValue - last_objvalue)<eps) or (n_iter_discrete > n_iter_discrete_max)):
+                exitLoop = 1
+            else:
+                last_objvalue = NcutValue
+                R = np.matrix(Vh).T*np.matrix(U).T
     
     if exitLoop == 0:
         raise SVDError("SVD didn't converge after 30 retries")
