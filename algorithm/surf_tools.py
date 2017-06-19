@@ -95,49 +95,6 @@ class GenAdjacentMatrix(object):
                 adjmatrix[i,j] = 1
         return adjmatrix
 
-def caloverlap(imgdata1, imgdata2, label1, label2, index = 'dice', controlsize = False, actdata = None):
-    """
-    Compute overlap (dice coefficient or percentage) in surface format data
-    
-    Parameters:
-    ----------
-    imgdata1, imgdata2: two image data in surface format
-    label1, label2: label in correspond imgdata that used for overlap
-    index: output index, dice or percent
-    controlsize: whether control roi size of label in imgdata2 to roi size of label in imgdata1 or not, the method is to extract region with highest activation and paired them with region size of imgdata1
-    actdata: by default is None, if controlsize is True, it's better to give actdata in this function
-
-    Return:
-    ----------
-    overlapidx: overlap values
-    
-    Example: 
-    ---------
-    >>> overlapidx = caloverlap(imgdata1, imgdata2, label1, label2)
-    """
-    if imgdata1.ndim == 3:
-        imgdata1 = imgdata1[:,0,0]
-    if imgdata2.ndim == 3:
-        imgdata2 = imgdata2[:,0,0]
-    if controlsize is True:
-        imgsize1 = imgdata1[imgdata1==label1].shape[0]
-        try:
-            imgdata2 = tools.control_lbl_size(imgdata2, actdata, imgsize1)   
-        except AttributeError:
-            raise Exception('We haven''t make it clear whether allow actdata as None when size need to be controlled, please input actdata here')
-    overlap = np.logical_and(imgdata1==label1, imgdata2==label2)
-    try:
-        if index == 'dice':
-            overlapidx = 2.0*len(overlap[overlap==1])/(len(imgdata1[imgdata1==label1])+len(imgdata2[imgdata2==label2]))
-        elif index == 'percent':
-            overlapidx = 1.0*len(overlap[overlap==1])/(len(imgdata1[imgdata1==label1]))
-        else:
-            raise Exception('please input dice or percent as parameters')
-    except ZeroDivisionError as e:
-        overlapidx = np.nan
-    return overlapidx
-
-
 def get_masksize(mask, labelnum = None):
     """
     Compute mask size in surface space
