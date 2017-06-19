@@ -137,7 +137,23 @@ def discretisation(eigen_vec):
     else:
         return eigenvec_discrete
 
-
+def gen_labelimg(eigenvec_discrete):
+    """
+    Generate label image from discretisated eigenvector
+    
+    Parameters:
+    -----------
+    eigenvec_discrete: discretisated eigenvector
+    
+    Return:
+    -------
+    labelimg: label image (surface only)
+    """
+    eigenvec_discrete = eigenvec_discrete.todense()
+    eigenvec_discrete = np.array(eigenvec_discrete)
+    labelimg = np.argmax(eigenvec_discrete, axis=1)
+    labelimg += 1
+    return labelimg 
 
 
 
