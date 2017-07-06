@@ -460,3 +460,49 @@ def get_n_ring_neighbor(faces, n=1, ordinal=False):
         return n_th_ring_neighbors
     else:
         return n_ring_neighbors
+
+def get_connvex(seedvex, faces, mask):
+    """
+    Get connected vertices that contain in mask
+    We firstly need a start point to acquire connected vertices, then do region growing until all vertices in mask were included
+    That means, output should satisfied two condition:
+    1 overlap with mask
+    2 connected with each other
+    
+    Parameters:
+    -----------
+    seedvex: seed point (start point)
+    faces: faces array, vertex relationship
+    mask: overlapping mask
+
+    Return:
+    -------
+    connvex: connected vertice set
+
+    Example:
+    --------
+    >>> get_connvex(24, faces, mask)
+    """
+    connvex = set()
+    connvex.add(seedvex)
+    connvex_temp = _get_connvex_neigh(seedvex, faces, mask)
+    while not connvex_temp.issubset(connvex):
+        connvex_dif = connvex_temp.difference(connvex)
+        connvex.update(connvex_dif)
+        connvex_temp = set()
+        for sx in connvex_dif: 
+            connvex_temp.update(_get_connvex_neigh(sx, faces, mask))
+        print('Size of sulcus {0}'.format(len(connvex)))
+    return connvex  
+
+def _get_connvex_neigh(seedvex, faces, mask):
+    """
+    """
+    assert mask.shape[0] == np.max(faces) + 1 ,"mask need to have same vertex number with faces connection relationship"
+    connvex = set()
+
+    raw_faces, _ = np.where(faces == seedvex)
+    rawconnvex = set(faces[raw_faces].flatten())
+    [connvex.add(i) for i in rawconnvex if mask[i] == 1]
+    connvex.remove(seedvex)
+    return connvex
