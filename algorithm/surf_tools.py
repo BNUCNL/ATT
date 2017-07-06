@@ -461,7 +461,7 @@ def get_n_ring_neighbor(faces, n=1, ordinal=False):
     else:
         return n_ring_neighbors
 
-def get_connvex(seedvex, faces, mask):
+def get_connvex(seedvex, faces, mask, masklable = 1):
     """
     Get connected vertices that contain in mask
     We firstly need a start point to acquire connected vertices, then do region growing until all vertices in mask were included
@@ -474,6 +474,7 @@ def get_connvex(seedvex, faces, mask):
     seedvex: seed point (start point)
     faces: faces array, vertex relationship
     mask: overlapping mask
+    masklabel: specific mask label used as restriction
 
     Return:
     -------
@@ -481,28 +482,29 @@ def get_connvex(seedvex, faces, mask):
 
     Example:
     --------
-    >>> get_connvex(24, faces, mask)
+    >>> connvex = get_connvex(24, faces, mask)
     """
     connvex = set()
     connvex.add(seedvex)
-    connvex_temp = _get_connvex_neigh(seedvex, faces, mask)
+    connvex_temp = _get_connvex_neigh(seedvex, faces, mask, masklabel)
     while not connvex_temp.issubset(connvex):
         connvex_dif = connvex_temp.difference(connvex)
         connvex.update(connvex_dif)
         connvex_temp = set()
         for sx in connvex_dif: 
-            connvex_temp.update(_get_connvex_neigh(sx, faces, mask))
+            connvex_temp.update(_get_connvex_neigh(sx, faces, mask, masklabel))
         print('Size of sulcus {0}'.format(len(connvex)))
     return connvex  
 
-def _get_connvex_neigh(seedvex, faces, mask):
+def _get_connvex_neigh(seedvex, faces, mask, masklabel = 1):
     """
+    Function to get neighbouring vertices of a seed that satisfied overlap with mask
     """
     assert mask.shape[0] == np.max(faces) + 1 ,"mask need to have same vertex number with faces connection relationship"
     connvex = set()
 
     raw_faces, _ = np.where(faces == seedvex)
     rawconnvex = set(faces[raw_faces].flatten())
-    [connvex.add(i) for i in rawconnvex if mask[i] == 1]
+    [connvex.add(i) for i in rawconnvex if mask[i] == masklabel]
     connvex.remove(seedvex)
     return connvex
