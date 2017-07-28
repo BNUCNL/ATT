@@ -49,7 +49,8 @@ class _IOFactory(object):
             A class
    
         Note:
-            What support now is .csv, .pkl, .mat and .nifti
+            What support now is .csv, .pkl, .mat .nifti, .label
+            # Note, we can read .gifti & .cifti data but can't save that
         """
         _comp_file = pjoin(filepath, filename)
         _lbl_cifti = False
