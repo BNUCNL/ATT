@@ -68,6 +68,8 @@ class _IOFactory(object):
             return _NIFTI(_comp_file)
         elif _comp_file.endswith('gii'):
             return _GIFTI(_comp_file)
+        elif _comp_file.endswith('label'):
+            return _LABEL(_comp_file)
         else:
             return None
 
@@ -278,4 +280,23 @@ class _GIFTI(object):
 
     def save(self):
         pass
+
+class _LABEL(object):
+    def __init__(self, _comp_file):
+        self._comp_file = _comp_file
+
+    def load(self):
+        """
+        Load label data
+        """
+        data = nib.freesurfer.read_label(self._comp_file)
+        return data
+
+    def save(self, labeldata):
+        """
+        Save label data
+        """
+        header = str('the number of vertex: ' + str(len(labeldata)))
+        np.savetxt(self._comp_file, labeldata, fmt='%d', 
+                   header = header, comments='# ascii, label vertexes\n')
 
