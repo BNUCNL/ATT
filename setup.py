@@ -9,6 +9,6 @@ setup(name='ATT',
       author='Taicheng Huang',
       author_email='taicheng_huang@sina.cn',
       url='https://github.com/helloTC/ATT',
-      packages=['algorithm', 'corefunc', 'iofunc', 'utilfunc'],
-      install_requires=['numpy', 'scipy', 'nibabel', 'six', 'sklearn', 'pandas', 'matplotlib', 'seaborn', 'cPickle']
+      packages=['algorithm', 'graph', 'iofunc', 'surface', 'util', 'volume'],
+      install_requires=['numpy', 'scipy', 'nibabel', 'six', 'sklearn', 'pandas', 'matplotlib', 'seaborn']
       )
