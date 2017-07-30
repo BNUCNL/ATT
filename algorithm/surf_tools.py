@@ -370,42 +370,13 @@ def _mmd_ab(a, b, one_ring_neighbour):
         h.append(hd)
     return h
 
-
-def mesh_edges(faces):
-    """
-    Copy from FreeROI! Not writed by myself!
-    Returns sparse matrix with edges as an adjacency matrix
-
-    Parameters
-    ----------
-    faces : array of shape [n_triangles x 3]
-        The mesh faces
-
-    Returns
-    -------
-    edges : sparse matrix
-        The adjacency matrix
-    """
-    npoints = np.max(faces) + 1
-    nfaces = len(faces)
-    a, b, c = faces.T
-    edges = sparse.coo_matrix((np.ones(nfaces), (a, b)),
-                              shape=(npoints, npoints))
-    edges = edges + sparse.coo_matrix((np.ones(nfaces), (b, c)),
-                                      shape=(npoints, npoints))
-    edges = edges + sparse.coo_matrix((np.ones(nfaces), (c, a)),
-                                      shape=(npoints, npoints))
-    edges = edges + edges.T
-    edges = edges.tocoo()
-    return edges
-
-
-def get_n_ring_neighbor(faces, n=1, ordinal=False):
+def get_n_ring_neighbor(vertx, faces, n=1, ordinal=False):
     """
     Get n ring neighbour from faces array
 
     Parameters:
     ---------
+    vertex: vertex number
     faces : the array of shape [n_triangles, 3]
     n : integer
         specify which ring should be got
@@ -423,43 +394,25 @@ def get_n_ring_neighbor(faces, n=1, ordinal=False):
 
     Example:
     ---------
-    >>> ringlist = get_n_ring_neighbour(faces, n)
+    >>> ringlist = get_n_ring_neighbour(24, faces, n)
     """
-    n_vtx = np.max(faces) + 1  # get the number of vertices
+    if isinstance(vertx, int):
+        vertx = [vertx]
+    nth_ring = [set([vx]) for vx in vertx]
+    nring = [set([vx]) for vx in vertx]
 
-    # find 1_ring neighbors' id for each vertex
-    coo_w = mesh_edges(faces)
-    csr_w = coo_w.tocsr()
-    n_ring_neighbors = [csr_w.indices[csr_w.indptr[i]:csr_w.indptr[i+1]] for i in range(n_vtx)]
-    n_ring_neighbors = [set(i) for i in n_ring_neighbors]
-
-    if n > 1:
-        # find n_ring neighbors
-        one_ring_neighbors = [i.copy() for i in n_ring_neighbors]
-        n_th_ring_neighbors = [i.copy() for i in n_ring_neighbors]
-        # if n>1, go to get more neighbors
-        for i in range(n-1):
-            for neighbor_set in n_th_ring_neighbors:
-                neighbor_set_tmp = neighbor_set.copy()
-                for v_id in neighbor_set_tmp:
-                    neighbor_set.update(one_ring_neighbors[v_id])
-
-            if i == 0:
-                for v_id in range(n_vtx):
-                    n_th_ring_neighbors[v_id].remove(v_id)
-
-            for v_id in range(n_vtx):
-                n_th_ring_neighbors[v_id] -= n_ring_neighbors[v_id]  # get the (i+2)_th ring neighbors
-                n_ring_neighbors[v_id] |= n_th_ring_neighbors[v_id]  # get the (i+2) ring neighbors
-    elif n == 1:
-        n_th_ring_neighbors = n_ring_neighbors
+    while n != 0:
+        n = n - 1
+        for idx, neighbor_set in enumerate(nth_ring):
+            nring[idx].update(neighbor_set)            
+                
+            neighbor_set_tmp = [_get_connvex_neigh(vx, faces) for vx in neighbor_set]
+            neighbor_set_tmp = set([item for sublist in neighbor_set_tmp for item in sublist])
+            nth_ring[idx] = neighbor_set_tmp.difference(nring[idx])
+    if ordinal is True:
+        return nth_ring
     else:
-        raise RuntimeError("The number of rings should be equal or greater than 1!")
-
-    if ordinal:
-        return n_th_ring_neighbors
-    else:
-        return n_ring_neighbors
+        return nring
 
 def get_connvex(seedvex, faces, mask, masklabel = 1):
     """
@@ -513,3 +466,4 @@ def _get_connvex_neigh(seedvex, faces, mask = None, masklabel = 1):
         connvex = rawconnvex
         connvex.discard(seedvex)
     return connvex
+
