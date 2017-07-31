@@ -404,11 +404,11 @@ def get_n_ring_neighbor(vertx, faces, n=1, ordinal=False):
     while n != 0:
         n = n - 1
         for idx, neighbor_set in enumerate(nth_ring):
-            nring[idx].update(neighbor_set)            
-                
             neighbor_set_tmp = [_get_connvex_neigh(vx, faces) for vx in neighbor_set]
             neighbor_set_tmp = set([item for sublist in neighbor_set_tmp for item in sublist])
-            nth_ring[idx] = neighbor_set_tmp.difference(nring[idx])
+            neighbor_set_tmp.difference_update(nring[idx])
+            nth_ring[idx] = neighbor_set_tmp
+            nring[idx].update(nth_ring[idx])
     if ordinal is True:
         return nth_ring
     else:
