@@ -5,6 +5,30 @@ import numpy as np
 from surf_tools import caloverlap
 import tools
 
+def mask_apm(act_merge, thr):
+    """
+    Compute activation probabilistic map
+
+    Parameters:
+    -----------
+    act_merge: merged activation map
+    thr_val: threshold of activation value
+
+    Return:
+    -------
+    apm: activation probabilistic map
+
+    Example:
+    --------
+    >>> apm = mask_apm(act_merge, thr = 5.0)
+    """
+    import copy
+    act_tmp = copy.deepcopy(act_merge)
+    act_tmp[act_tmp<thr] = 0
+    act_tmp[act_tmp!=0] = 1
+    apm = np.mean(act_tmp,axis=-1)
+    return apm
+
 def make_pm(mask, meth = 'all', labelnum = None):
     """
     Compute probabilistic map
