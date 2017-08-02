@@ -35,8 +35,8 @@ class ImageCalculator(object):
                 outdata[...,i] = nib.load(rawdatapath[i]).get_data()
             else:
                 raise Exception('File may not exist of %s' % rawdatapath[i])
-        img = nib.Nifti1Image(outdata, None, header)
         if issave is True:
+            img = nib.Nifti1Image(outdata, None, header)
             if outdatapath.split('/')[-1].endswith('.nii.gz'):
                 nib.save(img, outdatapath)
             else:
