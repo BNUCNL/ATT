@@ -455,15 +455,15 @@ def _get_connvex_neigh(seedvex, faces, mask = None, masklabel = 1):
     """
     if mask is not None:
         assert mask.shape[0] == np.max(faces) + 1 ,"mask need to have same vertex number with faces connection relationship"
-    connvex = set()
+    assert isinstance(seedvex, (int, np.integer)), "only allow input an integer as seedvex"
 
     raw_faces, _ = np.where(faces == seedvex)
-    rawconnvex = set(faces[raw_faces].flatten())
+    rawconnvex = np.unique(faces[raw_faces])
     if mask is not None:
+        connvex = set()
         [connvex.add(i) for i in rawconnvex if mask[i] == masklabel]
-        connvex.discard(seedvex)
     else:
-        connvex = rawconnvex
-        connvex.discard(seedvex)
+        connvex = set(rawconnvex)
+    connvex.discard(seedvex)
     return connvex
 
