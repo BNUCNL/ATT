@@ -2,7 +2,6 @@
 # vi: set ft=python sts=4 ts=4 et:
 
 import numpy as np
-from scipy import sparse
 from . import tools
 import copy
 
@@ -461,7 +460,8 @@ def _get_connvex_neigh(seedvex, faces, mask = None, masklabel = 1):
     rawconnvex = np.unique(faces[raw_faces])
     if mask is not None:
         connvex = set()
-        [connvex.add(i) for i in rawconnvex if mask[i] == masklabel]
+        list_connvex = [i for i in rawconnvex if mask[i] == masklabel]
+        connvex.update(list_connvex)
     else:
         connvex = set(rawconnvex)
     connvex.discard(seedvex)
