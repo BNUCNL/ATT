@@ -2,7 +2,7 @@
 # vi: set ft=python sts=4 sw=4 et:
 
 import numpy as np
-from surf_tools import caloverlap
+from tools import calc_overlap
 import tools
 
 def mask_apm(act_merge, thr):
