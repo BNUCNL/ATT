@@ -114,11 +114,14 @@ def get_masksize(mask, labelnum = None):
     if mask.ndim == 3:
         mask = mask[:,0,0]
     labels = np.unique(mask)[1:]
-    if labelnum is None:
-        labelnum = int(np.max(labels))
     masksize = []
-    for i in range(labelnum):
-        masksize.append(len(mask[mask == i+1]))
+    if len(labels) != 0:
+        if labelnum is None:
+            labelnum = int(np.max(labels))
+        for i in range(labelnum):
+            masksize.append(len(mask[mask == i+1]))
+    else:
+        masksize.append(0)
     return np.array(masksize)
     
 def get_signals(atlas, mask, method = 'mean', labelnum = None):
@@ -200,7 +203,10 @@ def get_vexnumber(atlas, mask, method = 'peak', labelnum = None):
         mask = mask[:,0,0]
     labels = np.unique(mask)[1:]
     if labelnum is None:
-        labelnum = int(np.max(labels))
+        try:
+            labelnum = int(np.max(labels))
+        except ValueError as e:
+            labelnum = 0
 
     extractpeak = lambda x: np.unravel_index(x.argmax(), x.shape)[0]
     extractcenter = lambda x: np.mean(np.transpose(np.nonzero(x)))
