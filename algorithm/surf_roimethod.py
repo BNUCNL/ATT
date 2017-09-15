@@ -304,9 +304,9 @@ def cv_pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice
             print("threshold {} is verifing".format(e))
             mpm = make_mpm(pm, e)
             if cmpalllbl is True:
-                mpm_temp.append([calc_overlap(mpm, test_data[:,i], lbltmp, lbltst, index, controlsize = controlsize, actdata = verify_actdata) for lbltmp in labels_template for lbltst in labels_testdata])
+                mpm_temp.append([calc_overlap(mpm[:,0,0], test_data[:,i], lbltmp, lbltst, index, controlsize = controlsize, actdata = verify_actdata) for lbltmp in labels_template for lbltst in labels_testdata])
             else:
-                mpm_temp.append([calc_overlap(mpm, test_data[:,i], labels_template[idx], lbld, index, controlsize = controlsize, actdata = verify_actdata) for idx, lbld in enumerate(labels_testdata)])
+                mpm_temp.append([calc_overlap(mpm[:,0,0], test_data[:,i], labels_template[idx], lbld, index, controlsize = controlsize, actdata = verify_actdata) for idx, lbld in enumerate(labels_testdata)])
         output_overlap.append(mpm_temp)
     return np.array(output_overlap)
 
