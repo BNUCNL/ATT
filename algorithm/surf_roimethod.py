@@ -249,7 +249,7 @@ def pm_overlap(pm1, pm2, thr_range, option = 'number', index = 'dice'):
         pm2_thr = thre_func(pm2, i)
         pm1_thr[pm1_thr!=0] = 1
         pm2_thr[pm2_thr!=0] = 1
-        output_overlap.append(caloverlap(pm1_thr, pm2_thr, 1, 1))
+        output_overlap.append(calc_overlap(pm1_thr, pm2_thr, 1, 1))
     output_overlap = np.array(output_overlap)
     output_overlap[np.isnan(output_overlap)] = 0
     return output_overlap
@@ -304,9 +304,9 @@ def cv_pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice
             print("threshold {} is verifing".format(e))
             mpm = make_mpm(pm, e)
             if cmpalllbl is True:
-                mpm_temp.append([caloverlap(mpm, test_data[:,i], lbltmp, lbltst, index, controlsize = controlsize, actdata = verify_actdata) for lbltmp in labels_template for lbltst in labels_testdata])
+                mpm_temp.append([calc_overlap(mpm[:,0,0], test_data[:,i], lbltmp, lbltst, index, controlsize = controlsize, actdata = verify_actdata) for lbltmp in labels_template for lbltst in labels_testdata])
             else:
-                mpm_temp.append([caloverlap(mpm, test_data[:,i], labels_template[idx], lbld, index, controlsize = controlsize, actdata = verify_actdata) for idx, lbld in enumerate(labels_testdata)])
+                mpm_temp.append([calc_overlap(mpm[:,0,0], test_data[:,i], labels_template[idx], lbld, index, controlsize = controlsize, actdata = verify_actdata) for idx, lbld in enumerate(labels_testdata)])
         output_overlap.append(mpm_temp)
     return np.array(output_overlap)
 
@@ -345,7 +345,7 @@ def overlap_bysubject(imgdata, labels, subj_range, labelnum = None, prob_meth = 
             pm_sub_lbl = pm_sub[...,lbl-1]
             pm_lbl[pm_lbl!=0] = 1
             pm_sub_lbl[pm_sub_lbl!=0] = 1
-            overlap_lbl.append(caloverlap(pm_lbl, pm_sub_lbl, 1, 1, index = index))
+            overlap_lbl.append(calc_overlap(pm_lbl, pm_sub_lbl, 1, 1, index = index))
         overlap_subj.append(overlap_lbl)
     return np.array(overlap_subj)
 

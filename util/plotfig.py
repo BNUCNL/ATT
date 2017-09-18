@@ -171,8 +171,15 @@ class _FigureFactory(object):
                         rects = ax.bar(ind + i*width, data[:,i], width, color = color[i%5], label = legendname[i])
                     ax.legend(loc=legendpos) 
             else:
+                if isinstance(err, list):
+                    err = np.array(err)
+                if err.ndim == 1:
+                    err = np.expand_dims(err, axis = 1)
                 for i in range(data.shape[1]):
-                    rects = ax.bar(ind + i*width, data[:,i], width, color = color[i%5], yerr = err[:,i], error_kw=dict(ecolor = '#757575', capthick=1), label = legendname[i])
+                    try:
+                        rects = ax.bar(ind + i*width, data[:,i], width, color = color[i%5], yerr = err[:,i], error_kw=dict(ecolor = '#757575', capthick=1), label = legendname[i])
+                    except TypeError:
+                        rects = ax.bar(ind + i*width, data[:,i], width, color = color[i%5], yerr = err[:,i], error_kw=dict(ecolor = '#757575', capthick=1), label = legendname)                     
                     ax.legend(loc=legendpos)
             
             x0, x1 = ax.get_xlim()

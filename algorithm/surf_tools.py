@@ -114,11 +114,14 @@ def get_masksize(mask, labelnum = None):
     if mask.ndim == 3:
         mask = mask[:,0,0]
     labels = np.unique(mask)[1:]
-    if labelnum is None:
-        labelnum = int(np.max(labels))
     masksize = []
-    for i in range(labelnum):
-        masksize.append(len(mask[mask == i+1]))
+    if len(labels) != 0:
+        if labelnum is None:
+            labelnum = int(np.max(labels))
+        for i in range(labelnum):
+            masksize.append(len(mask[mask == i+1]))
+    else:
+        masksize.append(0)
     return np.array(masksize)
     
 def get_signals(atlas, mask, method = 'mean', labelnum = None):
@@ -200,7 +203,10 @@ def get_vexnumber(atlas, mask, method = 'peak', labelnum = None):
         mask = mask[:,0,0]
     labels = np.unique(mask)[1:]
     if labelnum is None:
-        labelnum = int(np.max(labels))
+        try:
+            labelnum = int(np.max(labels))
+        except ValueError as e:
+            labelnum = 0
 
     extractpeak = lambda x: np.unravel_index(x.argmax(), x.shape)[0]
     extractcenter = lambda x: np.mean(np.transpose(np.nonzero(x)))
@@ -466,4 +472,35 @@ def _get_connvex_neigh(seedvex, faces, mask = None, masklabel = 1):
         connvex = set(rawconnvex)
     connvex.discard(seedvex)
     return connvex
+
+def inflated_roi_by_rg(orig_mask, ref_mask, faces):
+    """
+    Inflate orig_mask by extracting connected parcel of ref_mask
+    A detailed explanation of this method:
+    We have a more stricted orig_mask which pointed relatively correct position of a specific region (e.g. hMT/V5+)
+    To use a larger ref_mask as constraints, by extracting connected parcels in ref_mask (the seed point comes from orig_mask), we can get a larger relatively accurate ROI of a specific region
+
+    Parameters:
+    -----------
+    orig_mask: original mask with a/several small parcel(s)
+    ref_mask: reference mask with larger parcel(s)
+    faces: relationship of connection
+    """
+    import random
+    orig_maskset = set(np.where(orig_mask!=0)[0])
+    ref_maskset = set(np.where(orig_mask!=0)[0])
+
+    connvex = set()
+    dif_connvex = orig_maskset.difference(connvex)
+    parcel_num = 0
+    while len(dif_connvex) != 0:
+        seedpt = random.choice(tuple(orig_maskset))
+        parcel_connvex = get_connvex(seedpt, faces, ref_mask)
+        connvex.update(parcel_connvex)
+        dif_connvex = orig_maskset.difference(connvex)
+        parcel_num+=1
+        print('parcel number: {0}'.format(parcel_num))
+    return connvex
+  
+
 
