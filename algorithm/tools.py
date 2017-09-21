@@ -221,16 +221,8 @@ def pearsonr(A, B):
         A = np.expand_dims(A, axis=1).T
     if np.ndim(B) == 1:
         B = np.expand_dims(B, axis=1).T
-    A = A.T
-    B = B.T
-    N = B.shape[0]
-    sA = A.sum(0)
-    sB = B.sum(0)
-    p1 = N*np.dot(B.T, A)
-    p2 = sA*sB[:,None]
-    p3 = N*((B**2).sum(0)) - (sB**2)
-    p4 = N*((A**2).sum(0)) - (sA**2)
-    rcorr = ((p1-p2)/np.sqrt(p4*p3[:,None]))
+
+    rcorr = 1.0 - distance.cdist(A, B, 'correlation')
 
     df = A.T.shape[1] - 2
     
