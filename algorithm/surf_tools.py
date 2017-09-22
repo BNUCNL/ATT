@@ -494,7 +494,7 @@ def inflated_roi_by_rg(orig_mask, ref_mask, faces):
     dif_connvex = orig_maskset.difference(connvex)
     parcel_num = 0
     while len(dif_connvex) != 0:
-        seedpt = random.choice(tuple(orig_maskset))
+        seedpt = random.choice(tuple(dif_connvex))
         parcel_connvex = get_connvex(seedpt, faces, ref_mask)
         connvex.update(parcel_connvex)
         dif_connvex = orig_maskset.difference(connvex)
