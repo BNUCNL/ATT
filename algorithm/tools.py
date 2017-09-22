@@ -422,11 +422,11 @@ def make_lblmask_by_loc(image, loclist, correspond_matrix = None):
     """
     mask = np.zeros_like(image)
     if correspond_matrix is None:
-        for i in vertex_num:
+        for i in loclist:
             mask[tuple(i)] = 1
     else:
         for i,e in enumerate(correspond_matrix):
-            if e in vertex_num:
+            if e in loclist:
                 mask[i] = 1
     return mask
     
