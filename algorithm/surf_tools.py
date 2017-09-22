@@ -63,7 +63,7 @@ class GenAdjacentMatrix(object):
         """ 
         assert isinstance(edge, list), "edge should be a list"
         edge_node_num = [len(i) for i in edge]
-        assert edge_node_num.count((edge_node_num[0]) == len(edge_node_num)), "One edge should only contain 2 nodes"
+        assert edge_node_num.count(edge_node_num[0]) == len(edge_node_num), "One edge should only contain 2 nodes"
         node_number = np.max(edge)+1
         ad_matrix = np.zeros((node_number, node_number))
         for eg in edge:
