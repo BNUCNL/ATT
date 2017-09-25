@@ -290,14 +290,16 @@ class _LABEL(object):
         """
         Load label data
         """
-        data = nib.freesurfer.read_label(self._comp_file)
-        return data
+        label = nib.freesurfer.read_label(self._comp_file)
+        return label
 
-    def save(self, labeldata):
+    def save(self, label, coords):
         """
         Save label data
         """
-        header = str('the number of vertex: ' + str(len(labeldata)))
-        np.savetxt(self._comp_file, labeldata, fmt='%d', 
-                   header = header, comments='# ascii, label vertexes\n')
+        with open(self._comp_file, 'w') as f:
+            f.write('%d\n' % len(label))
+            for lbl in label:
+                x, y, z = coords[lbl]
+                f.write('%d %f %f %f 0.000000\n' % (lbl, x, y, z))
 
