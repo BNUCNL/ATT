@@ -780,8 +780,49 @@ def control_lbl_size(labeldata, actdata, thr, label = None,  option = 'num'):
     out_lbldata = labeldata*(outactdata!=0)
     return out_lbldata
 
+def permutation_corr_dif(r1_data, r2_data, n_permutation = 5000, method = 'pearson'):
+    """
+    Do permutation test between r1_data and r2_data to check whether the difference between r1 (correlation coefficient) calculated from r1data and r2 calculated from r2data will be significant
 
+    Parameters:
+    -----------
+    r1_data: raw data for correlation of r1
+             the format of raw data as a array of Nx2, where N is the number of data point. The first column is data of x, the second column is data of y. r1 computed by x and y.
+    r2_data: raw data for correlation of r2
+    n_permutation: permutation times, by default is 5,000
+    method: method for correlation and coefficient
+            'pearson', pearson correlation coefficient
+            'spearman', spearman correlation coefficient
 
-
+    Return:
+    -------
+    r_dif: difference between r1 and r2
+    permutation_scores: Scores obtained for each permutations
+    pvalue: p values
+    """
+    import random
+    if method == 'pearson':
+        corr_method = stats.pearsonr
+    elif method == 'spearman':
+        corr_method = stats.spearman
+    else:
+        raise Exception('Just support pearson or spearman correlation')
+    r1, _ = corr_method(r1_data[:,0], r1_data[:,1])
+    r2, _ = corr_method(r2_data[:,0], r2_data[:,1])
+    r_dif = r1 - r2
+    merged_data = np.concatenate((r1_data, r2_data))
+    total_pt = merged_data.shape[0]
+    permutation_scores = []
+    for i in range(n_permutation):
+        rd_lbl1 = tuple(np.sort(random.sample(range(total_pt), total_pt/2)))
+        rd_lbl2 = tuple([i for i in range(total_pt) if i not in rd_lbl1])
+        r1_rddata = merged_data[rd_lbl1,:]
+        r2_rddata = merged_data[rd_lbl2,:]
+        r1_rd, _ = corr_method(r1_rddata[:,0], r1_rddata[:,1])
+        r2_rd, _ = corr_method(r2_rddata[:,0], r2_rddata[:,1])
+        permutation_scores.append(r1_rd - r2_rd)
+    permutation_scores = np.array(permutation_scores)
+    pvalue = 1.0*sum(permutation_scores>r_dif)/len(permutation_scores)
+    return r_dif, permutation_scores, pvalue
 
 
