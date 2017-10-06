@@ -734,9 +734,9 @@ def threshold_by_value(imgdata, thr, threshold_type = 'value', option = 'descend
     else:
         raise Exception('Parameters should be value or percent')
     if option == 'descend':
-        imgdata_thr = imgdata*[imgdata>thr_val]
+        imgdata_thr = imgdata*(imgdata>thr_val)
     elif option == 'ascend':
-        imgdata_thr = imgdata*[imgdata<thr_val]
+        imgdata_thr = imgdata*(imgdata<thr_val)
     else:
         raise Exception('No such parameter in option')
     return imgdata_thr
