@@ -825,4 +825,50 @@ def permutation_corr_dif(r1_data, r2_data, n_permutation = 5000, method = 'pears
     pvalue = 1.0*sum(permutation_scores>r_dif)/len(permutation_scores)
     return r_dif, permutation_scores, pvalue
 
+def genroi_bytmp(raw_roi, template, thr, thr_idx = 'values', threshold_type = 'value', option = 'descend'):
+    """
+    Generate ROI map with different threshold by using a template with values
+
+    Parameters:
+    -----------
+    raw_roi: original roi map
+    template: a template with values, as our reference to threshold raw_roi
+    thr: threshold
+    thr_idx: 'values' or 'numbers'
+             'values', threhold by values
+             'numbers', threshold by vertex numbers (or voxel numbers)
+    threshold_type: 'value' (by default), threshold by absolute (not relative) values
+                    'percent', threhold by percentage (fraction)
+    option: 'descend', by default is 'descend', filter from the highest values
+            'ascend', filter from the lowest values
+
+    Returns:
+    --------
+    new_roi: thresholded roi map
+
+    Example:
+    >>> new_roi = genroi_bytmp(raw_roi, template, thr = 4.0)
+    """
+    assert raw_roi.shape == template.shape, "the shape of raw_roi should be equal to template"
+
+    if thr_idx == 'values':
+        thrmethod = threshold_by_value
+    elif thr_idx == 'numbers':
+        thrmethod = threshold_by_number
+    else:
+        raise Exception('threshold by values or numbers, bad parameters were input')
+
+    thr_template = thrmethod(template, thr, threshold_type = threshold_type, option = option)
+    assert thr_template[thr_template!=0].shape[0] < raw_roi[raw_roi!=0].shape[0], "thr should be more strict (with larger threshold)"
+
+    thr_template[thr_template!=0] = 1
+    new_roi = raw_roi * thr_template
+    return new_roi
+
+
+
+
+
+
+
 
