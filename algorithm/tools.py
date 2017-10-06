@@ -859,7 +859,6 @@ def genroi_bytmp(raw_roi, template, thr, thr_idx = 'values', threshold_type = 'v
         raise Exception('threshold by values or numbers, bad parameters were input')
 
     thr_template = thrmethod(template, thr, threshold_type = threshold_type, option = option)
-    assert thr_template[thr_template!=0].shape[0] < raw_roi[raw_roi!=0].shape[0], "thr should be more strict (with larger threshold)"
 
     thr_template[thr_template!=0] = 1
     new_roi = raw_roi * thr_template
