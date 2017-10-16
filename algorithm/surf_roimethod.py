@@ -73,7 +73,7 @@ def make_pm(mask, meth = 'all', labelnum = None):
     pm = pm.reshape((pm.shape[0], 1, 1, pm.shape[1]))
     return pm
 
-def make_mpm(pm, threshold, consider_baseline = False):
+def make_mpm(pm, threshold, keep_prob = False, consider_baseline = False):
     """
     Make maximum probablistic map (mpm)
     
@@ -104,8 +104,11 @@ def make_mpm(pm, threshold, consider_baseline = False):
     if consider_baseline is True:
         vex_discard = [(np.count_nonzero(pm_temp[i,:])>1)&((np.sum(pm_temp[i,:]))<0.5) for i in range(pm_temp.shape[0])]
         vex_disind = [i for i,e in enumerate(vex_discard) if e]
-        pm_temp[vex_disind,:] = 0 
-    mpm = np.argmax(pm_temp, axis=1)
+        pm_temp[vex_disind,:] = 0
+    if not keep_prob: 
+        mpm = np.argmax(pm_temp, axis=1)
+    else:
+        mpm = np.max(pm_temp, axis=1)
     mpm = mpm.reshape((mpm.shape[0], 1, 1))
     return mpm
     
