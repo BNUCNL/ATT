@@ -5,7 +5,7 @@ import numpy as np
 from tools import calc_overlap
 import tools
 
-def mask_apm(act_merge, thr):
+def make_apm(act_merge, thr):
     """
     Compute activation probabilistic map
 
@@ -20,7 +20,7 @@ def mask_apm(act_merge, thr):
 
     Example:
     --------
-    >>> apm = mask_apm(act_merge, thr = 5.0)
+    >>> apm = make_apm(act_merge, thr = 5.0)
     """
     import copy
     act_tmp = copy.deepcopy(act_merge)
