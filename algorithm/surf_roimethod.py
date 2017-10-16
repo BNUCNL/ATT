@@ -82,6 +82,9 @@ def make_mpm(pm, threshold, keep_prob = False, consider_baseline = False):
     pm: probabilistic map
         Note that pm.shape[3] should correspond to specific label of region
     threshold: threshold to filter vertex with low probability
+    keep_prob: whether to keep maximum probability but not transform it into labels
+               If True, return map with maximum probability
+               If False, return map with label from maxmum probability
     consider_baseline: whether consider baseline or not when compute mpm
                        if True, check vertices that contain several probabilities, if p1+p2+...+pn < 0.5, then discard it
                        Details see Liang Wang, et al., Probabilistic Maps of Visual Topology in Human Cortex, 2015
