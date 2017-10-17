@@ -20,7 +20,7 @@ def make_figfunction(figuretype):
                 'hierarchy', hierarchy maps
                 'line', line maps
                 'scatter', scatter maps
-
+                'montage', montage maps
     Return:
     -------
     figinstance: figure function
@@ -58,6 +58,7 @@ class _FigureFactory(object):
                         'hierarchy', hierarchy maps
                         'line', line maps
                         'scatter', scatter maps
+                        'montage', montage maps
         """
         figure = self._Figures()
         if figuretype == 'corr':
@@ -74,6 +75,8 @@ class _FigureFactory(object):
             figuror = figure._simpleline_plotting
         elif figuretype == 'scatter':
             figuror = figure._scatter_plotting
+        elif figuretype == 'montage':
+            figuror = figure._montage_plotting
         else:
               raise Exception('wrong parameter input!')
         return figuror
@@ -316,4 +319,49 @@ class _FigureFactory(object):
                 plt.ylim(ylim)
 
             plt.show()
+
+        def _montage_plotting(self, pic_path, column_num, row_num, text_list = None, text_loc = (0,50), fontsize = 12, fontcolor = 'w'):
+            """
+            Show pictures in a figure
+
+            Parameters:
+            -----------
+            pic_path: path of pictures, as a list
+            column_num: picture numbers shown in each column
+            row_num: picture numbers shown in each row
+            text_list: whether to show text in each picture, by default is None
+            text_loc: text location
+            fontsize: text font size
+            fontcolor: text font color
+
+            Example:
+            ---------
+            >>> plotmontage(pic_path, 8, 6, text_list)
+            """
+            try:
+                from skimage import io as sio
+            except ImportError as e:
+                raise Exception('Please install skimage first')
+
+            assert (len(pic_path) < column_num*row_num)|(len(pic_path) == column_num*row_num), "Number of pictures is larger than what subplot could accomdate, please increase column_num/row_num values"
+            if text_list is not None:
+                assert len(pic_path) == len(text_list), "pic_path shall have the same length as text_list"
+                 
+            fig = plt.figure(figsize=(2*column_num, 2*row_num))
+            for i, ppath in enumerate(pic_path):
+                img = sio.imread(ppath)
+                ax = plt.subplot(row_num, column_num, i+1)
+                ax.set_axis_off()
+                plt.subplots_adjust(left=0.01, right=0.99, bottom=0.01, top=0.99, wspace=0.1, hspace=0.1)
+                if text_list is not None:
+                    plt.text(text_loc[0], text_loc[1], text_list[i], fontsize=fontsize, color = fontcolor)
+                plt.imshow(img)
+            plt.show()
+
+
+
+
+
+
+
 
