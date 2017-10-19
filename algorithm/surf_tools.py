@@ -4,6 +4,7 @@
 import numpy as np
 from . import tools
 import copy
+import random
 
 def extract_edge_from_faces(faces):
     """
@@ -419,7 +420,7 @@ def get_n_ring_neighbor(vertx, faces, n=1, ordinal=False):
     else:
         return nring
 
-def get_connvex(seedvex, faces, mask, masklabel = 1):
+def get_connvex(seedvex, faces, mask = None, masklabel = 1):
     """
     Get connected vertices that contain in mask
     We firstly need a start point to acquire connected vertices, then do region growing until all vertices in mask were included
@@ -486,7 +487,6 @@ def inflated_roi_by_rg(orig_mask, ref_mask, faces):
     ref_mask: reference mask with larger parcel(s)
     faces: relationship of connection
     """
-    import random
     orig_maskset = set(np.where(orig_mask!=0)[0])
     ref_maskset = set(np.where(orig_mask!=0)[0])
 
@@ -498,9 +498,52 @@ def inflated_roi_by_rg(orig_mask, ref_mask, faces):
         parcel_connvex = get_connvex(seedpt, faces, ref_mask)
         connvex.update(parcel_connvex)
         dif_connvex = orig_maskset.difference(connvex)
-        parcel_num+=1
+        parcel_num += 1
         print('parcel number: {0}'.format(parcel_num))
     return connvex
-  
+
+def cutrg2parcels(orig_mask, faces, label = 1):
+    """
+    Use region growing method to cut discontinuous specific regions to parcels
+
+    Parameters:
+    -----------
+    orig_mask: original mask has a/several small parcel(s) with labels
+    faces: relationship of connection
+    label[int]: specific label of orig_mask that used to cut into parcels
+
+    Returns:
+    --------
+    parcel_mask: parcel mask that generated from specific label of orig_mask
+
+    Example:
+    --------
+    >>> parcel_mask = cutrg2parcels(orig_mask, faces, 1)
+    """
+    if not isinstance(label, int):
+        raise Exception('label need to be an int')
+    lbl_orig_mask = tools.get_specificroi(orig_mask, label)
+    parcel_mask = np.zeros_like(orig_mask)
+
+    orig_maskset = set(np.where(lbl_orig_mask!=0)[0])
+    connvex = set()
+    dif_connvex = orig_maskset.difference(connvex)
+
+    parcel_num = 0
+    while len(dif_connvex) != 0:
+        seedpt = random.choice(tuple(dif_connvex))
+        parcel_connvex = get_connvex(seedpt, faces, lbl_orig_mask, masklabel = label)
+        connvex.update(parcel_connvex)
+        dif_connvex = orig_maskset.difference(connvex)
+        parcel_num += 1
+        parcel_mask = tools.make_lblmask_by_loc(parcel_mask, tuple(parcel_connvex), parcel_num)
+        print('parcel number: {0}'.format(parcel_num))
+    return parcel_mask
+
+
+
+
+
+
 
 

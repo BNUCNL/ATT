@@ -402,7 +402,7 @@ def get_specificroi(image, labellist):
     specific_data = image*logic_array
     return specific_data
 
-def make_lblmask_by_loc(image, loclist, correspond_matrix = None):
+def make_lblmask_by_loc(mask, loclist, label = 1):
     """
     Generate a mask by loclist
 
@@ -410,7 +410,6 @@ def make_lblmask_by_loc(image, loclist, correspond_matrix = None):
     -----------
     image: Provide a matrix as template, program will generate a same-shape mask as image
     loclist: location list
-    correspond_matrix: In case of mismatching between index of image and loclist. The shape of correspond_matrix should be similar to image
 
     Return:
     -------
@@ -420,14 +419,12 @@ def make_lblmask_by_loc(image, loclist, correspond_matrix = None):
     --------
     >>> mask = make_lblmask_by_loc(image, loclist)
     """
-    mask = np.zeros_like(image)
-    if correspond_matrix is None:
-        for i in loclist:
-            mask[tuple(i)] = 1
-    else:
-        for i,e in enumerate(correspond_matrix):
-            if e in loclist:
-                mask[i] = 1
+    try:
+        mask[tuple(loclist),:] = label
+    except IndexError:    
+        mask = np.expand_dims(mask,axis=-1)
+        mask[tuple(loclist),:] = label
+        mask = mask[:,0]
     return mask
     
 def lin_betafit(estimator, X, y, c, tail = 'both'):
