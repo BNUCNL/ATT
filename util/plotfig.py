@@ -83,8 +83,9 @@ class _FigureFactory(object):
 
     class _Figures(object):
         def __init__(self):
-            pass    
-    
+            plt.rc('xtick', labelsize = 14)
+            plt.rc('ytick', labelsize = 14)
+
         def _corr_plotting(self, meas1, meas2, labels=['',''], method = 'pearson'):
             """
             Make scatter plot and give a fit on it.
@@ -98,8 +99,6 @@ class _FigureFactory(object):
             Example:
                 >>> plotcorr(data1, data2, labels = label, method = 'pearson')
             """
-            plt.rc('xtick', labelsize = 14)
-            plt.rc('ytick', labelsize = 14)
             if (meas1.dtype != 'O') | (meas2.dtype != 'O'):
                 samp_sel = ~np.isnan(meas1*meas2)
                 x = meas1[samp_sel]
@@ -137,8 +136,6 @@ class _FigureFactory(object):
             Example:
                 >>> plotmat(data, xlabel = xlabellist, ylabel = ylabellist)
             """
-            plt.rc('xtick', labelsize=14)
-            plt.rc('ytick', labelsize=14)
             sns.heatmap(data, xticklabels = xlabel, yticklabels = ylabel)
             plt.show()
 
@@ -155,8 +152,6 @@ class _FigureFactory(object):
             Example:
                 >>> plotbar(data, title = titletxt, xlabels = xlabel, ylabels = ylabel, legendname = legendnametxt, err = errdata)
             """
-            plt.rc('xtick', labelsize=14)
-            plt.rc('ytick', labelsize=14)
             color = ['#BDBDBD', '#575757', '#404040', '#080808', '#919191']
             if isinstance(data, list):
                 data = np.array(data)
@@ -212,8 +207,6 @@ class _FigureFactory(object):
             Example:
                 >>> plothist(values, legend_label = labels, score = score_collect, pval = pvalue)
             """
-            plt.rc('xtick', labelsize=14)
-            plt.rc('ytick', labelsize=14)
             if len(oppar) == 0:
                 plt.hist(n_scores, 50, label = legend_label)
                 ylim = plt.ylim()
@@ -241,14 +234,12 @@ class _FigureFactory(object):
             Example:
                 >>> plothierarchy(distance, regions) 
             """
-            plt.rc('xtick', labelsize=14)
-            plt.rc('xtick', labelsize=14)
             Z = linkage(distance, 'average')
             dendrogram(Z, labels = regions)
 
             plt.show()
 
-        def _simpleline_plotting(self, x, y, yerr = None, xlabel='', ylabel='', xlim = None, ylim = None, scaling = False):
+        def _simpleline_plotting(self, x, y, yerr = None, xlabel='', ylabel='', legend = None, xlim = None, ylim = None, scaling = False):
             """
             Plot an array using simple lines
             For better showing, rescaling each array into range of 0 to 1
@@ -264,12 +255,15 @@ class _FigureFactory(object):
             Example:
                 >>> plotline(x, y, yerr)
             """
-            plt.rc('xtick', labelsize = 14)
-            plt.rc('ytick', labelsize = 14)
-            fig, ax = plt.subplots()
-            ax.set_color_cycle(['red', 'blue', 'yellow', 'black', 'green'])
             if y.ndim == 1:
-                y = np.expand_dims(y, axis = 1)
+                y = np.expand_dims(y, axis = -1)
+            if yerr is not None:
+                if yerr.ndim == 1:
+                    yerr = np.expand_dims(yerr, axis = -1)
+            fig, ax = plt.subplots()
+            COLORNUM = y.shape[-1]
+            cm = plt.get_cmap('Dark2')
+            ax.set_color_cycle([cm(1.0*i/COLORNUM) for i in range(COLORNUM)])
             if scaling is True:
                 y_scaling = np.zeros_like(y)
                 for i in range(y.shape[1]):
@@ -277,7 +271,12 @@ class _FigureFactory(object):
             else:
                 y_scaling = y
             for i in range(y_scaling.shape[-1]):
-                plt.errorbar(x, y_scaling[:,i], yerr = yerr)
+                if yerr is not None:
+                    plt.errorbar(x, y_scaling[:,i], yerr = yerr[:,i])
+                else:
+                    plt.errorbar(x, y_scaling[:,i], yerr = yerr)
+            if legend is not None:
+                plt.legend(legend)
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
             if xlim is not None:
@@ -301,8 +300,6 @@ class _FigureFactory(object):
             Example:
                 >>> plotscatter(array1, array2)
             """
-            plt.rc('xtick', labelsize = 14)
-            plt.rc('ytick', labelsize = 14)
             if array1.ndim == 1:
                 array1 = np.expand_dims(array1, axis=1)
             if array2.ndim == 1:
