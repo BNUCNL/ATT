@@ -249,6 +249,7 @@ class _FigureFactory(object):
                 y: data array, a x*y array, y means number of lines
                 xlabel: xlabel
                 ylabel: ylabel
+                legend: legend
                 xlim: By default is None, if ylim exists, limit x values of figure
                 ylim: By default is None, if ylim exists, limit y values of figure
                 scaling: whether do rescaling or not to show multiple lines
