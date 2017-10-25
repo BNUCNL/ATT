@@ -277,7 +277,7 @@ class _FigureFactory(object):
                 else:
                     plt.errorbar(x, y_scaling[:,i], yerr = yerr)
             if legend is not None:
-                plt.legend(legend)
+                plt.legend(legend, fontsize = 14)
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
             if xlim is not None:
