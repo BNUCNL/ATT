@@ -420,7 +420,7 @@ def get_n_ring_neighbor(vertx, faces, n=1, ordinal=False):
     else:
         return nring
 
-def get_connvex(seedvex, faces, mask = None, masklabel = 1):
+def get_connvex(seedvex, faces, valuemask = None, labelmask = None, label = 1):
     """
     Get connected vertices that contain in mask
     We firstly need a start point to acquire connected vertices, then do region growing until all vertices in mask were included
@@ -432,7 +432,8 @@ def get_connvex(seedvex, faces, mask = None, masklabel = 1):
     -----------
     seedvex: seed point (start point)
     faces: faces array, vertex relationship
-    mask: overlapping mask
+    valuemask: mask with values. if it exists, connection will be covered only region with decrease gradient
+    mask: overlapping mask, a label mask
     masklabel: specific mask label used as restriction
 
     Return:
@@ -445,15 +446,37 @@ def get_connvex(seedvex, faces, mask = None, masklabel = 1):
     """
     connvex = set()
     connvex.add(seedvex)
-    connvex_temp = _get_connvex_neigh(seedvex, faces, mask, masklabel)
+    neighbor_set = _get_connvex_neigh(seedvex, faces, labelmask, label)
+
+    if valuemask is None:
+        connvex_temp = neighbor_set
+    else:
+        assert valuemask.shape[0] == np.max(faces) + 1, "valuemask should has the same vertex number as faces connection relatonship"
+        if valuemask.ndim != 2:
+            valuemask = valuemask.reshape(valuemask.shape[0], 1)
+        refpt = 1*seedvex
+        connvex_temp = _mask_by_gradient(refpt, neighbor_set, valuemask)
+
     while not connvex_temp.issubset(connvex):
         connvex_dif = connvex_temp.difference(connvex)
         connvex.update(connvex_dif)
         connvex_temp = set()
         for sx in connvex_dif: 
-            connvex_temp.update(_get_connvex_neigh(sx, faces, mask, masklabel))
+            if valuemask is None:
+                connvex_temp.update(_get_connvex_neigh(sx, faces, labelmask, label))
+            else:
+                refpt = 1*sx
+                neighbor_set = _get_connvex_neigh(refpt, faces, labelmask, label)
+                connvex_temp.update(_mask_by_gradient(refpt, neighbor_set, valuemask))
         print('Size of sulcus {0}'.format(len(connvex)))
     return connvex  
+
+def _mask_by_gradient(refpt, neighbor_set, valuemask):
+    """
+    mask neighbor set by valuemask that choose vertices with value smaller than value of vertex refpt
+    """
+    return set([i for i in neighbor_set if valuemask[i]<valuemask[refpt]])
+
 
 def _get_connvex_neigh(seedvex, faces, mask = None, masklabel = 1):
     """
