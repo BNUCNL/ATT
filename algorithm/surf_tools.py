@@ -187,7 +187,8 @@ def get_vexnumber(atlas, mask, method = 'peak', labelnum = None):
     mask: mask, a label image
     method: 'peak' ,'center', or 'vertex', 
             'peak' means peak vertex number with maximum signals from specific roi
-            'vertex' means extract all vertex of each roi
+            'center', center of mass of roi
+            'vertex' means extract all vertex of roi
     labelnum: mask's label numbers, add this parameters for group analysis
     
     Return:
@@ -210,7 +211,7 @@ def get_vexnumber(atlas, mask, method = 'peak', labelnum = None):
             labelnum = 0
 
     extractpeak = lambda x: np.unravel_index(x.argmax(), x.shape)[0]
-    extractcenter = lambda x: np.mean(np.transpose(np.nonzero(x)))
+    extractcenter = _extractcenter
     extractvertex = lambda x: x[x!=0]
     
     if method == 'peak':
@@ -230,6 +231,27 @@ def get_vexnumber(atlas, mask, method = 'peak', labelnum = None):
         else:
             vexnumber.append(np.array([np.nan]))
     return vexnumber
+
+def _extractcenter(roisignal):
+    """
+    Compute center of mass from ROI which included magnitudes in each vertex
+    Surface has its special data construction, they're not consistent across whole ROI. It's better to use mapping method to solve this problem.
+
+    Parameters:
+    -----------
+    roisignal: ROI that included magnitudes in each vertex
+
+    Returns:
+    --------
+    center_point: center of mass from ROI
+    """
+    raw_idx = np.where(roisignal!=0)[0] 
+    new_idx = tools.convert_listvalue_to_ordinal(raw_idx)
+    new_center = sum(roisignal[e]*new_idx[i] for i,e in enumerate(raw_idx))/sum(roisignal[e] for _,e in enumerate(raw_idx))
+    new_center = int(new_center)
+    center_point = (raw_idx[i] for i,e in enumerate(new_idx) if e == new_center).next()
+    return center_point
+
 
 def surf_dist(vtx_src, vtx_dst, one_ring_neighbour):
     """
