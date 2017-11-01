@@ -112,7 +112,7 @@ def make_mpm(pm, threshold, keep_prob = False, consider_baseline = False):
         mpm = np.argmax(pm_temp, axis=1)
     else:
         mpm = np.max(pm_temp, axis=1)
-    mpm = mpm.reshape((mpm.shape[0], 1, 1))
+    mpm = mpm.reshape(mpm, pm.shape)
     return mpm
     
 def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=1, controlsize = False, actdata = None):
