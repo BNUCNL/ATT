@@ -20,6 +20,7 @@ def make_figfunction(figuretype):
                 'hierarchy', hierarchy maps
                 'line', line maps
                 'scatter', scatter maps
+                'violin', violin maps
                 'montage', montage maps
     Return:
     -------
@@ -75,6 +76,8 @@ class _FigureFactory(object):
             figuror = figure._simpleline_plotting
         elif figuretype == 'scatter':
             figuror = figure._scatter_plotting
+        elif figuretype == 'violin':
+            figuror = figure._violin_plotting
         elif figuretype == 'montage':
             figuror = figure._montage_plotting
         else:
@@ -82,9 +85,10 @@ class _FigureFactory(object):
         return figuror
 
     class _Figures(object):
-        def __init__(self):
-            plt.rc('xtick', labelsize = 14)
-            plt.rc('ytick', labelsize = 14)
+        def __init__(self, labelsize = 14):
+            plt.rc('xtick', labelsize = labelsize)
+            plt.rc('ytick', labelsize = labelsize)
+            self._labelsize = labelsize
 
         def _corr_plotting(self, meas1, meas2, labels=['',''], method = 'pearson'):
             """
@@ -250,8 +254,8 @@ class _FigureFactory(object):
                 xlabel: xlabel
                 ylabel: ylabel
                 legend: legend
-                xlim: By default is None, if ylim exists, limit x values of figure
-                ylim: By default is None, if ylim exists, limit y values of figure
+                xlim: By default is None, if ylim exists, limit x values of figure, [xmin, xmax]
+                ylim: By default is None, if ylim exists, limit y values of figure, [ymin, ymax]
                 scaling: whether do rescaling or not to show multiple lines
             Example:
                 >>> plotline(x, y, yerr)
@@ -296,8 +300,8 @@ class _FigureFactory(object):
                 xlabel: xlabel
                 ylabel: ylabel
                 colors: color of each group
-                xlim: axis x limitation
-                ylim: axis y limitation
+                xlim: axis x limitation, [xmin, xmax]
+                ylim: axis y limitation, [ymin, ymax]
             Example:
                 >>> plotscatter(array1, array2)
             """
@@ -317,6 +321,36 @@ class _FigureFactory(object):
                 plt.ylim(ylim)
 
             plt.show()
+
+        def _violin_plotting(self, data, xticklabels = None, showmeans = True, xlabel = '', ylabel = '', ylim = None):
+            """
+            Plot violin figures by a 2D data
+            ----------------------------------
+            Parameters:
+            data: a 2 dimensional data, M*N, where N is the number of category
+            xticklabels: xticklabels, by default is None
+            showmeans: whether to show means in violin plot
+            xlabel: xlabel
+            ylabel: ylabel
+            ylim: limitation of y
+
+            Examples:
+            ----------
+            >>> plotviolin(data)
+            """
+            assert data.ndim == 2, 'A two-dimension data should be inputted'
+            cat_num = data.shape[-1]
+            ax = plt.subplot()                       
+            plt.violinplot(data, np.arange(1, cat_num+1), showmeans = showmeans)
+            ax.set_xticks(np.arange(1, cat_num+1))
+            if xticklabels is not None:
+                ax.set_xticklabels(xticklabels, fontsize = self._labelsize)
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+            if ylim is not None:
+                plt.ylim(ylim)
+            plt.show()
+
 
         def _montage_plotting(self, pic_path, column_num, row_num, text_list = None, text_loc = (0,50), fontsize = 12, fontcolor = 'w'):
             """
