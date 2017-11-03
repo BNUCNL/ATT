@@ -112,10 +112,10 @@ def make_mpm(pm, threshold, keep_prob = False, consider_baseline = False):
         mpm = np.argmax(pm_temp, axis=1)
     else:
         mpm = np.max(pm_temp, axis=1)
-    mpm = mpm.reshape((mpm.shape[0], 1, 1))
+    mpm = mpm.reshape(pm.shape)
     return mpm
     
-def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=1, controlsize = False, actdata = None):
+def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', thr_meth = 'prob', prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=1, controlsize = False, actdata = None):
     """
     Decide the maximum threshold from raw image data.
     Here using the cross validation method to decide threhold using for getting the maximum probabilistic map
@@ -126,6 +126,8 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', pr
     labels: list, label number used to extract dice coefficient
     labelnum: by default is None, label number size. We recommend to provide label number here.
     index: 'dice' or 'percent'
+    thr_meth: 'prob', threshold probabilistic map by probabilistic values (MPM)
+              'number', threshold probabilistic map by numbers of vertex
     prob_meth: 'all' or 'part' subjects to use to compute probablistic map
     n_fold: split data into n_fold part, using first n_fold-1 part to get probabilistic map, then using rest part to evaluate overlap condition, by default is 2
     thr_range: pre-set threshold range to find the best maximum probabilistic threshold, the best threshold will search in this parameters, by default is [0,1,0.1], as the format of [start, stop, step]
@@ -166,12 +168,12 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', pr
         else:
             verify_actdata = None
         pm = make_pm(test_data, prob_meth, labelnum)
-        pm_temp = cv_pm_overlap(pm, verify_data, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = verify_actdata)
+        pm_temp = cv_pm_overlap(pm, verify_data, labels, labels, thr_meth = thr_meth, thr_range = thr_range, index = index, cmpalllbl = False, controlsize = controlsize, actdata = verify_actdata)
         output_overlap.append(pm_temp)
     output_overlap = np.array(output_overlap)
     return output_overlap
 
-def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', prob_meth = 'part', thr_range = [0,1,0.1], controlsize = False, actdata = None):
+def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', thr_meth = 'prob', prob_meth = 'part', thr_range = [0,1,0.1], controlsize = False, actdata = None):
     """
     A leave one out cross validation metho for threshold to best overlapping in probabilistic map
     
@@ -181,6 +183,8 @@ def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice'
     labels: list, label number used to extract dice coefficient
     labelnum: by default is None, label number size. We recommend to provide label number here.
     index: 'dice' or 'percent'
+    thr_meth: 'prob', threshold probabilistic map by probabilistic values (MPM)
+              'number', threshold probabilistic map by numbers of vertex
     prob_meth: 'all' or 'part' subjects to use to compute probablistic map
     thr_range: pre-set threshold range to find the best maximum probabilistic threshold
     controlsize: whether control label data size with template mpm label size or not, by default is False.
@@ -209,7 +213,7 @@ def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice'
         testdata = np.expand_dims(imgdata[:,i],axis=1)
         test_actdata = np.expand_dims(actdata[:,i],axis=1)
         pm = make_pm(data_temp, prob_meth, labelnum)
-        pm_temp = cv_pm_overlap(pm, testdata, labels, labels, index = index, cmpalllbl = False, controlsize = controlsize, actdata = test_actdata)
+        pm_temp = cv_pm_overlap(pm, testdata, labels, labels, thr_meth = thr_meth, thr_range = thr_range, index = index, cmpalllbl = False, controlsize = controlsize, actdata = test_actdata)
         output_overlap.append(pm_temp)
     output_array = np.array(output_overlap)
     return output_array.reshape(output_array.shape[0], output_array.shape[2], output_array.shape[3])
@@ -260,7 +264,7 @@ def pm_overlap(pm1, pm2, thr_range, option = 'number', index = 'dice'):
     output_overlap[np.isnan(output_overlap)] = 0
     return output_overlap
          
-def cv_pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', thr_range = [0, 1, 0.1], cmpalllbl = True, controlsize = False, actdata = None):
+def cv_pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice', thr_meth = 'prob', thr_range = [0, 1, 0.1], cmpalllbl = True, controlsize = False, actdata = None):
     """
     Compute overlap(dice) between probabilistic map and test data
     
@@ -271,6 +275,8 @@ def cv_pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice
     labels_template: list, label number of template (pm) used to extract overlap values 
     label_testdata: list, label number of test data used to extract overlap values
     index: 'dice' or 'percent'
+    thr_meth: 'prob', threshold probabilistic map by probabilistic values (MPM)
+              'number', threshold probabilistic map by numbers of vertex
     thr_range: pre-set threshold range to find the best maximum probabilistic threshold
     cmpalllbl: compute all overlap label one to one or not.
                e.g. labels_template = [2,4], labels_testdata = [2,4]
@@ -301,19 +307,23 @@ def cv_pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice
             actdata = actdata.reshape(actdata.shape[0], actdata.shape[-1])
     output_overlap = []
     for i in range(test_data.shape[-1]):
-        mpm_temp = []
+        thrmp_temp = []
         if actdata is not None:
             verify_actdata = actdata[:,i]
         else:
             verify_actdata = None
         for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
             print("threshold {} is verifing".format(e))
-            mpm = make_mpm(pm, e)
+            if thr_meth == 'prob':    
+                thrmp = make_mpm(pm, e)
+            elif thr_meth == 'number':
+                thrmp = tools.threshold_by_number(pm, e)
+                thrmp[thrmp!=0] = 1
             if cmpalllbl is True:
-                mpm_temp.append([calc_overlap(mpm[:,0,0], test_data[:,i], lbltmp, lbltst, index, controlsize = controlsize, actdata = verify_actdata) for lbltmp in labels_template for lbltst in labels_testdata])
+                thrmp_temp.append([calc_overlap(thrmp.flatten(), test_data[:,i], lbltmp, lbltst, index, controlsize = controlsize, actdata = verify_actdata) for lbltmp in labels_template for lbltst in labels_testdata])
             else:
-                mpm_temp.append([calc_overlap(mpm[:,0,0], test_data[:,i], labels_template[idx], lbld, index, controlsize = controlsize, actdata = verify_actdata) for idx, lbld in enumerate(labels_testdata)])
-        output_overlap.append(mpm_temp)
+                thrmp_temp.append([calc_overlap(thrmp.flatten(), test_data[:,i], labels_template[idx], lbld, index, controlsize = controlsize, actdata = verify_actdata) for idx, lbld in enumerate(labels_testdata)])
+        output_overlap.append(thrmp_temp)
     return np.array(output_overlap)
 
 def overlap_bysubject(imgdata, labels, subj_range, labelnum = None, prob_meth = 'part', index = 'dice'):
