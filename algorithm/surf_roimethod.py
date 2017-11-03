@@ -168,7 +168,7 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', th
         else:
             verify_actdata = None
         pm = make_pm(test_data, prob_meth, labelnum)
-        pm_temp = cv_pm_overlap(pm, verify_data, labels, labels, thr_meth = thr_meth, index = index, cmpalllbl = False, controlsize = controlsize, actdata = verify_actdata)
+        pm_temp = cv_pm_overlap(pm, verify_data, labels, labels, thr_meth = thr_meth, thr_range = thr_range, index = index, cmpalllbl = False, controlsize = controlsize, actdata = verify_actdata)
         output_overlap.append(pm_temp)
     output_overlap = np.array(output_overlap)
     return output_overlap
@@ -213,7 +213,7 @@ def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice'
         testdata = np.expand_dims(imgdata[:,i],axis=1)
         test_actdata = np.expand_dims(actdata[:,i],axis=1)
         pm = make_pm(data_temp, prob_meth, labelnum)
-        pm_temp = cv_pm_overlap(pm, testdata, labels, labels, thr_meth = thr_meth, index = index, cmpalllbl = False, controlsize = controlsize, actdata = test_actdata)
+        pm_temp = cv_pm_overlap(pm, testdata, labels, labels, thr_meth = thr_meth, thr_range = thr_range, index = index, cmpalllbl = False, controlsize = controlsize, actdata = test_actdata)
         output_overlap.append(pm_temp)
     output_array = np.array(output_overlap)
     return output_array.reshape(output_array.shape[0], output_array.shape[2], output_array.shape[3])
