@@ -3,7 +3,7 @@
 
 import numpy as np
 from tools import calc_overlap
-import tools
+import tools, surf_tools
 
 def make_apm(act_merge, thr):
     """
@@ -326,6 +326,28 @@ def cv_pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice
         output_overlap.append(thrmp_temp)
     return np.array(output_overlap)
 
+def cv_pm_magnitude(pm, test_magdata, index = 'mean', thr_meth = 'prob', thr_range = [0,1,0.1]):
+    """
+    Function to extract signals from probabilistic map with varied threshold
+
+    Parameters:
+    ------------
+    """
+    if test_magdata.ndim == 4:
+        test_magdata.reshape(test_magdata.shape[0], test_magdata.shape[-1])
+    signal = []
+    for i in range(test_magdata.shape[-1]):
+        for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
+            if thr_meth == 'prob':
+                thrmp = make_mpm(pm, e)
+            elif thr_meth == 'number':
+                thrmp = tools.threshold_by_number(pm, e)
+                thrmp[thrmp!=0] = 1
+            else:
+                raise Exception('Threshold probability only contains by probability values or vertex numbers')
+            signal.append(surf_tools.get_signals(test_magdata[:,i], thrmp, method = index, labelnum = 1))
+    return np.array(signal)
+                
 def overlap_bysubject(imgdata, labels, subj_range, labelnum = None, prob_meth = 'part', index = 'dice'):
     """
     A function used for computing overlap between template (probilistic map created by all subjects) and probabilistic map of randomly chosen subjects.
