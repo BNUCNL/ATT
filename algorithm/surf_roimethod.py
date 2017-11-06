@@ -332,11 +332,26 @@ def cv_pm_magnitude(pm, test_magdata, index = 'mean', thr_meth = 'prob', thr_ran
 
     Parameters:
     ------------
+    pm: probablistic map
+    test_magdata: magnitude data used as test dataset
+    index: type of signals, by default is 'mean'
+    thr_meth: 'prob', threshold probabilistic map using probabilistic threshold
+              'number', threshold probabilistic map using numbers of vertex
+    thr_range: threshold range
+
+    Results:
+    ---------
+    signals: signals of each threshold 
+
+    Example:
+    ---------
+    >>> signals = cv_pm_magnitude(pm, test_magdata)
     """
     if test_magdata.ndim == 4:
         test_magdata.reshape(test_magdata.shape[0], test_magdata.shape[-1])
     signal = []
     for i in range(test_magdata.shape[-1]):
+        signal_thr = []
         for j,e in enumerate(np.arange(thr_range[0], thr_range[1], thr_range[2])):
             if thr_meth == 'prob':
                 thrmp = make_mpm(pm, e)
@@ -345,7 +360,8 @@ def cv_pm_magnitude(pm, test_magdata, index = 'mean', thr_meth = 'prob', thr_ran
                 thrmp[thrmp!=0] = 1
             else:
                 raise Exception('Threshold probability only contains by probability values or vertex numbers')
-            signal.append(surf_tools.get_signals(test_magdata[:,i], thrmp, method = index, labelnum = 1))
+            signal_thr.append(surf_tools.get_signals(test_magdata[:,i], thrmp[:,0], method = index, labelnum = 1)[0])
+        signal.append(signal_thr)
     return np.array(signal)
                 
 def overlap_bysubject(imgdata, labels, subj_range, labelnum = None, prob_meth = 'part', index = 'dice'):
