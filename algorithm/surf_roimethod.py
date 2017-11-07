@@ -218,6 +218,46 @@ def leave1out_location_overlap(imgdata, labels, labelnum = None, index = 'dice',
     output_array = np.array(output_overlap)
     return output_array.reshape(output_array.shape[0], output_array.shape[2], output_array.shape[3])
 
+def leave1out_magnitude(roidata, magdata, index = 'mean', thr_meth = 'prob', thr_range = [0,1,0.1], prob_meth = 'part'):
+    """
+    Function to use cross validation to extract magnitudes
+    Compute probabilistic map to extract signal of the rest part of subject
+
+    Parameters:
+    ------------
+    roidata: roidata used for probabilistic map
+    magdata: magnitude data
+    index: 'mean', 'std', 'ste', 'vertex', etc.
+    thr_meth: 'prob', threshold probabilistic map by probabilistic values
+              'number', threshold probabilistic map by numbers of vertex
+    prob_meth: 'all' or 'part' used for probabilistic map generation
+    thr_range: pre-set threshold range to compute thresholded labeled map
+
+    Returns:
+    --------
+    mag_signals: magnitude signals
+    
+    Examples:
+    ----------
+    >>> mag_signals = leave1out_magnitude(roidata, magdata)
+    """
+    roidata = roidata.reshape(roidata.shape[0], roidata.shape[-1])
+    magdata = magdata.reshape(magdata.shape[0], magdata.shape[-1])
+    assert roidata.shape == magdata.shape, "roidata should have same shape as magdata"
+    output_overlap = []
+    n_subj = roidata.shape[-1]
+    for i in range(roidata.shape[-1]):
+        verify_subj = [i]
+        test_subj = [val for val in range(n_subj) if val not in verify_subj]
+        test_roidata = roidata[:, test_subj]
+        verify_magdata = magdata[:, verify_subj]
+        pm = make_pm(test_roidata, prob_meth)
+        pm_temp = cv_pm_magnitude(pm, verify_magdata, index = index, thr_meth = thr_meth, thr_range = thr_range)
+        output_overlap.append(pm_temp)
+    output_array = np.array(output_overlap)
+    output_array = output_array.reshape((-1,(thr_range[1]-thr_range[0])/thr_range[2]))
+    return output_array
+
 def nfold_magnitude(roidata, magdata, index = 'mean', thr_meth = 'prob', prob_meth = 'part', thr_range = [0,1,0.1], n_fold = 2, n_permutation = 1):
     """
     Using cross validation method to split data into nfold
@@ -407,7 +447,6 @@ def cv_pm_magnitude(pm, test_magdata, index = 'mean', thr_meth = 'prob', thr_ran
             else:
                 raise Exception('Threshold probability only contains by probability values or vertex numbers')
             signal_thr.append(surf_tools.get_signals(test_magdata[:,i], thrmp[:,0], method = index))
-        print('subji: {}'.format(i+1))
         signal.append(signal_thr)
     return np.array(signal)
                 
