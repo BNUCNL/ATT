@@ -147,7 +147,7 @@ def nfold_location_overlap(imgdata, labels, labelnum = None, index = 'dice', thr
     
     Example:
     --------
-    >>> output_overlap = nfold_maximum_threshold(imgdata, [2,4], labelnum = 4)
+    >>> output_overlap = nfold_location_overlap(imgdata, [2,4], labelnum = 4)
     """        
     assert (imgdata.ndim==2)|(imgdata.ndim==4), "imgdata should be 2/4 dimension"
     if imgdata.ndim == 4:
@@ -201,7 +201,7 @@ def leave1out_location_overlap(imgdata, labels, labelnum = None, index = 'dice',
 
     Example:
     --------
-    >>> output_overlap = leave1out_maximum_threshold(imgdata, [2,4], labelnum = 4)
+    >>> output_overlap = leave1out_location_overlap(imgdata, [2,4], labelnum = 4)
     """
     if imgdata.ndim == 4:
         imgdata = imgdata.reshape(imgdata.shape[0], imgdata.shape[-1])
