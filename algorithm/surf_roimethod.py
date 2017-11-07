@@ -70,7 +70,7 @@ def make_pm(mask, meth = 'all', labelnum = None):
             pm[...,i] = np.mean(mask_i[...,subj],axis = 1)
     else:
         raise Exception('Miss parameter meth')
-    pm = pm.reshape((pm.shape[0], 1, 1, pm.shape[1]))
+    pm = pm.reshape((pm.shape[0], 1, 1, pm.shape[-1]))
     return pm
 
 def make_mpm(pm, threshold, keep_prob = False, consider_baseline = False):
@@ -112,10 +112,10 @@ def make_mpm(pm, threshold, keep_prob = False, consider_baseline = False):
         mpm = np.argmax(pm_temp, axis=1)
     else:
         mpm = np.max(pm_temp, axis=1)
-    mpm = mpm.reshape(pm.shape)
+    mpm = mpm.reshape((-1, pm.ndim))
     return mpm
     
-def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', thr_meth = 'prob', prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=1, controlsize = False, actdata = None):
+def nfold_location_overlap(imgdata, labels, labelnum = None, index = 'dice', thr_meth = 'prob', prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=1, controlsize = False, actdata = None):
     """
     Decide the maximum threshold from raw image data.
     Here using the cross validation method to decide threhold using for getting the maximum probabilistic map
@@ -173,7 +173,7 @@ def nfold_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', th
     output_overlap = np.array(output_overlap)
     return output_overlap
 
-def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice', thr_meth = 'prob', prob_meth = 'part', thr_range = [0,1,0.1], controlsize = False, actdata = None):
+def leave1out_location_overlap(imgdata, labels, labelnum = None, index = 'dice', thr_meth = 'prob', prob_meth = 'part', thr_range = [0,1,0.1], controlsize = False, actdata = None):
     """
     A leave one out cross validation metho for threshold to best overlapping in probabilistic map
     
@@ -217,6 +217,48 @@ def leave1out_maximum_threshold(imgdata, labels, labelnum = None, index = 'dice'
         output_overlap.append(pm_temp)
     output_array = np.array(output_overlap)
     return output_array.reshape(output_array.shape[0], output_array.shape[2], output_array.shape[3])
+
+def nfold_magnitude(roidata, magdata, index = 'mean', thr_meth = 'prob', prob_meth = 'part', thr_range = [0,1,0.1], n_fold = 2, n_permutation = 1):
+    """
+    Using cross validation method to split data into nfold
+    compute probabilistic map by first part of data, then extract signals of rest part of data using probabilistic map 
+
+    Parameters:
+    ------------
+    roidata: roidata used for probabilistic map
+    magdata: magnitude data
+    index: 'mean', 'std', 'ste', 'vertex', etc.
+    thr_meth: 'prob', threshold probabilistic map by probabilistic values (MPM)
+              'number', threshold probabilistic map by numbers of vertex
+    prob_meth: 'all' or 'part'. Subjects to use compute probabilistic map
+    thr_range: pre-set threshold range to compute thresholded labeled map
+    n_fold: split numbers for cross validation
+    n_permutation: permutation times
+
+    Returns:
+    --------
+    mag_signals: magnitude signals
+
+    Examples:
+    ---------
+    >>> mag_signals = nfold_magnitude(roidata, magdata)
+    """
+    roidata = roidata.reshape(roidata.shape[0], roidata.shape[-1])
+    magdata = magdata.reshape(magdata.shape[0], magdata.shape[-1])
+    assert magdata.shape == roidata.shape, "roidata should have same shape as magdata"
+    n_subj = roidata.shape[-1]
+    output_overlap = []
+    for n in range(n_permutation):
+        print('permutation {} starts'.format(n+1))
+        test_subj = np.sort(np.random.choice(n_subj, n_subj-n_subj/n_fold, replace = False)).tolist()
+        verify_subj = [val for val in range(n_subj) if val not in test_subj]
+        test_roidata = roidata[:, test_subj]
+        verify_magdata = magdata[:, verify_subj]
+        pm = make_pm(test_roidata, prob_meth)
+        pm_temp = cv_pm_magnitude(pm, verify_magdata, index = index, thr_meth = thr_meth, thr_range = thr_range)
+        output_overlap.append(pm_temp)
+    output_array = np.array(output_overlap)
+    return output_array
 
 def pm_overlap(pm1, pm2, thr_range, option = 'number', index = 'dice'):
     """
@@ -317,6 +359,8 @@ def cv_pm_overlap(pm, test_data, labels_template, labels_testdata, index = 'dice
             if thr_meth == 'prob':    
                 thrmp = make_mpm(pm, e)
             elif thr_meth == 'number':
+                if pm.shape[-1] > 1:
+                    raise Exception('only support 1 label for this situation')
                 thrmp = tools.threshold_by_number(pm, e)
                 thrmp[thrmp!=0] = 1
             if cmpalllbl is True:
@@ -347,8 +391,8 @@ def cv_pm_magnitude(pm, test_magdata, index = 'mean', thr_meth = 'prob', thr_ran
     ---------
     >>> signals = cv_pm_magnitude(pm, test_magdata)
     """
-    if test_magdata.ndim == 4:
-        test_magdata.reshape(test_magdata.shape[0], test_magdata.shape[-1])
+    test_magdata.reshape(test_magdata.shape[0], test_magdata.shape[-1])
+    pm.reshape(pm.shape[0], pm.shape[-1])
     signal = []
     for i in range(test_magdata.shape[-1]):
         signal_thr = []
@@ -356,11 +400,14 @@ def cv_pm_magnitude(pm, test_magdata, index = 'mean', thr_meth = 'prob', thr_ran
             if thr_meth == 'prob':
                 thrmp = make_mpm(pm, e)
             elif thr_meth == 'number':
+                if pm.shape[-1] > 1:
+                    raise Exception('only support 1 label for this situation')
                 thrmp = tools.threshold_by_number(pm, e)
                 thrmp[thrmp!=0] = 1
             else:
                 raise Exception('Threshold probability only contains by probability values or vertex numbers')
-            signal_thr.append(surf_tools.get_signals(test_magdata[:,i], thrmp[:,0], method = index, labelnum = 1)[0])
+            signal_thr.append(surf_tools.get_signals(test_magdata[:,i], thrmp[:,0], method = index))
+        print('subji: {}'.format(i+1))
         signal.append(signal_thr)
     return np.array(signal)
                 
