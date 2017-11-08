@@ -431,8 +431,8 @@ def cv_pm_magnitude(pm, test_magdata, index = 'mean', thr_meth = 'prob', thr_ran
     ---------
     >>> signals = cv_pm_magnitude(pm, test_magdata)
     """
-    test_magdata.reshape(test_magdata.shape[0], test_magdata.shape[-1])
-    pm.reshape(pm.shape[0], pm.shape[-1])
+    test_magdata = test_magdata.reshape(test_magdata.shape[0], test_magdata.shape[-1])
+    pm = pm.reshape(pm.shape[0], pm.shape[-1])
     signal = []
     for i in range(test_magdata.shape[-1]):
         signal_thr = []
