@@ -156,7 +156,7 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
             labelnum = int(np.max(labels))
         except ValueError as e:
             print('value in mask are all zeros')
-            labelnum = 0
+            labelnum = 1
     if method == 'mean':
         calfunc = np.nanmean
     elif method == 'std':

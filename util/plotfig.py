@@ -305,6 +305,10 @@ class _FigureFactory(object):
             Example:
                 >>> plotscatter(array1, array2)
             """
+            if isinstance(array1, list):
+                array1 = np.array(array1)
+            if isinstance(array2, list):
+                array2 = np.array(array2)
             if array1.ndim == 1:
                 array1 = np.expand_dims(array1, axis=1)
             if array2.ndim == 1:
