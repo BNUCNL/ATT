@@ -7,7 +7,7 @@ from scipy import stats
 import numpy as np
 from scipy.cluster.hierarchy import linkage, dendrogram
 
-def make_figfunction(figuretype):
+def make_figfunction(figuretype, isshow = True):
     """
     A function to pack figure factory, make it easier to use
  
@@ -22,6 +22,8 @@ def make_figfunction(figuretype):
                 'scatter', scatter maps
                 'violin', violin maps
                 'montage', montage maps
+    isshow: whether to show plot or not. 
+            if isshow is False, output plot can be combined together
     Return:
     -------
     figinstance: figure function
@@ -30,7 +32,7 @@ def make_figfunction(figuretype):
     --------
     >>> plotcorr = make_figfunction('corr')
     """
-    figFact = _FigureFactory()
+    figFact = _FigureFactory(isshow = isshow)
     return figFact.createfactory(figuretype)
 
 class _FigureFactory(object):
@@ -41,8 +43,8 @@ class _FigureFactory(object):
         >>> figFact = plotfig.FigureFactory()
         >>> plotmat = figFact.createfactory('mat')
     """
-    def __init__(self):
-	    pass
+    def __init__(self, isshow = True):
+        self._isshow = isshow
 
     def __str__(self):
         return 'A factory for plotting figures'
@@ -61,7 +63,7 @@ class _FigureFactory(object):
                         'scatter', scatter maps
                         'montage', montage maps
         """
-        figure = self._Figures()
+        figure = self._Figures(isshow = self._isshow)
         if figuretype == 'corr':
             figuror = figure._corr_plotting
         elif figuretype == 'mat':
@@ -85,10 +87,11 @@ class _FigureFactory(object):
         return figuror
 
     class _Figures(object):
-        def __init__(self, labelsize = 14):
+        def __init__(self, labelsize = 14, isshow = True):
             plt.rc('xtick', labelsize = labelsize)
             plt.rc('ytick', labelsize = labelsize)
             self._labelsize = labelsize
+            self._isshow = isshow
 
         def _corr_plotting(self, meas1, meas2, labels=['',''], method = 'pearson'):
             """
@@ -127,7 +130,8 @@ class _FigureFactory(object):
             plt.ylabel(labels[1])
             plt.title(method.capitalize()+' Correlation')
 
-            plt.show()
+            if self._isshow is True:
+                plt.show()
 
         def _mat_plotting(self, data, xlabel='', ylabel=''):
             """
@@ -197,7 +201,8 @@ class _FigureFactory(object):
             ax.set_xticklabels(xlabels)
             ax.set_title(title, fontsize=12)
 
-            plt.show()
+            if self._isshow is True:
+                plt.show()
 
         def _hist_plotting(self, n_scores, legend_label, *oppar):
             """
@@ -226,7 +231,8 @@ class _FigureFactory(object):
             plt.legend()
             plt.xlabel('Score')
              
-            plt.show()
+            if self._isshow is True:
+                plt.show()
           
         def _hierarchy_plotting(self, distance, regions):
             """
@@ -241,7 +247,8 @@ class _FigureFactory(object):
             Z = linkage(distance, 'average')
             dendrogram(Z, labels = regions)
 
-            plt.show()
+            if self._isshow is True:
+                plt.show()
 
         def _simpleline_plotting(self, x, y, yerr = None, xlabel='', ylabel='', legend = None, xlim = None, ylim = None, scaling = False):
             """
@@ -288,7 +295,8 @@ class _FigureFactory(object):
                 plt.xlim(xlim)
             if ylim is not None:
                 plt.ylim(ylim)
-            plt.show()
+            if self._isshow is True:
+                plt.show()
 
         def _scatter_plotting(self, array1, array2, xlabel='', ylabel='', colors = ['red'], xlim = None, ylim = None):
             """
@@ -324,7 +332,8 @@ class _FigureFactory(object):
             if ylim is not None:
                 plt.ylim(ylim)
 
-            plt.show()
+            if self._isshow is True:
+                plt.show()
 
         def _violin_plotting(self, data, xticklabels = None, showmeans = True, xlabel = '', ylabel = '', ylim = None):
             """
@@ -353,7 +362,9 @@ class _FigureFactory(object):
             plt.ylabel(ylabel)
             if ylim is not None:
                 plt.ylim(ylim)
-            plt.show()
+            
+            if self._isshow is True:
+                plt.show()
 
 
         def _montage_plotting(self, pic_path, column_num, row_num, text_list = None, text_loc = (0,50), fontsize = 12, fontcolor = 'w'):
@@ -392,7 +403,9 @@ class _FigureFactory(object):
                 if text_list is not None:
                     plt.text(text_loc[0], text_loc[1], text_list[i], fontsize=fontsize, color = fontcolor)
                 plt.imshow(img)
-            plt.show()
+
+            if self._isshow is True:
+                plt.show()
 
 
 
