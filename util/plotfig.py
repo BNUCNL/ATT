@@ -145,7 +145,8 @@ class _FigureFactory(object):
                 >>> plotmat(data, xlabel = xlabellist, ylabel = ylabellist)
             """
             sns.heatmap(data, xticklabels = xlabel, yticklabels = ylabel)
-            plt.show()
+            if self._isshow is True:
+                plt.show()
 
         def _bar_plotting(self, data, title = '', xlabels = '', ylabels = '', legendname = None, legendpos = 'upper left', err=None):
             """
