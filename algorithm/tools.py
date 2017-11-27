@@ -426,7 +426,42 @@ def make_lblmask_by_loc(mask, loclist, label = 1):
         mask[tuple(loclist),:] = label
         mask = mask[:,0]
     return mask
-    
+
+def list_reshape_bywindow(longlist, windowlen, step = 1):
+    """
+    A function to use window cut longlist into several pieces
+
+    A list could be like below,
+    [a, b, c, d, e]
+    when windowlen as 2, step as 2,
+    output as 
+    [[a,b], [c,d]]
+    when window len as 2, step as 1,
+    output as 
+    [[a,b], [b,c], [c,d], [d,e]]
+
+    Parameters:
+    -----------
+    longlist: original long list
+    windowlen: window length
+    step: by default is 1
+          window sliding step
+
+    Returns:
+    --------
+    ic_list: intercept list
+
+    Example:
+    --------
+    >>> ic_list = list_reshape_bywindow(longlist, windowlen = 3)
+    """
+    ic_list = []
+    i = 0
+    while len(longlist)>=(windowlen+step*i):
+        ic_list.append(longlist[(step*i):(windowlen+step*i)])
+        i+=1
+    return ic_list
+
 def lin_betafit(estimator, X, y, c, tail = 'both'):
     """
     Linear estimation using linear models
