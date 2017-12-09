@@ -152,8 +152,9 @@ def nfold_location_overlap(imgdata, labels, labelnum = None, index = 'dice', thr
     assert (imgdata.ndim==2)|(imgdata.ndim==4), "imgdata should be 2/4 dimension"
     if imgdata.ndim == 4:
         imgdata = imgdata.reshape((imgdata.shape[0], imgdata.shape[3]))
-    if (actdata.ndim == 4) & (actdata is not None):
-        actdata = actdata.reshape((actdata.shape[0], actdata.shape[3]))
+    if actdata is not None:
+        if actdata.ndim == 4:
+            actdata = actdata.reshape((actdata.shape[0], actdata.shape[3]))
     n_subj = imgdata.shape[1]
     if labelnum is None:
         labelnum = int(np.max(np.unique(imgdata)))
@@ -207,13 +208,17 @@ def leave1out_location_overlap(imgdata, labels, labelnum = None, index = 'dice',
     """
     if imgdata.ndim == 4:
         imgdata = imgdata.reshape(imgdata.shape[0], imgdata.shape[-1])
-    if (actdata.ndim == 4) & (actdata is not None):
-        actdata = actdata.reshape(actdata.shape[0], actdata.shape[-1])
+    if actdata is not None:
+        if actdata.ndim == 4:
+            actdata = actdata.reshape(actdata.shape[0], actdata.shape[-1])
     output_overlap = []
     for i in range(imgdata.shape[-1]):
         data_temp = np.delete(imgdata, i, axis=1)
         testdata = np.expand_dims(imgdata[:,i],axis=1)
-        test_actdata = np.expand_dims(actdata[:,i],axis=1)
+        if actdata is not None:
+            test_actdata = np.expand_dims(actdata[:,i],axis=1)
+        else:
+            test_actdata = None
         pm = make_pm(data_temp, prob_meth, labelnum)
         pm_temp = cv_pm_overlap(pm, testdata, labels, labels, thr_meth = thr_meth, thr_range = thr_range, index = index, cmpalllbl = False, controlsize = controlsize, actdata = test_actdata)
         output_overlap.append(pm_temp)
