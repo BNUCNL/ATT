@@ -106,14 +106,14 @@ class _CSV(object):
         else:
             raise Exception('Input must be a numpy array.')
 
-    def load(self):
+    def load(self, header = False):
         """
         Read data from .csv
         ----------------------------------
         Parameters:
             outdata: a directory, with key and its data
         """
-        pddata = pd.read_csv(self._comp_file)
+        pddata = pd.read_csv(self._comp_file, header = header)
         outdata = {}
         for key in pddata.keys():
             outdata[key] = pddata[key].get_values()
