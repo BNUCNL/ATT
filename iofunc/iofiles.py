@@ -6,7 +6,7 @@ import nibabel as nib
 import os
 import pickle
 from scipy.io import savemat, loadmat
-import pandas as pd
+import csv
 
 pjoin = os.path.join
 
@@ -106,17 +106,20 @@ class _CSV(object):
         else:
             raise Exception('Input must be a numpy array.')
 
-    def load(self, header = False):
+    def load(self, dtype = 'float'):
         """
         Read data from .csv
         ----------------------------------
         Parameters:
-            outdata: a directory, with key and its data
+            dtype: read data as specific type, by default is 'float'
         """
-        pddata = pd.read_csv(self._comp_file, header = header)
-        outdata = {}
-        for key in pddata.keys():
-            outdata[key] = pddata[key].get_values()
+        csv_reader = file(self._comp_file, 'rb')
+        reader = csv.reader(csv_reader)
+        outdata = []
+        for row in reader:
+            outdata.append(row)
+        outdata = np.array(outdata)
+        outdata = outdata.astype(dtype)
         return outdata
 
 class _TXT(object):
