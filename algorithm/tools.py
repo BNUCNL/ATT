@@ -896,23 +896,48 @@ def genroi_bytmp(raw_roi, template, thr, thr_idx = 'values', threshold_type = 'v
     new_roi = raw_roi * thr_template
     return new_roi
 
-def autocorr(x, t = 0):
+def autocorr(x, t = 0, mode = 'point'):
     """
     Calculate the statistical correlation for a lag of t
 
     Paramters:
     ----------
     x: array, time series
-    t: int, lag time
+    t: int, lag time, by default is t = 0
        Note that the largest t = len(x)-2
+    mode: string, 'point': compute autocorrelation of one lag point
+                  'fullcut': compute autocorrelation with whole points (without circular series) 
+                  'circcut': compute autocorrelation with whole points (with circular series)
 
     Returns:
     --------
     r: pearson coefficient
     p: significance value
     """
-    assert t<len(x)-1, "the largest t = len(x)-2, please be note of it"
-    return stats.pearsonr(x[0:len(x)-t], x[t:len(x)])
+    if mode == 'point':
+        assert t<len(x)-1, "the largest t = len(x)-2, please be note of it"
+        r, p = stats.pearsonr(x[0:len(x)-t], x[t:len(x)])
+    elif mode == 'fullcut':
+        r = []
+        p = []
+        for t0 in range(len(x)-1):
+            r0, p0 = stats.pearsonr(x[0:len(x)-t0], x[t0:len(x)])
+            r.append(r0)
+            p.append(p0)
+        r = np.array(r)
+        p = np.array(p)
+    elif mode == 'circcut':
+        r = []
+        p = []
+        for t0 in range(len(x)):
+            r0, p0 = stats.pearsonr(np.roll(x, t0), np.roll(x, len(x)-t0))
+            r.append(r0)
+            p.append(p0)
+        r = np.array(r)
+        p = np.array(p)
+    else:
+        raise Exception('No such a mode name')
+    return r, p
 
 
 
