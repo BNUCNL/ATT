@@ -896,7 +896,23 @@ def genroi_bytmp(raw_roi, template, thr, thr_idx = 'values', threshold_type = 'v
     new_roi = raw_roi * thr_template
     return new_roi
 
+def autocorr(x, t = 0):
+    """
+    Calculate the statistical correlation for a lag of t
 
+    Paramters:
+    ----------
+    x: array, time series
+    t: int, lag time
+       Note that the largest t = len(x)-2
+
+    Returns:
+    --------
+    r: pearson coefficient
+    p: significance value
+    """
+    assert t<len(x)-1, "the largest t = len(x)-2, please be note of it"
+    return stats.pearsonr(x[0:len(x)-t], x[t:len(x)])
 
 
 
