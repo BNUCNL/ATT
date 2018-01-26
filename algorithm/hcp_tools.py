@@ -4,24 +4,25 @@
 import math
 import numpy as np
 import os
-import csv
 from ATT.iofunc import iofiles
 from ATT.algorithm import surf_tools
 import pandas as pd
 from ATT.util import decorators
-
-
-stem_path = 'e:\\projects\\genetic_imaging\\HCPdata\\HCP900'
-output_stem_path = 'E:\\projects\\genetic_imaging\\testResults'
+from sklearn.decomposition.pca import PCA
+import nibabel as nib
  
 
-class get_hcp_data(object):
+class hcpAWS(object):
     """
     usage
     >>>get_data = get_hcp_data(data_path)
     >>>get_data.getsave_certain_data('func',label_data,output_stem_path,face-avg_t.csv)
     """
     def __init__(self,stem_path):
+        """
+        Parameters:
+            stem_path: the path where you put your hcp data in e.g, c:/hcp
+        """
         self.stem_path = stem_path
         subid = os.listdir(stem_path) #get subjects' id according to to folder's name
         self.subid = subid
@@ -125,9 +126,26 @@ class get_hcp_data(object):
         """
         if file_type == 'func':
 
-            func_sample_path = os.path.join(self.stem_path, '100307', 'MNINonLinear', 'Results', 'tfMRI_WM')
-            func_stem_path = os.path.join('MNINonLinear', 'Results', 'tfMRI_WM')
-
+            #func_sample_path = os.path.join(self.stem_path, '100307', 'MNINonLinear', 'Results', 'tfMRI_WM')
+            task_num = int(input('''
+            please input the number of task:
+                1.emotion
+                2.languge
+                3.gambling
+                4.motor
+                5.relational
+                6.social
+                7.working memory
+            '''))
+            task = ['tfMRI_EMOTION',
+                    'tfMRI_GAMBLING',
+                    'tfMRI_LANGUAGE',
+                    'tfMRI_MOTOR',
+                    'tfMRI_RELATIONAL',
+                    'tfMRI_SOCIAL',
+                    'tfMRI_WM']
+            func_stem_path = os.path.join('MNINonLinear', 'Results', task[task_num-1])
+            
             catagory_num = int(input('''
     please input the number of  catagoty you want:
     1.*.hp200_s12_level12.feat 
@@ -140,20 +158,23 @@ class get_hcp_data(object):
             '''))
             datatype_num = int(input('please input the number of your data type:\n:1.t value 2.beta\n--'))
             cope_num = int(input('''
-                        please input the contrast type
-                        1.body-avg
-                        2.face-avg
-                        3.place-avg
-                        4.tool-avg
+                        please input the cope number: 
                         '''))
+            
+            catagory = ['tfMRI_WM_hp200_s12_level12.feat',
+            'tfMRI_WM_hp200_s2_level2.feat',
+            'tfMRI_WM_hp200_s2_level2_MSMAll.feat',
+            'tfMRI_WM_hp200_s4_level2.feat',
+            'tfMRI_WM_hp200_s4_level2_MSMAll.feat',
+            'tfMRI_WM_hp200_s8_level2.feat']
 
-            catagory = os.listdir(func_sample_path) #get different type of folders
-            cope_folders = ['cope19.feat', 'cope20.feat', 'cope21.feat', 'cope22.feat']
+            #catagory = os.listdir(func_sample_path) #get different type of folders
+            cope_folder = 'cope'+str(cope_num)+'.feat'
             data_type =['tstat1.dtseries.nii','cope1.dtseries.nii']
             self.catagory = catagory[catagory_num-1]
 
-            path_list = [os.path.join(self.stem_path,i, func_stem_path, catagory[catagory_num - 1], 'GrayordinatesStats',cope_folders[cope_num - 1],data_type[datatype_num-1]) for i in self.subid]
-
+            path_list = [os.path.join(self.stem_path,i, func_stem_path, catagory[catagory_num - 1], 'GrayordinatesStats',cope_folder,data_type[datatype_num-1]) for i in self.subid]
+ 
         elif file_type == 'stru':
             self.catagory = ''
             stru_type_num = int(input('''
@@ -193,6 +214,8 @@ class get_hcp_data(object):
                 path_list = [os.path.join(self.stem_path,i,'T1w',i,'stats','aseg.stats') for i in self.subid]
         else:
             raise Exception('please input the right file type: func, stru, other')
+            
+        print(path_list[0])
         return path_list
 
     @decorators.timer
@@ -204,6 +227,7 @@ class get_hcp_data(object):
         :param output_filename: the name of the csv file. eg. face-avg_t.csv
         :param output_stem_path: 
         :return: nothing returned, only a csv file is created
+        
         """
         path_list = self.get_path_list(file_type)
         data_list = []
@@ -240,24 +264,121 @@ class get_hcp_data(object):
                 data_list.append(self.motion_RMS(path_list))
                 data_list.append(self.motion_FD(path_list)[0])
                 data_list.append(self.motion_FD(path_list)[1])
+                pd_data_list = pd.DataFrame(data_list, index = ['RMS_mean','FD1','FD2'], columns=self.subid).T
             elif self.other_type == 'brain_size':
                 data_list.append(self.get_brainsize(path_list))
-
-            data_list=np.array(data_list).T
-            pd_data_list = pd.DataFrame(data_list, index=self.subid)
-
+                pd_data_list = pd.DataFrame(data_list,columns=self.subid).T
 
         pd_data_list.to_csv(os.path.join(output_path,output_filename))
+        return pd_data_list
+    
+    @decorators.timer    
+    def get_peak_value(self, pathlist, label_data, roi_id, output_file_name):
+        all_sub_peak = []
+        for i in pathlist:
+            try:
+                sub_img = nib.load(i)
+                sub_data = sub_img.get_data()
+                while sub_data.ndim > 1:
+                    sub_data = sub_data[0]
+                sub_max = [max(sub_data[0:len(label_data)][label_data == j]) for j in roi_id] #record each roi's peak value for each subject
+                all_sub_peak.append(sub_max)
+            except IOError as e:
+                print(e)
+                all_sub_peak.append([])
+                     
+        all_sub_peak = pd.DataFrame(all_sub_peak, index = self.subid,columns = roi_id)
+        all_sub_peak.to_csv(output_file_name)
+        return all_sub_peak
+    
+    @decorators.timer
+    def get_PCA_component(self, pathlist, label_data, roi_id,output_filename,n_comp = [2,3,4,5]):
+        all_sub_data = []
+        for i in pathlist:
+            try:
+                sub_img = nib.load(i)
+                sub_data = sub_img.get_data()
+                while sub_data.ndim > 1:
+                    sub_data = sub_data[0]
+                all_sub_data.append(list(sub_data[0:len(label_data)]))
+            except IOError as e:
+                print(e)
+                all_sub_data.append([])
+        
 
-
-
+        all_sub_data = pd.DataFrame(all_sub_data,index = self.subid).T # make this datafram has 59412 rows 
+        all_sub_data = all_sub_data.dropna(axis = 1)
+        for n in n_comp:
+            pca = PCA(n_components = n)
+            pca_component_ratio = []
+            for j in roi_id:
+                roi_data = all_sub_data.ix[label_data == j].T # get certain ROI's data
+                pca.fit(roi_data)
+                pca_component_ratio.append(pca.explained_variance_ratio_)
+                
+            pca_component_ratio = pd.DataFrame(pca_component_ratio,index = roi_id)
+            pca_component_ratio.to_csv(output_filename[:-4] + str(n) + output_filename[-4:])
+    
+    @decorators.timer
+    def get_all_vertex_data(self,pathlist,label_data,roi_id,output_filename):
+        all_sub_data = []
+        bool_matrix = (label_data == roi_id[0]) # merge False and Right matirx of ROIs in roi_id
+        for j in roi_id[1:]:
+            bool_matrix = bool_matrix | (label_data == j)
+            
+        try:
+            for i in pathlist:
+                try:
+                    sub_img = nib.load(i)
+                    sub_data = sub_img.get_data()
+                    while sub_data.ndim > 1:
+                        sub_data = sub_data[0]
+                        
+                    all_sub_data.append(list(sub_data[0:len(label_data)][bool_matrix]))
+                except IOError as e:
+                    print(e)
+                    all_sub_data.append([])
+                    
+            all_sub_data = pd.DataFrame(all_sub_data,index = self.subid)
+            all_sub_data.to_csv(output_filename)
+        except MemoryError as e:
+            print(e)
+            print('we have load data of ', len(all_sub_data),' subjects')
+            all_sub_data = pd.DataFrame(all_sub_data)
+            all_sub_data.to_csv(output_filename)
+        return bool_matrix
+    
+    @decorators.timer
+    def get_all_roi_vertex_data(self,path_list,output_filename,ssid):
+        all_sub_data = []
+        pathlist = [path for path in path_list for sid in ssid if str(sid) in path]
+        try:
+            for i in pathlist:
+                try:
+                    sub_img = nib.load(i)
+                    sub_data = sub_img.get_data()
+                    while sub_data.ndim >1:
+                        sub_data = sub_data[0]
+                    all_sub_data.append(list(sub_data))
+                except IOError as e:
+                    print(e)
+                    all_sub_data.append([])
+            all_sub_data = pd.DataFrame(all_sub_data,index = ssid)
+            all_sub_data.to_csv(output_filename)    
+            
+        except MemoryError as e:
+            print(e)
+            print('we have load data of ', len(all_sub_data),' subjects')
+            all_sub_data = pd.DataFrame(all_sub_data)
+            all_sub_data.to_csv(output_filename)
+            
+            
+                
+    
 if __name__ == '__main__':
-    import nibabel as nib
-    label_img = nib.load('e:/coding/ATT/data/Q1-Q6_RelatedParcellation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii')
-    label_data = label_img.get_data()[0]
-    get_data = get_hcp_data(stem_path)
-    get_data.getsave_certain_data('stru',label_data,output_stem_path,'curvature_msmall.csv')
-
+    stem_path = 'e:/projects/genetic_imaging/HCPdata/HCP900/'
+    hcp = hcpAWS(stem_path)
+    path = hcp.get_path_list('func')
 
 
 
