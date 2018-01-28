@@ -106,6 +106,8 @@ class _FigureFactory(object):
             Example:
                 >>> plotcorr(data1, data2, labels = label, method = 'pearson')
             """
+            meas1 = np.array(meas1)
+            meas2 = np.array(meas2)
             if (meas1.dtype != 'O') | (meas2.dtype != 'O'):
                 samp_sel = ~np.isnan(meas1*meas2)
                 x = meas1[samp_sel]

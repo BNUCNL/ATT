@@ -262,8 +262,17 @@ class _CIFTI(object):
             raise Exception('contrast should be an int or None')
         return data
    
-    def save(self):
-        pass
+    def save(self, data, header):
+        """
+        Save cifti file
+
+        Parameters:
+        -----------
+        data: output data
+        header: cifti header
+        """
+        img = nib.Cifti2Image(data, header)
+        img.to_filename(self._comp_file)
  
 class _GIFTI(object):
     def __init__(self, _comp_file):
