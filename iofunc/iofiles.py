@@ -291,8 +291,28 @@ class _GIFTI(object):
                 data.append(img.darrays[i].data)
         return data
 
-    def save(self):
-        pass
+    def save(self, data, hemisphere = None):
+        """
+        A method to save vector data as gifti image
+
+        Save output name with [].func.gii or [].shape.gii
+
+        Parameters:
+        -----------
+        data: vector to save as gifti file
+        hemisphere: 'CortexLeft' or 'CortexRight', depending on hemisphere
+        """
+        assert hemisphere in ['CortexLeft', 'CortexRight']
+        nvPair = nib.gifti.GiftiNVPairs(name='AnatomicalStructurePrimary', value=hemisphere)
+        metaData = nib.gifti.GiftiMetaData(nvPair)
+
+        data = np.squeeze(data.astype(np.float32))
+        img = nib.gifti.GiftiImage(meta=metaData)
+        gda = nib.gifti.GiftiDataArray(data=data)
+        img.add_gifti_data_array(gda)
+
+        nib.save(img, self._comp_file)
+          
 
 class _LABEL(object):
     def __init__(self, _comp_file):
