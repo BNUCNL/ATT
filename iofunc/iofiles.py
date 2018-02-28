@@ -238,29 +238,65 @@ class _CIFTI(object):
     def __init__(self, _comp_file):
         self._comp_file = _comp_file
     
-    def load(self,contrast=None):
+    def get_brain_structure(self):
+        """ 
+        Return brain structure
+
+        Parameters:
+        -----------
+        None
+
+        Return:
+        -------
+        brain_structure[list]: brain_structure
+        """
+        img = nib.load(self._comp_file)
+
+        header = img.header
+        index_map = header.get_index_map(1)
+        brain_models = [i for i in index_map.brain_models]
+        brain_structure = [i.brain_structure for i in brain_models]
+
+        return brain_structure                
+
+    def load(self, structure = None):
         """
         Read cifti data. If your cifti data contains multiple contrast, you can input your contrast number and get value of this contrast.
  
         Parameters:
         --------------
-        contrast: the number of your contrasts
+        structure[string]: structure name
+
+        Return:
+        -------
+        data[array]: cifti data
+        vxidx[object]: vertex indices table
+                       For matching vertex indices in surface, use vxidx.index(NUM) to get index in data. e.g. vxidx.index(32491) = 29695 in left cortex.
 
         """
+
         img = nib.load(self._comp_file)
         data = img.get_data()
 
-        # when reading data with old version of nibabel, data may have 5 or 6 dimensions. Use command below to downsize dimension to 2
-        while data.ndim >2:
-            data = data[0]
 
-        if contrast is None:
-            data = data[0]
-        elif type(contrast) == int:
-            data = data[contrast-1]
+        header = img.header
+        index_map = header.get_index_map(1)
+        brain_models = [i for i in index_map.brain_models]
+
+        brain_structure = [i.brain_structure for i in brain_models]
+        index_count = [i.index_count for i in brain_models]
+        index_offset = [i.index_offset for i in brain_models]
+        vertex_indices = [i.vertex_indices for i in brain_models]
+        if structure is None:
+            pass
+        elif structure in brain_structure:
+            idx = brain_structure.index(structure)
+            data = data[:, (index_offset[idx]):(index_offset[idx]+index_count[idx])]
+            vxidx = vertex_indices[idx]
         else:
-            raise Exception('contrast should be an int or None')
-        return data
+            raise Exception('No such a structure in brain model')
+
+        return data, vxidx
    
     def save(self, data, header):
         """
