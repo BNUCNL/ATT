@@ -13,12 +13,11 @@ from ATT.iofunc import iofiles
 
 pjoin = os.path.join
 
-_figfactory = plotfig.FigureFactory()
-_plot_corr = _figfactory.createfactory('corr')
-_plot_mat = _figfactory.createfactory('mat')
-_plot_bar = _figfactory.createfactory('bar')
-_plot_hist = _figfactory.createfactory('hist')
-_plot_hierarchy = _figfactory.createfactory('hierarchy')
+_plot_corr = plotfig.make_figfunction('corr')
+_plot_mat = plotfig.make_figfunction('mat')
+_plot_bar = plotfig.make_figfunction('bar')
+_plot_hist = plotfig.make_figfunction('hist')
+_plot_hierarchy = plotfig.make_figfunction('hierarchy')
 
 
 def data_preprocess(data, outlier_method = None, outlier_range = [-3,3], mergehemi = None):

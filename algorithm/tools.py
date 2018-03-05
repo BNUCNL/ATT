@@ -939,6 +939,43 @@ def autocorr(x, t = 0, mode = 'point'):
         raise Exception('No such a mode name')
     return r, p
 
+def template_overlap(roimask, template, index='percent'):
+    """
+    Find the subregion of roimask that defined from template
+
+    Parameters:
+    -----------
+    roimask: roi mask, several ROIs contained (max label: M). 
+    template: template used for providing subregion (max label: N).
+    index: 'percent', measured by percentage
+           'dice', measured by dice coefficient
+
+    Returns:
+    --------
+    label_dict, dict: record labels as subregion which belongs to template
+    overlap_array, M*N array: record overlap values of each label.
+    """
+    roimask = roimask.astype('int')
+    template = template.astype('int')
+
+    overlap_array = np.zeros((np.max(roimask), np.max(template)))
+
+    for i in np.sort(np.unique(roimask)[1:]):
+        for j in np.sort(np.unique(template)[1:]):
+            overlap_array[i-1, j-1] = calc_overlap(roimask, template, i, j, index = index)
+
+    row, column = np.where(overlap_array)
+    row += 1
+    column += 1
+    
+    label_dict = {}
+    for i in np.unique(row):
+        label_dict[i] = column[row==i]
+
+    return label_dict, overlap_array
+
+
+
 
 
 

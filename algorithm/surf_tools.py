@@ -577,7 +577,7 @@ def cutrg2parcels(orig_mask, faces, label = 1):
     parcel_num = 0
     while len(dif_connvex) != 0:
         seedpt = random.choice(tuple(dif_connvex))
-        parcel_connvex = get_connvex(seedpt, faces, lbl_orig_mask, masklabel = label)
+        parcel_connvex = get_connvex(seedpt, faces, labelmask = lbl_orig_mask, label = label)
         connvex.update(parcel_connvex)
         dif_connvex = orig_maskset.difference(connvex)
         parcel_num += 1
