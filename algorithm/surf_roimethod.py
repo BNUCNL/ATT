@@ -539,14 +539,15 @@ class GetLblRegion(object):
             out_template[...,i] = tools.get_specificroi(self._template, template_lbl)
         return out_template
 
-def get_border_vertex(data, faces):
+def get_border_vertex(data, faces, n = 2):
     """
     extract vertices that be in border of original data.
 
     Parameters:
     -----------
     data: original data (scalar data)
-    faces: faces relationship   
+    faces: faces relationship  
+    n: by default is 2. Neighboring ring number. 
 
     Returns:
     --------
@@ -558,7 +559,7 @@ def get_border_vertex(data, faces):
     """
     border_vertex = []
     data_vertex = np.where(data!=0)[0]
-    one_ring_neighbor = surf_tools.get_n_ring_neighbor(data_vertex, faces)
+    one_ring_neighbor = surf_tools.get_n_ring_neighbor(data_vertex, faces, n)
     border_check = [not np.all(data[list(i)]) for i in one_ring_neighbor]   
     border_vertex = data_vertex[border_check]
     return border_vertex
