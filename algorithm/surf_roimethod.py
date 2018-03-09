@@ -557,7 +557,6 @@ def get_border_vertex(data, faces, n = 2):
     ---------
     >>> border_vertex = get_border_vertex(data, faces)
     """
-    border_vertex = []
     data_vertex = np.where(data!=0)[0]
     one_ring_neighbor = surf_tools.get_n_ring_neighbor(data_vertex, faces, n)
     border_check = [not np.all(data[list(i)]) for i in one_ring_neighbor]   
