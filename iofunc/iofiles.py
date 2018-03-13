@@ -361,13 +361,23 @@ class _LABEL(object):
         label = nib.freesurfer.read_label(self._comp_file)
         return label
 
-    def save(self, label, coords):
+    def save(self, label, coords, scalar_data = None):
         """
         Save label data
+
+        Parameters:
+        -----------
+        label: label vertices ID
+        coords: surface coordinates
+        scalar_data: scalar_data, same length like coordinates
+
         """
+        if scalar_data is None:
+            scalar_data = np.zeros((coords.shape[0],))
         with open(self._comp_file, 'w') as f:
+            f.write('#! ascii label\n')
             f.write('%d\n' % len(label))
             for lbl in label:
                 x, y, z = coords[lbl]
-                f.write('%d %f %f %f 0.000000\n' % (lbl, x, y, z))
+                f.write('%d %f %f %f %f\n' % (lbl, x, y, z, scalar_data.flatten()[lbl]))
 
