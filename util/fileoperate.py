@@ -50,11 +50,15 @@ class CopyFile(object):
     """
     def __init__(self):
         pass
-    def execute(self, src, dst):
+    def execute(self, src, dst, dst_filename = None):
         if verbose:
             print('Copying {0} to {1}'.format(src, dst))
+        assert os.path.isdir(dst), "determine file name in parameter of dst_filename."
         if os.path.isfile(src):
-            shutil.copyfile(src, os.path.join(dst, [x for x in src.split('/') if x][-1]))
+            if dst_filename is None:
+                shutil.copyfile(src, os.path.join(dst, [x for x in src.split('/') if x][-1]))
+            else:
+                shutil.copyfile(src, os.path.join(dst, dst_filename))
         else:
             shutil.copytree(src, os.path.join(dst, [x for x in src.split('/') if x][-1]))
     def undo(self):
