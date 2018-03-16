@@ -2,7 +2,7 @@
 # vi: set ft=python sts=4 sw=4 et:
 
 import numpy as np
-from scipy import stats
+from scipy import stats, special
 from scipy.spatial import distance
 import copy
 import pandas as pd
@@ -229,7 +229,7 @@ def pearsonr(A, B):
     r_forp = rcorr*1.0
     r_forp[r_forp==1.0] = 0.0
     t_squared = rcorr.T**2*(df/((1.0-rcorr.T)*(1.0+rcorr.T)))
-    pcorr = stats.betai(0.5*df, 0.5, df/(df+t_squared))
+    pcorr = special.betainc(0.5*df, 0.5, df/(df+t_squared))
     return rcorr.T, pcorr
 
 def r2z(r):
