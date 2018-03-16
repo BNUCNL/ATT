@@ -547,7 +547,7 @@ def inflated_roi_by_rg(orig_mask, ref_mask, faces):
         print('parcel number: {0}'.format(parcel_num))
     return connvex
 
-def cutrg2parcels(orig_mask, faces, label = 1):
+def cutrg2parcels(orig_mask, faces, label = 1, label_rules = 'random'):
     """
     Use region growing method to cut discontinuous specific regions to parcels
 
@@ -556,6 +556,9 @@ def cutrg2parcels(orig_mask, faces, label = 1):
     orig_mask: original mask has a/several small parcel(s) with labels
     faces: relationship of connection
     label[int]: specific label of orig_mask that used to cut into parcels
+    label_ruls[string]: 'random', arrange new label randomly
+                        'min2max', arrange new label from minimum vertex to maximum vertex
+                        'max2min', arrange new label from maxmum vertex to minimum vertex
 
     Returns:
     --------
@@ -575,8 +578,17 @@ def cutrg2parcels(orig_mask, faces, label = 1):
     dif_connvex = orig_maskset.difference(connvex)
 
     parcel_num = 0
+    if label_rules == 'random':
+        seedchoose = random.choice
+    elif label_rules == 'min2max':
+        seedchoose = np.min
+    elif label_rules == 'max2min':
+        seedchoose = np.max
+    else:
+        raise Exception('Set wrong parameter label_rules.')
+
     while len(dif_connvex) != 0:
-        seedpt = random.choice(tuple(dif_connvex))
+        seedpt = seedchoose(tuple(dif_connvex))
         parcel_connvex = get_connvex(seedpt, faces, labelmask = lbl_orig_mask, label = label)
         connvex.update(parcel_connvex)
         dif_connvex = orig_maskset.difference(connvex)
