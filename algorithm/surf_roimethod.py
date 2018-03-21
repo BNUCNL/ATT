@@ -115,14 +115,15 @@ def make_mpm(pm, threshold, keep_prob = False, consider_baseline = False):
     mpm = mpm.reshape((-1, pm.ndim))
     return mpm
     
-def nfold_location_overlap(imgdata, labels, labelnum = None, index = 'dice', thr_meth = 'prob', prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=1, controlsize = False, actdata = None):
+def nfold_location_overlap(imgdata1, imgdata2, labels, labelnum = None, index = 'dice', thr_meth = 'prob', prob_meth = 'part', n_fold=2, thr_range = [0,1,0.1], n_permutation=1, controlsize = False, actdata = None):
     """
     Decide the maximum threshold from raw image data.
     Here using the cross validation method to decide threhold using for getting the maximum probabilistic map
     
     Parameters:
     -----------
-    imgdata: A 2/4 dimensional data
+    imgdata1: A 2/4 dimensional data, used as train data
+    imgdata2: A 2/4 dimensional data, used as test data
     labels: list, label number used to extract dice coefficient
     labelnum: by default is None, label number size. We recommend to provide label number here.
     index: 'dice' or 'percent'
@@ -147,25 +148,26 @@ def nfold_location_overlap(imgdata, labels, labelnum = None, index = 'dice', thr
     
     Example:
     --------
-    >>> output_overlap = nfold_location_overlap(imgdata, [2,4], labelnum = 4)
+    >>> output_overlap = nfold_location_overlap(imgdata1, imgdata2, [2,4], labelnum = 4)
     """        
-    assert (imgdata.ndim==2)|(imgdata.ndim==4), "imgdata should be 2/4 dimension"
-    if imgdata.ndim == 4:
-        imgdata = imgdata.reshape((imgdata.shape[0], imgdata.shape[3]))
+    if imgdata1.ndim == 4:
+        imgdata1 = imgdata1.reshape((imgdata1.shape[0], imgdata1.shape[3]))
+    if imgdata2.ndim == 4:
+        imgdata2 = imgdata2.reshape((imgdata2.shape[0], imgdata2.shape[3]))
     if actdata is not None:
         if actdata.ndim == 4:
             actdata = actdata.reshape((actdata.shape[0], actdata.shape[3]))
-    n_subj = imgdata.shape[1]
+    n_subj = imgdata1.shape[1]
     if labelnum is None:
-        labelnum = int(np.max(np.unique(imgdata)))
+        labelnum = int(np.max(np.unique(imgdata1)))
     assert (np.max(labels)<labelnum+1), "the maximum of labels should smaller than labelnum"
     output_overlap = []
     for n in range(n_permutation):
         print("permutation {} starts".format(n+1))
         test_subj = np.sort(np.random.choice(range(n_subj), n_subj-n_subj/n_fold, replace = False)).tolist()
         verify_subj = [val for val in range(n_subj) if val not in test_subj]
-        test_data = imgdata[:,test_subj]
-        verify_data = imgdata[:,verify_subj]
+        test_data = imgdata1[:,test_subj]
+        verify_data = imgdata2[:,verify_subj]
         if actdata is not None:
             verify_actdata = actdata[...,verify_subj]
         else:
@@ -176,13 +178,14 @@ def nfold_location_overlap(imgdata, labels, labelnum = None, index = 'dice', thr
     output_overlap = np.array(output_overlap)
     return output_overlap
 
-def leave1out_location_overlap(imgdata, labels, labelnum = None, index = 'dice', thr_meth = 'prob', prob_meth = 'part', thr_range = [0,1,0.1], controlsize = False, actdata = None):
+def leave1out_location_overlap(imgdata1, imgdata2, labels, labelnum = None, index = 'dice', thr_meth = 'prob', prob_meth = 'part', thr_range = [0,1,0.1], controlsize = False, actdata = None):
     """
-    A leave one out cross validation metho for threshold to best overlapping in probabilistic map
+    A leave one out cross validation method for threshold to best overlapping in probabilistic map
     
     Parameters:
     -----------
-    imgdata: A 2/4 dimensional data
+    imgdata1: A 2/4 dimensional data, used as train data
+    imgdata2: A 2/4 dimensional data, used as test data
     labels: list, label number used to extract dice coefficient
     labelnum: by default is None, label number size. We recommend to provide label number here.
     index: 'dice' or 'percent'
@@ -204,17 +207,22 @@ def leave1out_location_overlap(imgdata, labels, labelnum = None, index = 'dice',
 
     Example:
     --------
-    >>> output_overlap = leave1out_location_overlap(imgdata, [2,4], labelnum = 4)
+    >>> output_overlap = leave1out_location_overlap(imgdata1, imgdata1, [2,4], labelnum = 4)
     """
-    if imgdata.ndim == 4:
-        imgdata = imgdata.reshape(imgdata.shape[0], imgdata.shape[-1])
+    if imgdata1.ndim == 4:
+        imgdata1 = imgdata1.reshape(imgdata1.shape[0], imgdata1.shape[-1])
+    if imgdata2.ndim == 4:
+        imgdata2 = imgdata2.reshape(imgdata2.shape[0], imgdata2.shape[-1])
+
+    assert imgdata1.shape == imgdata2.shape, "The shape of imgdata1 and imgdata2 must be equal."
+    
     if actdata is not None:
         if actdata.ndim == 4:
             actdata = actdata.reshape(actdata.shape[0], actdata.shape[-1])
     output_overlap = []
     for i in range(imgdata.shape[-1]):
-        data_temp = np.delete(imgdata, i, axis=1)
-        testdata = np.expand_dims(imgdata[:,i],axis=1)
+        data_temp = np.delete(imgdata1, i, axis=1)
+        testdata = np.expand_dims(imgdata2[:,i],axis=1)
         if actdata is not None:
             test_actdata = np.expand_dims(actdata[:,i],axis=1)
         else:
@@ -560,7 +568,7 @@ def get_border_vertex(data, faces, n = 2):
     data_vertex = np.where(data!=0)[0]
     one_ring_neighbor = surf_tools.get_n_ring_neighbor(data_vertex, faces, n)
     border_check = [not np.all(data[list(i)]) for i in one_ring_neighbor]   
-    border_vertex = data_vertex[border_check]
+    border_vertex = data_vertex[np.array(border_check)]
     return border_vertex
     
 
