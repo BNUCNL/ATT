@@ -308,7 +308,7 @@ class _CIFTI(object):
         header = img.get_header()
         return header
 
-    def save_from_existed_header(self, header, map_name, data):
+    def save_from_existed_header(self, header, data, map_name = None):
         """
         Save scalar data using a existed header
         Information of brain_model in existed header will be used.
@@ -318,11 +318,12 @@ class _CIFTI(object):
         Parameters:
         ------------
         header: existed header
-        map_name: map name
         data: scalar data
+        map_name: map name
         """
-        assert data.shape[0] == len(map_name), "Map_name and data mismatched."
-
+        if map_name is None:
+            map_name = ['']*data.shape[0]
+	assert data.shape[0] == len(map_name), "Map_name and data mismatched."
         index_map0 = header.get_index_map(0)
         mimcls0 = cifti2.Cifti2MatrixIndicesMap([0], 'CIFTI_INDEX_TYPE_SCALARS')
         for mn in map_name:
