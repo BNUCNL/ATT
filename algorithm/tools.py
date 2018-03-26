@@ -974,6 +974,42 @@ def template_overlap(roimask, template, index='percent'):
 
     return label_dict, overlap_array
 
+def rearrange_matrix(matrix_data, index_list):
+    """
+    Rearrange square matrix by index list
+
+    Parameters:
+    ------------
+    matrix_data(NxN matrix): square matrix data    
+    index_list: index list
+
+    Returns:
+    --------
+    rag_matrix: rearrange square matrix
+
+    Examples:
+    ----------
+    >>> diag_data = [1,2,3,4]
+    >>> matrix_data = np.diagflat(diag_data)
+    >>> matrix_data
+    array([[1, 0, 0, 0],
+           [0, 2, 0, 0],
+           [0, 0, 3, 0],
+           [0, 0, 0, 4]]) 
+    >>> rag_matrix = rearrange_matrix(matrix_data, [2,3,1,0])
+    >>> rag_matrix
+    array([[3, 0, 0, 0],
+           [0, 4, 0, 0], 
+           [0, 0, 2, 0],
+           [0, 0, 0, 1]])
+    """
+    assert matrix_data.ndim == 2, "Input a NxN matrix."
+    assert matrix_data.shape[0] == matrix_data.shape[1], "row number should be equal to column number."
+    index_list = np.array(index_list)
+    tmp_data = matrix_data[index_list,:]
+    rag_matrix = tmp_data[:,index_list]
+    return rag_matrix
+
 
 
 

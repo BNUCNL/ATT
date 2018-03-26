@@ -3,10 +3,12 @@
 
 import numpy as np
 import nibabel as nib
+from nibabel import cifti2
 import os
 import pickle
 from scipy.io import savemat, loadmat
 import csv
+import copy
 
 pjoin = os.path.join
 
@@ -288,8 +290,8 @@ class _CIFTI(object):
         index_offset = [i.index_offset for i in brain_models]
         vertex_indices = [i.vertex_indices for i in brain_models]
         if structure is None:
-            pass
-        elif structure in brain_structure:
+            vxidx = None
+        if structure in brain_structure:
             idx = brain_structure.index(structure)
             data = data[:, (index_offset[idx]):(index_offset[idx]+index_count[idx])]
             vxidx = vertex_indices[idx]
@@ -297,17 +299,51 @@ class _CIFTI(object):
             raise Exception('No such a structure in brain model')
 
         return data, vxidx
-   
-    def save(self, data, header):
+  
+    def get_header(self):
         """
-        Save cifti file
+        Get header
+        """
+        img = nib.load(self._comp_file)
+        header = img.get_header()
+        return header
+
+    def save_from_existed_header(self, header, data, map_name = None):
+        """
+        Save scalar data using a existed header
+        Information of brain_model in existed header will be used.
+        For simplication, data in subregion won't be stored.
+
 
         Parameters:
-        -----------
-        data: output data
-        header: cifti header
+        ------------
+        header: existed header
+        data: scalar data
+        map_name: map name
         """
-        img = nib.Cifti2Image(data, header)
+        if map_name is None:
+            map_name = ['']*data.shape[0]
+	assert data.shape[0] == len(map_name), "Map_name and data mismatched."
+        index_map0 = header.get_index_map(0)
+        mimcls0 = cifti2.Cifti2MatrixIndicesMap([0], 'CIFTI_INDEX_TYPE_SCALARS')
+        for mn in map_name:
+            name_mapcls = cifti2.Cifti2NamedMap(mn)
+            mimcls0.append(name_mapcls)
+
+        index_map1 = header.get_index_map(1)
+        brain_models = [i for i in index_map1.brain_models]
+        # For data in left & right hemisphere cortex
+        brain_models = brain_models[:2]
+        mimcls1 = cifti2.Cifti2MatrixIndicesMap([1], 'CIFTI_INDEX_TYPE_BRAIN_MODELS')
+        for bm in brain_models:
+            mimcls1.append(bm)
+        
+        matrix = cifti2.Cifti2Matrix()
+        matrix.append(mimcls0)
+        matrix.append(mimcls1)
+
+        header_new = cifti2.Cifti2Header(matrix)
+        img = nib.Cifti2Image(data, header_new)
         img.to_filename(self._comp_file)
  
 class _GIFTI(object):
