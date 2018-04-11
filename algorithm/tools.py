@@ -812,7 +812,7 @@ def control_lbl_size(labeldata, actdata, thr, label = None,  option = 'num'):
     out_lbldata = labeldata*(outactdata!=0)
     return out_lbldata
 
-def permutation_corr_dif(r1_data, r2_data, n_permutation = 5000, method = 'pearson'):
+def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, method = 'pearson'):
     """
     Do permutation test between r1_data and r2_data to check whether the difference between r1 (correlation coefficient) calculated from r1data and r2 calculated from r2data will be significant
 
@@ -856,6 +856,48 @@ def permutation_corr_dif(r1_data, r2_data, n_permutation = 5000, method = 'pears
     permutation_scores = np.array(permutation_scores)
     pvalue = 1.0*sum(permutation_scores>r_dif)/len(permutation_scores)
     return r_dif, permutation_scores, pvalue
+
+def permutation_diff(list1, list2, n_permutation=1000):
+    """
+    Make permutation test for the difference of mean values between list1 and list2
+
+    Parameters:
+    -----------
+    list1, list2: two lists contain data
+    n_permutation: permutation times
+    
+    Output:
+    -------
+    list_diff: difference between list1 and list2
+    diff_scores: different values after the permutation
+    pvalue: pvalues
+
+    Examples:
+    ----------
+    >>> list_diff, diff_scores, pvalue = permutation_diff(list1, list2)
+    """
+    if not isinstance(list1, list):
+        list1 = list(list1)
+    if not isinstance(list2, list):
+        list2 = list(list2)
+    list_diff = np.mean(list1) - np.mean(list2)
+    list1_len = len(list1)
+    list2_len = len(list2)
+    list_total = np.array(list1+list2)
+    list_total_len = len(list_total)
+    
+    diff_scores = []
+    for i in range(n_permutation):
+        list1_perm_idx = np.sort(np.random.choice(range(list_total_len), list1_len, replace=False))
+        list2_perm_idx = np.sort(list(set(range(list_total_len)).difference(set(list1_perm_idx))))
+        list1_perm = list_total[list1_perm_idx]
+        list2_perm = list_total[list2_perm_idx]
+        diff_scores.append(np.mean(list1_perm)-np.mean(list2_perm))
+    pvalue = 1.0*np.sum(np.array(diff_scores)<list_diff)/n_permutation
+    return list_diff, diff_scores, pvalue
+
+
+
 
 def genroi_bytmp(raw_roi, template, thr, thr_idx = 'values', threshold_type = 'value', option = 'descend'):
     """
