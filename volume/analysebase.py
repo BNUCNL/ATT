@@ -486,7 +486,8 @@ class PatternSimilarity(object):
         vxseries = np.expand_dims(vxseries, axis=1).T
         for i in range(self._imgdata.shape[0]):
             for j in range(self._imgdata.shape[1]):
-                rmap[i,j,:], pmap[i,j,:] = tools.pearsonr(vxseries, self._imgdata[i, j, :, :])
+                r_tmp, p_tmp = tools.pearsonr(vxseries, self._imgdata[i,j,...])
+                rmap[i,j,:], pmap[i,j,:] = r_tmp.flatten(), p_tmp.flatten()
             print('{}% finished'.format(100.0*i/self._imgdata.shape[0]))
         # solve problems as output of nifti data
         # won't affect fdr corrected result
@@ -519,7 +520,8 @@ class PatternSimilarity(object):
         roiseries = np.expand_dims(roiseries, axis=1).T
         for i in range(self._imgdata.shape[0]):
             for j in range(self._imgdata.shape[1]):
-                rmap[i, j, :], pmap[i, j, :] = tools.pearsonr(roiseries, self._imgdata[i, j, :, :])
+                r_tmp, p_tmp = tools.pearsonr(roiseries, self._imgdata[i,j,...])
+                rmap[i,j,:], pmap[i,j,:] = r_tmp.flatten(), p_tmp.flatten()
             print('{}% finished'.format(100.0*i/self._imgdata.shape[0]))
         rmap[np.isnan(rmap)] = 0
         pmap[pmap == 1] = 0
