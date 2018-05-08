@@ -219,15 +219,16 @@ class _FigureFactory(object):
             Example:
                 >>> plothist(values, legend_label = labels, score = score_collect, pval = pvalue)
             """
+            if isinstance(legend_label, str):
+                legend_label = [legend_label]
             if len(oppar) == 0:
                 plt.hist(n_scores, 50, label = legend_label)
                 ylim = plt.ylim()
             elif len(oppar) == 2:
-                plt.hist(n_scores, 50, label = 'permutation scores')
+                plt.hist(n_scores, 50, label = legend_label)
                 ylim = plt.ylim()
                 plt.plot(2*[oppar[0]], ylim, '--k', linewidth = 3,
-                         label = 'Scores'
-                         ' (pvalue %s)' % str(oppar[1]))
+                         label = 'Pvalue %.2f' % oppar[1])
                 plt.ylim(ylim)
             else:
                 raise Exception('parameter numbers should be 2 or 4!')
