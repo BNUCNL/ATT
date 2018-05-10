@@ -1076,7 +1076,6 @@ def icc(x1, x2):
     Calculate intraclass correlation between list1 and list2.
 
     Formula refers to http://en.wikipedia.org/wiki/Intraclass_correlaion.
-    Where this statistic used the DOF 2N-1 in the denominator for calculating s2 and N-1 in the denominator for calculating r.
 
     Only support for data sets with groups having 2 values.
 
@@ -1103,11 +1102,11 @@ def icc(x1, x2):
     # s square
     sumsquare_x1 = np.sum([(x1_i - x_mean)**2 for x1_i in x1])
     sumsquare_x2 = np.sum([(x2_i - x_mean)**2 for x2_i in x2])
-    s_square = (sumsquare_x1 + sumsquare_x2)/(2*N-1)
+    s_square = 1.0*(sumsquare_x1 + sumsquare_x2)/(2*N)
 
     # r
     suminter = np.sum([(x1[i] - x_mean)*(x2[i] - x_mean) for i, _ in enumerate(x1)])
-    r_icc = suminter/((N-1)*s_square)
+    r_icc = 1.0*suminter/(N*s_square)
 
     return r_icc
 
