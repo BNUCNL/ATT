@@ -227,8 +227,12 @@ class _FigureFactory(object):
             elif len(oppar) == 2:
                 plt.hist(n_scores, 50, label = legend_label)
                 ylim = plt.ylim()
-                plt.plot(2*[oppar[0]], ylim, '--k', linewidth = 3,
-                         label = 'Pvalue %.2f' % oppar[1])
+                if oppar[1]<0.001:
+                    plt.plot(2*[oppar[0]], ylim, '--k', linewidth = 3,
+                             label = 'Pvalue<0.001')
+                else:
+                    plt.plot(2*[oppar[0]], ylim, '--k', linewidth = 3,
+                             label = 'Pvalue %.2f' % oppar[1])
                 plt.ylim(ylim)
             else:
                 raise Exception('parameter numbers should be 2 or 4!')
