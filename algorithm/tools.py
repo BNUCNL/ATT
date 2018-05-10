@@ -812,7 +812,7 @@ def control_lbl_size(labeldata, actdata, thr, label = None,  option = 'num'):
     out_lbldata = labeldata*(outactdata!=0)
     return out_lbldata
 
-def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, method = 'pearson'):
+def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, method = 'pearson', tail = 'single'):
     """
     Do permutation test between r1_data and r2_data to check whether the difference between r1 (correlation coefficient) calculated from r1data and r2 calculated from r2data will be significant
 
@@ -825,39 +825,56 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, method = 'pear
     method: method for correlation and coefficient
             'pearson', pearson correlation coefficient
             'spearman', spearman correlation coefficient
+    tail: 'single', one-tailed test
+          'both', two-tailed test
 
     Return:
     -------
     r_dif: difference between r1 and r2
     permutation_scores: Scores obtained for each permutations
     pvalue: p values
+
+    Example:
+    ---------
+    >>> r_dif, permutation_scores, pvalue = permutation_corr_diff(r1_data, r2_data)
     """
     import random
     if method == 'pearson':
         corr_method = stats.pearsonr
     elif method == 'spearman':
         corr_method = stats.spearman
+    elif method == 'icc':
+        corr_method = icc
     else:
-        raise Exception('Just support pearson or spearman correlation')
-    r1, _ = corr_method(r1_data[:,0], r1_data[:,1])
-    r2, _ = corr_method(r2_data[:,0], r2_data[:,1])
-    r_dif = r1 - r2
+        raise Exception('Only support pearson, spearman or intra-class correlation')
+    r1 = corr_method(r1_data[:,0], r1_data[:,1])
+    r2 = corr_method(r2_data[:,0], r2_data[:,1])
+    if method == 'icc':
+        r_dif = r1 - r2
+    else:
+        r_dif = r1[0] - r2[0]
     merged_data = np.concatenate((r1_data, r2_data))
     total_pt = merged_data.shape[0]
     permutation_scores = []
     for i in range(n_permutation):
-        rd_lbl1 = tuple(np.sort(random.sample(range(total_pt), total_pt/2)))
+        rd_lbl1 = tuple(np.sort(random.sample(range(total_pt), r1_data.shape[0])))
         rd_lbl2 = tuple([i for i in range(total_pt) if i not in rd_lbl1])
         r1_rddata = merged_data[rd_lbl1,:]
         r2_rddata = merged_data[rd_lbl2,:]
-        r1_rd, _ = corr_method(r1_rddata[:,0], r1_rddata[:,1])
-        r2_rd, _ = corr_method(r2_rddata[:,0], r2_rddata[:,1])
-        permutation_scores.append(r1_rd - r2_rd)
-    permutation_scores = np.array(permutation_scores)
-    pvalue = 1.0*(sum(np.abs(permutation_scores)>=np.abs(r_dif))+1)/len(permutation_scores+1)
+        r1_rd = corr_method(r1_rddata[:,0], r1_rddata[:,1])
+        r2_rd = corr_method(r2_rddata[:,0], r2_rddata[:,1])
+        if method == 'icc':
+            permutation_scores.append(r1_rd - r2_rd)
+        else:
+            permutation_scores.append(r1_rd[0] - r2_rd[0])
+    permutation_scores = np.array(permutation_scores)    
+    if tail == 'single':
+        pvalue = 1.0*(sum(permutation_scores>r_dif)+1)/(n_permutation+1)
+    elif tail == 'both':
+        pvalue = 1.0*(sum(np.abs(permutation_scores)>np.abs(r_dif))+1)/(n_pemutation+1)
     return r_dif, permutation_scores, pvalue
 
-def permutation_diff(list1, list2, n_permutation=1000):
+def permutation_diff(list1, list2, n_permutation = 1000, tail = 'single'):
     """
     Make permutation test for the difference of mean values between list1 and list2
 
@@ -865,6 +882,8 @@ def permutation_diff(list1, list2, n_permutation=1000):
     -----------
     list1, list2: two lists contain data
     n_permutation: permutation times
+    tail: 'single', one-tailed test
+          'both', two_tailed test
     
     Output:
     -------
@@ -893,11 +912,11 @@ def permutation_diff(list1, list2, n_permutation=1000):
         list1_perm = list_total[list1_perm_idx]
         list2_perm = list_total[list2_perm_idx]
         diff_scores.append(np.mean(list1_perm)-np.mean(list2_perm))
-    pvalue = 1.0*(np.sum(np.abs(diff_scores)>=np.abs(list_diff))+1)/(n_permutation+1)
+    if tail == 'single':
+        pvalue = 1.0*(np.sum(diff_scores>list_diff)+1)/(n_permutation+1)
+    elif tail == 'both':
+        pvalue = 1.0*(np.sum(np.abs(diff_scores)>np.abs(list_diff))+1)/(n_permutation+1)
     return list_diff, diff_scores, pvalue
-
-
-
 
 def genroi_bytmp(raw_roi, template, thr, thr_idx = 'values', threshold_type = 'value', option = 'descend'):
     """
@@ -1057,7 +1076,6 @@ def icc(x1, x2):
     Calculate intraclass correlation between list1 and list2.
 
     Formula refers to http://en.wikipedia.org/wiki/Intraclass_correlaion.
-    Where this statistic used the DOF 2N-1 in the denominator for calculating s2 and N-1 in the denominator for calculating r.
 
     Only support for data sets with groups having 2 values.
 
@@ -1084,11 +1102,11 @@ def icc(x1, x2):
     # s square
     sumsquare_x1 = np.sum([(x1_i - x_mean)**2 for x1_i in x1])
     sumsquare_x2 = np.sum([(x2_i - x_mean)**2 for x2_i in x2])
-    s_square = (sumsquare_x1 + sumsquare_x2)/(2*N-1)
+    s_square = 1.0*(sumsquare_x1 + sumsquare_x2)/(2*N)
 
     # r
     suminter = np.sum([(x1[i] - x_mean)*(x2[i] - x_mean) for i, _ in enumerate(x1)])
-    r_icc = suminter/((N-1)*s_square)
+    r_icc = 1.0*suminter/(N*s_square)
 
     return r_icc
 
