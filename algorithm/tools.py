@@ -854,7 +854,7 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, method = 'pear
         r2_rd, _ = corr_method(r2_rddata[:,0], r2_rddata[:,1])
         permutation_scores.append(r1_rd - r2_rd)
     permutation_scores = np.array(permutation_scores)
-    pvalue = 1.0*sum(permutation_scores>r_dif)/len(permutation_scores)
+    pvalue = 1.0*(sum(np.abs(permutation_scores)>=np.abs(r_dif))+1)/len(permutation_scores+1)
     return r_dif, permutation_scores, pvalue
 
 def permutation_diff(list1, list2, n_permutation=1000):
@@ -893,7 +893,7 @@ def permutation_diff(list1, list2, n_permutation=1000):
         list1_perm = list_total[list1_perm_idx]
         list2_perm = list_total[list2_perm_idx]
         diff_scores.append(np.mean(list1_perm)-np.mean(list2_perm))
-    pvalue = 1.0*np.sum(np.array(diff_scores)<list_diff)/n_permutation
+    pvalue = 1.0*(np.sum(np.abs(diff_scores)>=np.abs(list_diff))+1)/(n_permutation+1)
     return list_diff, diff_scores, pvalue
 
 

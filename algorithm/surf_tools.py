@@ -175,7 +175,14 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
             signals.append(atlas[mask==i+1])
         else:
             signals.append(np.array([np.nan]))
-    return [calfunc(sg) for sg in signals]
+    if atlas.ndim == mask.ndim+1:
+        # time series
+        if calfunc != np.array:
+            return [calfunc(sg, axis=0) for sg in signals]
+        else:
+            return [calfunc(sg) for sg in signals]
+    else:
+        return [calfunc(sg) for sg in signals]
 
 def get_vexnumber(atlas, mask, method = 'peak', labelnum = None):
     """
