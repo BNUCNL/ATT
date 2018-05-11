@@ -874,13 +874,22 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, method = 'pear
         pvalue = 1.0*(sum(np.abs(permutation_scores)>np.abs(r_dif))+1)/(n_pemutation+1)
     return r_dif, permutation_scores, pvalue
 
-def permutation_diff(list1, list2, n_permutation = 1000, tail = 'single'):
+def permutation_diff(list1, list2, dist_method = 'mean', n_permutation = 1000, tail = 'single'):
     """
     Make permutation test for the difference of mean values between list1 and list2
 
     Parameters:
     -----------
     list1, list2: two lists contain data
+    dist_method: 'mean', the difference between average of list1 and list2
+                 'std', the difference between std of list1 and list2
+                 -------------------Note-----------------------------------
+                 The significance of correlation is from two-tailed test,
+                 if you use 'pearson' or 'icc' as distance method, tail will
+                 be set as 'both' compulsorily.
+                 ----------------------------------------------------------
+                 'pearson', the pearson correlation between list1 and list2
+                 'icc', the intra-class correlation between list1 and list2
     n_permutation: permutation times
     tail: 'single', one-tailed test
           'both', two_tailed test
@@ -899,7 +908,9 @@ def permutation_diff(list1, list2, n_permutation = 1000, tail = 'single'):
         list1 = list(list1)
     if not isinstance(list2, list):
         list2 = list(list2)
-    list_diff = np.mean(list1) - np.mean(list2)
+    if (dist_method == 'pearson') or (dist_method == 'icc'):
+        tail = 'both'
+    list_diff = _dist_func(list1, list2, dist_method)
     list1_len = len(list1)
     list2_len = len(list2)
     list_total = np.array(list1+list2)
@@ -911,12 +922,30 @@ def permutation_diff(list1, list2, n_permutation = 1000, tail = 'single'):
         list2_perm_idx = np.sort(list(set(range(list_total_len)).difference(set(list1_perm_idx))))
         list1_perm = list_total[list1_perm_idx]
         list2_perm = list_total[list2_perm_idx]
-        diff_scores.append(np.mean(list1_perm)-np.mean(list2_perm))
+        diff_scores.append(_dist_func(list1_perm, list2_perm, dist_method))
     if tail == 'single':
         pvalue = 1.0*(np.sum(diff_scores>list_diff)+1)/(n_permutation+1)
     elif tail == 'both':
         pvalue = 1.0*(np.sum(np.abs(diff_scores)>np.abs(list_diff))+1)/(n_permutation+1)
     return list_diff, diff_scores, pvalue
+
+def _dist_func(list1, list2, dist_method = 'mean'):
+    """
+    An distance function for effect size of difference between list1 and list2
+    """
+    if dist_method == 'mean':
+        diff_list = np.nanmean(list1) - np.nanmean(list2)
+    elif dist_method == 'std':
+        diff_list = np.nanstd(list1) - np.nanstd(list2)
+    elif dist_method == 'pearson':
+        assert len(list1) == len(list2), "The length of list1 and list2 must be same."
+        diff_list = stats.pearsonr(list1, list2)[0]
+    elif dist_method == 'icc':
+        diff_list = icc(list1, list2)
+    else:
+        raise Exception('No such a option as dist_method!')
+    return diff_list
+
 
 def genroi_bytmp(raw_roi, template, thr, thr_idx = 'values', threshold_type = 'value', option = 'descend'):
     """
