@@ -874,13 +874,22 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, method = 'pear
         pvalue = 1.0*(sum(np.abs(permutation_scores)>np.abs(r_dif))+1)/(n_pemutation+1)
     return r_dif, permutation_scores, pvalue
 
-def permutation_diff(list1, list2, n_permutation = 1000, tail = 'single'):
+def permutation_diff(list1, list2, dist_method = 'mean', n_permutation = 1000, tail = 'single'):
     """
     Make permutation test for the difference of mean values between list1 and list2
 
     Parameters:
     -----------
     list1, list2: two lists contain data
+    dist_method: 'mean', the difference between average of list1 and list2
+                 'std', the difference between std of list1 and list2
+                 -------------------Note-----------------------------------
+                 The significance of correlation is from two-tailed test,
+                 if you use 'pearson' or 'icc' as distance method, tail will
+                 be set as 'both' compulsorily.
+                 ----------------------------------------------------------
+                 'pearson', the pearson correlation between list1 and list2
+                 'icc', the intra-class correlation between list1 and list2
     n_permutation: permutation times
     tail: 'single', one-tailed test
           'both', two_tailed test
@@ -899,7 +908,9 @@ def permutation_diff(list1, list2, n_permutation = 1000, tail = 'single'):
         list1 = list(list1)
     if not isinstance(list2, list):
         list2 = list(list2)
-    list_diff = np.mean(list1) - np.mean(list2)
+    if (dist_method == 'pearson') or (dist_method == 'icc'):
+        tail = 'both'
+    list_diff = _dist_func(list1, list2, dist_method)
     list1_len = len(list1)
     list2_len = len(list2)
     list_total = np.array(list1+list2)
@@ -911,12 +922,30 @@ def permutation_diff(list1, list2, n_permutation = 1000, tail = 'single'):
         list2_perm_idx = np.sort(list(set(range(list_total_len)).difference(set(list1_perm_idx))))
         list1_perm = list_total[list1_perm_idx]
         list2_perm = list_total[list2_perm_idx]
-        diff_scores.append(np.mean(list1_perm)-np.mean(list2_perm))
+        diff_scores.append(_dist_func(list1_perm, list2_perm, dist_method))
     if tail == 'single':
         pvalue = 1.0*(np.sum(diff_scores>list_diff)+1)/(n_permutation+1)
     elif tail == 'both':
         pvalue = 1.0*(np.sum(np.abs(diff_scores)>np.abs(list_diff))+1)/(n_permutation+1)
     return list_diff, diff_scores, pvalue
+
+def _dist_func(list1, list2, dist_method = 'mean'):
+    """
+    An distance function for effect size of difference between list1 and list2
+    """
+    if dist_method == 'mean':
+        diff_list = np.nanmean(list1) - np.nanmean(list2)
+    elif dist_method == 'std':
+        diff_list = np.nanstd(list1) - np.nanstd(list2)
+    elif dist_method == 'pearson':
+        assert len(list1) == len(list2), "The length of list1 and list2 must be same."
+        diff_list = stats.pearsonr(list1, list2)[0]
+    elif dist_method == 'icc':
+        diff_list = icc(np.vstack((list1, list2)))[0]
+    else:
+        raise Exception('No such a option as dist_method!')
+    return diff_list
+
 
 def genroi_bytmp(raw_roi, template, thr, thr_idx = 'values', threshold_type = 'value', option = 'descend'):
     """
@@ -1071,45 +1100,94 @@ def rearrange_matrix(matrix_data, index_list):
     rag_matrix = tmp_data[:,index_list]
     return rag_matrix
 
-def icc(x1, x2):
+def anova_decomposition(Y):
     """
-    Calculate intraclass correlation between list1 and list2.
+    Decompositing variance of dataset Y into Mean Square and its corresponded dof.
 
-    Formula refers to http://en.wikipedia.org/wiki/Intraclass_correlaion.
+    The data Y are entered as a 'table' with subjects (targets) are in rows
+    and repeated measure (judges) in columns
 
-    Only support for data sets with groups having 2 values.
+    Reference: P.E. Shrout & Joseph L. Fleiss (1979). "Intraclass Correlations: Uses in Assessing Rater Reliability". Psychological Bulletin 86 (2): 420-428.
 
-    Parameters: 
-    -----------
-    x1, x2: Two lists[arrays] with a same length.
-
-    Returns: 
-    --------
-    r_icc: intraclass correlation
-
-    Examples:
-    ---------
-    >>> r_icc = icc(list1, list2)
+    Source of variance: SST = SSW + SSB; SSW = SSBJ + SSE
     """
-    assert len(x1) == len(x2), "Length mismatched between list1 and list2."
-    N = len(x1)
-    if isinstance(x1, list) | isinstance(x2, list):
-        x1 = np.array(x1)
-        x2 = np.array(x2)
+    [n_subjects, n_conditions] = Y.shape
+    dfbt = n_subjects - 1
+    dfbj = n_conditions - 1
+    dfwt = n_subjects*dfbj
+    dfe = dfbt * dfbj
+    # SST
+    mean_Y = np.mean(Y)
+    SST = ((Y-mean_Y)**2).sum()
+    # WMS (within-target mean square)
+    Avg_WithinTarg = np.tile(np.mean(Y, axis=1), (n_conditions, 1)).T
+    SSW = ((Y - Avg_WithinTarg)**2).sum()
+    WMS = 1.0*SSW/dfwt
+    # BMS (between-target mean square)
+    SSB = ((Avg_WithinTarg - mean_Y)**2).sum()
+    BMS = 1.0*SSB/dfbt
+    # BJMS 
+    Avg_BetweenTarg = np.tile(np.mean(Y,axis=0), (n_subjects, 1))
+    SSBJ = ((Avg_BetweenTarg - mean_Y)**2).sum()
+    BJMS = 1.0*SSBJ/dfbj
+    # EMS
+    SSE = SST - SSBJ - SSB
+    EMS = 1.0*SSE/dfe
     
-    x_mean = np.sum(x1+x2)/(2*N)
+    # Package variables
+    Output = {}
+    Output['WMS'] = WMS
+    Output['BMS'] = BMS
+    Output['BJMS'] = BJMS
+    Output['EMS'] = EMS
+    Output['dof_bt'] = dfbt
+    Output['dof_wt'] = dfwt
+    Output['dof_bj'] = dfbj
+    Output['dof_e'] = dfe
+     
+    return Output
 
-    # s square
-    sumsquare_x1 = np.sum([(x1_i - x_mean)**2 for x1_i in x1])
-    sumsquare_x2 = np.sum([(x2_i - x_mean)**2 for x2_i in x2])
-    s_square = 1.0*(sumsquare_x1 + sumsquare_x2)/(2*N)
+def icc(Y, methods = '(2,1)'):    
+    """
+    Intra-correlation coefficient.
+    The data Y are entered as a 'table' with subjects (targets) are in rows,
+    and repeated measure (judges) in columns
+    
+    Reference: P.E. Shrout & Joseph L. Fleiss (1979). "Intraclass Correlations: Uses in Assessing Rater Reliability". Psychological Bulletin 86 (2): 420-428.
 
-    # r
-    suminter = np.sum([(x1[i] - x_mean)*(x2[i] - x_mean) for i, _ in enumerate(x1)])
-    r_icc = 1.0*suminter/(N*s_square)
+    Parameters:
+    -----------
+    Y: Original dataset, with its rows are targets and columns are judges.
+    methods: Please see attached reference for details.
+             (1,1), One-random effects
+                    Each target is rated by a different set of k judges, 
+                    randomly selected from a larger population of judges.
+             (2,1), Two-way random effects
+                    A random sample of k judges is selected from a larger 
+                    population, and each judge rates each target, that is,
+                    each judge rates n targets altogether.
+             (3,1), Two-way mixed model
+                    Each target is rated by each of the same k judges, who
+                    are only judges of interest.
 
-    return r_icc
-
-
-
-
+    Return: 
+    -------
+    r: intra-class correlation
+    """
+    decomp_var = anova_decomposition(Y)
+    [n_targs, n_judges] = Y.shape
+    if methods == '(1,1)':
+        r = (decomp_var['BMS'] - decomp_var['WMS'])/(decomp_var['BMS']+(n_judges-1)*decomp_var['WMS'])
+        F = decomp_var['BMS']/decomp_var['WMS']
+        p = stats.f.sf(F, n_targs-1, n_targs*(n_judges-1))
+    elif methods == '(2,1)':
+        r = (decomp_var['BMS'] - decomp_var['EMS'])/(decomp_var['BMS']+(n_judges-1)*decomp_var['EMS']+n_judges*(decomp_var['BJMS']-decomp_var['EMS'])/n_targs)
+        F = decomp_var['BMS']/decomp_var['EMS']
+        p = stats.f.sf(F, n_targs-1, (n_judges-1)*(n_targs-1))
+    elif methods == '(3,1)':
+        r = (decomp_var['BMS'] - decomp_var['EMS'])/(decomp_var['BMS']+(n_judges-1)*decomp_var['EMS'])
+        F = decomp_var['BMS']/decomp_var['EMS']
+        p = stats.f.sf(F, n_targs-1, (n_targs-1)*(n_judges-1))
+    else:
+        raise Exception('Not support this method.')
+    return r, p
