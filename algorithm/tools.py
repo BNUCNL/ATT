@@ -1100,45 +1100,88 @@ def rearrange_matrix(matrix_data, index_list):
     rag_matrix = tmp_data[:,index_list]
     return rag_matrix
 
-def icc(x1, x2):
+def anova_decomposition(Y):
     """
-    Calculate intraclass correlation between list1 and list2.
+    Decompositing variance of dataset Y into Mean Square and its corresponded dof.
 
-    Formula refers to http://en.wikipedia.org/wiki/Intraclass_correlaion.
+    The data Y are entered as a 'table' with subjects (targets) are in rows
+    and repeated measure (judges) in columns
 
-    Only support for data sets with groups having 2 values.
+    Reference: P.E. Shrout & Joseph L. Fleiss (1979). "Intraclass Correlations: Uses in Assessing Rater Reliability". Psychological Bulletin 86 (2): 420-428.
 
-    Parameters: 
-    -----------
-    x1, x2: Two lists[arrays] with a same length.
-
-    Returns: 
-    --------
-    r_icc: intraclass correlation
-
-    Examples:
-    ---------
-    >>> r_icc = icc(list1, list2)
+    Source of variance: SST = SSW + SSB; SSW = SSBJ + SSE
     """
-    assert len(x1) == len(x2), "Length mismatched between list1 and list2."
-    N = len(x1)
-    if isinstance(x1, list) | isinstance(x2, list):
-        x1 = np.array(x1)
-        x2 = np.array(x2)
+    [n_subjects, n_conditions] = Y.shape
+    dfbt = n_subjects - 1
+    dfbj = n_conditions - 1
+    dfwt = n_subjects*dfbj
+    dfe = dfbt * dfbj
+    # SST
+    mean_Y = np.mean(Y)
+    SST = ((Y-mean_Y)**2).sum()
+    # WMS (within-target mean square)
+    Avg_WithinTarg = np.tile(np.mean(Y, axis=1), (n_conditions, 1)).T
+    SSW = ((Y - Avg_WithinTarg)**2).sum()
+    WMS = 1.0*SSW/dfwt
+    # BMS (between-target mean square)
+    SSB = ((Avg_WithinTarg - mean_Y)**2).sum()
+    BMS = 1.0*SSB/dfbt
+    # BJMS 
+    Avg_BetweenTarg = np.tile(np.mean(Y,axis=0), (n_subjects, 1))
+    SSBJ = ((Avg_BetweenTarg - mean_Y)**2).sum()
+    BJMS = 1.0*SSBJ/dfbj
+    # EMS
+    SSE = SST - SSBJ - SSB
+    EMS = 1.0*SSE/dfe
     
-    x_mean = np.sum(x1+x2)/(2*N)
+    # Package variables
+    Output = {}
+    Output['WMS'] = WMS
+    Output['BMS'] = BMS
+    Output['BJMS'] = BJMS
+    Output['EMS'] = EMS
+    Output['dof_bt'] = dfbt
+    Output['dof_wt'] = dfwt
+    Output['dof_bj'] = dfbj
+    Output['dof_e'] = dfe
+     
+    return Output
 
-    # s square
-    sumsquare_x1 = np.sum([(x1_i - x_mean)**2 for x1_i in x1])
-    sumsquare_x2 = np.sum([(x2_i - x_mean)**2 for x2_i in x2])
-    s_square = 1.0*(sumsquare_x1 + sumsquare_x2)/(2*N)
+def icc(Y, methods = '(2,1)'):    
+    """
+    Intra-correlation coefficient.
+    The data Y are entered as a 'table' with subjects (targets) are in rows,
+    and repeated measure (judges) in columns
+    
+    Reference: P.E. Shrout & Joseph L. Fleiss (1979). "Intraclass Correlations: Uses in Assessing Rater Reliability". Psychological Bulletin 86 (2): 420-428.
 
-    # r
-    suminter = np.sum([(x1[i] - x_mean)*(x2[i] - x_mean) for i, _ in enumerate(x1)])
-    r_icc = 1.0*suminter/(N*s_square)
+    Parameters:
+    -----------
+    Y: Original dataset, with its rows are targets and columns are judges.
+    methods: Please see attached reference for details.
+             (1,1), One-random effects
+                    Each target is rated by a different set of k judges, 
+                    randomly selected from a larger population of judges.
+             (2,1), Two-way random effects
+                    A random sample of k judges is selected from a larger 
+                    population, and each judge rates each target, that is,
+                    each judge rates n targets altogether.
+             (3,1), Two-way mixed model
+                    Each target is rated by each of the same k judges, who
+                    are only judges of interest.
 
-    return r_icc
-
-
-
-
+    Return: 
+    -------
+    r: intra-class correlation
+    """
+    decomp_var = anova_decomposition(Y)
+    [n_targs, n_judges] = Y.shape
+    if methods == '(1,1)':
+        r = (decomp_var['BMS'] - decomp_var['WMS'])/(decomp_var['BMS']+(n_judges-1)*decomp_var['WMS'])
+    elif methods == '(2,1)':
+        r = (decomp_var['BMS'] - decomp_var['EMS'])/(decomp_var['BMS']+(n_judges-1)*decomp_var['EMS']+n_judges*(decomp_var['BJMS']-decomp_var['EMS'])/n_targs)
+    elif methods == '(3,1)':
+        r = (decomp_var['BMS'] - decomp_var['EMS'])/(decomp_var['BMS']+(n_judges-1)*decomp_var['EMS'])
+    else:
+        raise Exception('Not support this method.')
+    return r
