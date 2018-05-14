@@ -941,7 +941,7 @@ def _dist_func(list1, list2, dist_method = 'mean'):
         assert len(list1) == len(list2), "The length of list1 and list2 must be same."
         diff_list = stats.pearsonr(list1, list2)[0]
     elif dist_method == 'icc':
-        diff_list = icc(list1, list2)
+        diff_list = icc(np.vstack((list1, list2)))[0]
     else:
         raise Exception('No such a option as dist_method!')
     return diff_list
