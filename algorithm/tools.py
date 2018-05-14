@@ -1178,10 +1178,16 @@ def icc(Y, methods = '(2,1)'):
     [n_targs, n_judges] = Y.shape
     if methods == '(1,1)':
         r = (decomp_var['BMS'] - decomp_var['WMS'])/(decomp_var['BMS']+(n_judges-1)*decomp_var['WMS'])
+        F = decomp_var['BMS']/decomp_var['WMS']
+        p = stats.f.sf(F, n_targs-1, n_targs*(n_judges-1))
     elif methods == '(2,1)':
         r = (decomp_var['BMS'] - decomp_var['EMS'])/(decomp_var['BMS']+(n_judges-1)*decomp_var['EMS']+n_judges*(decomp_var['BJMS']-decomp_var['EMS'])/n_targs)
+        F = decomp_var['BMS']/decomp_var['EMS']
+        p = stats.f.sf(F, n_targs-1, (n_judges-1)*(n_targs-1))
     elif methods == '(3,1)':
         r = (decomp_var['BMS'] - decomp_var['EMS'])/(decomp_var['BMS']+(n_judges-1)*decomp_var['EMS'])
+        F = decomp_var['BMS']/decomp_var['EMS']
+        p = stats.f.sf(F, n_targs-1, (n_targs-1)*(n_judges-1))
     else:
         raise Exception('Not support this method.')
-    return r
+    return r, p
