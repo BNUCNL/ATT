@@ -847,12 +847,13 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, method = 'pear
         corr_method = icc
     else:
         raise Exception('Only support pearson, spearman or intra-class correlation')
-    r1 = corr_method(r1_data[:,0], r1_data[:,1])
-    r2 = corr_method(r2_data[:,0], r2_data[:,1])
     if method == 'icc':
-        r_dif = r1 - r2
+        r1 = corr_method(np.vstack((r1_data[:,0], r1_data[:,1])).T)[0]
+        r2 = corr_method(np.vstack((r2_data[:,0], r2_data[:,1])).T)[0]  
     else:
-        r_dif = r1[0] - r2[0]
+        r1 = corr_method(r1_data[:,0], r1_data[:,1])[0]
+        r2 = corr_method(r2_data[:,0], r2_data[:,1])[0]
+    r_dif = r1 - r2
     merged_data = np.concatenate((r1_data, r2_data))
     total_pt = merged_data.shape[0]
     permutation_scores = []
@@ -861,12 +862,13 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, method = 'pear
         rd_lbl2 = tuple([i for i in range(total_pt) if i not in rd_lbl1])
         r1_rddata = merged_data[rd_lbl1,:]
         r2_rddata = merged_data[rd_lbl2,:]
-        r1_rd = corr_method(r1_rddata[:,0], r1_rddata[:,1])
-        r2_rd = corr_method(r2_rddata[:,0], r2_rddata[:,1])
         if method == 'icc':
-            permutation_scores.append(r1_rd - r2_rd)
+            r1_rd = corr_method(np.vstack((r1_rddata[:,0], r1_rddata[:,1])).T)[0]
+            r2_rd = corr_method(np.vstack((r2_rddata[:,0], r2_rddata[:,1])).T)[0]
         else:
-            permutation_scores.append(r1_rd[0] - r2_rd[0])
+            r1_rd = corr_method(r1_rddata[:,0], r1_rddata[:,1])[0]
+            r2_rd = corr_method(r2_rddata[:,0], r2_rddata[:,1])[0]
+        permutation_scores.append(r1_rd - r2_rd)
     permutation_scores = np.array(permutation_scores)    
     if tail == 'single':
         pvalue = 1.0*(sum(permutation_scores>r_dif)+1)/(n_permutation+1)
@@ -1147,7 +1149,7 @@ def anova_decomposition(Y):
      
     return Output
 
-def icc(Y, methods = '(2,1)'):    
+def icc(Y, methods = '(1,1)'):    
     """
     Intra-correlation coefficient.
     The data Y are entered as a 'table' with subjects (targets) are in rows,
