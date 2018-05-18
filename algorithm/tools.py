@@ -840,15 +840,15 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, methods = 'pea
     >>> r_dif, permutation_scores, pvalue = permutation_corr_diff(r1_data, r2_data)
     """
     import random
-    if method == 'pearson':
+    if methods == 'pearson':
         corr_method = stats.pearsonr
-    elif method == 'spearman':
+    elif methods == 'spearman':
         corr_method = stats.spearman
-    elif method == 'icc':
+    elif methods == 'icc':
         corr_method = icc
     else:
         raise Exception('Only support pearson, spearman or intra-class correlation')
-    if method == 'icc':
+    if methods == 'icc':
         r1 = corr_method(np.vstack((r1_data[:,0], r1_data[:,1])).T)[0]
         r2 = corr_method(np.vstack((r2_data[:,0], r2_data[:,1])).T)[0]  
     else:
@@ -863,7 +863,7 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, methods = 'pea
         rd_lbl2 = tuple([i for i in range(total_pt) if i not in rd_lbl1])
         r1_rddata = merged_data[rd_lbl1,:]
         r2_rddata = merged_data[rd_lbl2,:]
-        if method == 'icc':
+        if methods == 'icc':
             r1_rd = corr_method(np.vstack((r1_rddata[:,0], r1_rddata[:,1])).T)[0]
             r2_rd = corr_method(np.vstack((r2_rddata[:,0], r2_rddata[:,1])).T)[0]
         else:
@@ -881,7 +881,7 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, methods = 'pea
         raise Exception('Wrong parameters')
     return r_dif, permutation_scores, pvalue
 
-def permutation_diff(list1, list2, dist_methods = 'mean', n_permutation = 1000, tail = 'single'):
+def permutation_diff(list1, list2, dist_methods = 'mean', n_permutation = 1000, tail = 'both'):
     """
     Make permutation test for the difference of mean values between list1 and list2
 
@@ -908,12 +908,10 @@ def permutation_diff(list1, list2, dist_methods = 'mean', n_permutation = 1000, 
     >>> list_diff, diff_scores, pvalue = permutation_diff(list1, list2)
     """
     if not isinstance(list1, list):
-        list1 = list(list1)
+        list1 = list(list1.flatten())
     if not isinstance(list2, list):
-        list2 = list(list2)
-    if (dist_method == 'pearson') or (dist_method == 'icc'):
-        tail = 'both'
-    list_diff = _dist_func(list1, list2, dist_method)
+        list2 = list(list2.flatten())
+    list_diff = _dist_func(list1, list2, dist_methods)
     list1_len = len(list1)
     list2_len = len(list2)
     list_total = np.array(list1+list2)
@@ -925,7 +923,7 @@ def permutation_diff(list1, list2, dist_methods = 'mean', n_permutation = 1000, 
         list2_perm_idx = np.sort(list(set(range(list_total_len)).difference(set(list1_perm_idx))))
         list1_perm = list_total[list1_perm_idx]
         list2_perm = list_total[list2_perm_idx]
-        diff_scores.append(_dist_func(list1_perm, list2_perm, dist_method))
+        diff_scores.append(_dist_func(list1_perm, list2_perm, dist_methods))
     if tail == 'larger':
         pvalue = 1.0*(np.sum(diff_scores>list_diff)+1)/(n_permutation+1)
     elif tail == 'smaller':
@@ -936,19 +934,21 @@ def permutation_diff(list1, list2, dist_methods = 'mean', n_permutation = 1000, 
         raise Exception('Wrong paramters')
     return list_diff, diff_scores, pvalue
 
-def _dist_func(list1, list2, dist_method = 'mean'):
+def _dist_func(list1, list2, dist_methods = 'mean'):
     """
     An distance function for effect size of difference between list1 and list2
     """
-    if dist_method == 'mean':
+    if dist_methods == 'mean':
         diff_list = np.nanmean(list1) - np.nanmean(list2)
-    elif dist_method == 'std':
+    elif dist_methods == 'std':
         diff_list = np.nanstd(list1) - np.nanstd(list2)
-    elif dist_method == 'pearson':
+    elif dist_methods == 'pearson':
         assert len(list1) == len(list2), "The length of list1 and list2 must be same."
         diff_list = stats.pearsonr(list1, list2)[0]
-    elif dist_method == 'icc':
-        diff_list = icc(np.vstack((list1, list2)))[0]
+    elif dist_methods == 'icc':
+        assert len(list1) == len(list2), "The length of list1 and list2 must be same."
+        concat_list = np.vstack((list1, list2)).T
+        diff_list = icc(concat_list)[0]
     else:
         raise Exception('No such a option as dist_method!')
     return diff_list
