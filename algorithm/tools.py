@@ -825,6 +825,7 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, methods = 'pea
     methods: methods for correlation and coefficient
             'pearson', pearson correlation coefficient
             'spearman', spearman correlation coefficient
+            'icc', intraclass correlation (ICC(1,1) for twin study)
     tail: 'larger', one-tailed test, test if r_dif larger than permutation_scores
           'smaller', one-tailed test, test if r_dif smaller than permutation_score
           'both', two-tailed test
@@ -876,7 +877,7 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, methods = 'pea
     elif tail == 'smaller':
         pvalue = 1.0*(sum(permutation_scores<r_dif)+1)/(n_permutation+1)
     elif tail == 'both':
-        pvalue = 1.0*(sum(np.abs(permutation_scores)>np.abs(r_dif))+1)/(n_pemutation+1)
+        pvalue = 1.0*(sum(np.abs(permutation_scores)>np.abs(r_dif))+1)/(n_permutation+1)
     else:
         raise Exception('Wrong parameters')
     return r_dif, permutation_scores, pvalue
