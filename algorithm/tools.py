@@ -812,7 +812,7 @@ def control_lbl_size(labeldata, actdata, thr, label = None,  option = 'num'):
     out_lbldata = labeldata*(outactdata!=0)
     return out_lbldata
 
-def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, method = 'pearson', tail = 'single'):
+def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, methods = 'pearson', tail = 'both'):
     """
     Do permutation test between r1_data and r2_data to check whether the difference between r1 (correlation coefficient) calculated from r1data and r2 calculated from r2data will be significant
 
@@ -822,10 +822,11 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, method = 'pear
              the format of raw data as a array of Nx2, where N is the number of data point. The first column is data of x, the second column is data of y. r1 computed by x and y.
     r2_data: raw data for correlation of r2
     n_permutation: permutation times, by default is 5,000
-    method: method for correlation and coefficient
+    methods: methods for correlation and coefficient
             'pearson', pearson correlation coefficient
             'spearman', spearman correlation coefficient
-    tail: 'single', one-tailed test
+    tail: 'larger', one-tailed test, test if r_dif larger than permutation_scores
+          'smaller', one-tailed test, test if r_dif smaller than permutation_score
           'both', two-tailed test
 
     Return:
@@ -870,30 +871,30 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, method = 'pear
             r2_rd = corr_method(r2_rddata[:,0], r2_rddata[:,1])[0]
         permutation_scores.append(r1_rd - r2_rd)
     permutation_scores = np.array(permutation_scores)    
-    if tail == 'single':
+    if tail == 'larger':
         pvalue = 1.0*(sum(permutation_scores>r_dif)+1)/(n_permutation+1)
+    elif tail == 'smaller':
+        pvalue = 1.0*(sum(permutation_scores<r_dif)+1)/(n_permutation+1)
     elif tail == 'both':
         pvalue = 1.0*(sum(np.abs(permutation_scores)>np.abs(r_dif))+1)/(n_pemutation+1)
+    else:
+        raise Exception('Wrong parameters')
     return r_dif, permutation_scores, pvalue
 
-def permutation_diff(list1, list2, dist_method = 'mean', n_permutation = 1000, tail = 'single'):
+def permutation_diff(list1, list2, dist_methods = 'mean', n_permutation = 1000, tail = 'single'):
     """
     Make permutation test for the difference of mean values between list1 and list2
 
     Parameters:
     -----------
     list1, list2: two lists contain data
-    dist_method: 'mean', the difference between average of list1 and list2
+    dist_methods: 'mean', the difference between average of list1 and list2
                  'std', the difference between std of list1 and list2
-                 -------------------Note-----------------------------------
-                 The significance of correlation is from two-tailed test,
-                 if you use 'pearson' or 'icc' as distance method, tail will
-                 be set as 'both' compulsorily.
-                 ----------------------------------------------------------
                  'pearson', the pearson correlation between list1 and list2
                  'icc', the intra-class correlation between list1 and list2
     n_permutation: permutation times
-    tail: 'single', one-tailed test
+    tail: 'larger', one-tailed test, test if list_diff is larger than diff_scores
+          'smaller', one-tailed test, test if list_diff is smaller than diff_score
           'both', two_tailed test
     
     Output:
@@ -925,10 +926,14 @@ def permutation_diff(list1, list2, dist_method = 'mean', n_permutation = 1000, t
         list1_perm = list_total[list1_perm_idx]
         list2_perm = list_total[list2_perm_idx]
         diff_scores.append(_dist_func(list1_perm, list2_perm, dist_method))
-    if tail == 'single':
+    if tail == 'larger':
         pvalue = 1.0*(np.sum(diff_scores>list_diff)+1)/(n_permutation+1)
+    elif tail == 'smaller':
+        pvalue = 1.0*(np.sum(diff_scores<list_diff)+1)/(n_permutation+1)
     elif tail == 'both':
         pvalue = 1.0*(np.sum(np.abs(diff_scores)>np.abs(list_diff))+1)/(n_permutation+1)
+    else:
+        raise Exception('Wrong paramters')
     return list_diff, diff_scores, pvalue
 
 def _dist_func(list1, list2, dist_method = 'mean'):
