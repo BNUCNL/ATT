@@ -1199,3 +1199,22 @@ def icc(Y, methods = '(1,1)'):
     else:
         raise Exception('Not support this method.')
     return r, p
+
+def confidence_interval(data, confidence = 0.95):
+    """
+    Calculate confidence interval from sample data
+    You can estimate confidence interval of a permutation test
+
+    Parameters:
+    -----------
+    data: sample data
+    confidence: confidence
+
+    Returns:
+    --------
+    low_conf: low confidence range
+    upper_conf: upper confidence range
+    """
+    low_conf, upper_conf = stats.t.interval(confidence, len(data)-1, loc=np.mean(data), scale=stats.sem(data))
+    return low_conf, upper_conf
+
