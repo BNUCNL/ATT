@@ -369,7 +369,11 @@ def listwise_clean(data):
 def ste(data, axis=None):
     """
     Calculate standard error
-    --------------------------------
+
+    2018/05/21, deprecated. 
+    Please use scipy.stats.sem for standard error
+    This method followed scipy.stats.sem
+    --------------------------------------------
     Parameters:
         data: data array
     Output:
@@ -378,8 +382,7 @@ def ste(data, axis=None):
     if isinstance(data, float) | isinstance(data, int):
         return np.nanstd(data,axis)/np.sqrt(1)
     else:
-        n = np.sum(~np.isnan(data),axis)
-        ste = np.nanstd(data,axis)/np.sqrt(n)
+        ste = stats.sem(data,axis)
         if isinstance(ste, np.ndarray):
             ste[np.isinf(ste)] = np.nan
         return ste
