@@ -369,7 +369,11 @@ def listwise_clean(data):
 def ste(data, axis=None):
     """
     Calculate standard error
-    --------------------------------
+
+    2018/05/21, deprecated. 
+    Please use scipy.stats.sem for standard error
+    This method followed scipy.stats.sem
+    --------------------------------------------
     Parameters:
         data: data array
     Output:
@@ -378,8 +382,7 @@ def ste(data, axis=None):
     if isinstance(data, float) | isinstance(data, int):
         return np.nanstd(data,axis)/np.sqrt(1)
     else:
-        n = np.sum(~np.isnan(data),axis)
-        ste = np.nanstd(data,axis)/np.sqrt(n)
+        ste = stats.sem(data,axis)
         if isinstance(ste, np.ndarray):
             ste[np.isinf(ste)] = np.nan
         return ste
@@ -1199,3 +1202,22 @@ def icc(Y, methods = '(1,1)'):
     else:
         raise Exception('Not support this method.')
     return r, p
+
+def confidence_interval(data, confidence = 0.95):
+    """
+    Calculate confidence interval from sample data
+    You can estimate confidence interval of a permutation test
+
+    Parameters:
+    -----------
+    data: sample data
+    confidence: confidence
+
+    Returns:
+    --------
+    low_conf: low confidence range
+    upper_conf: upper confidence range
+    """
+    low_conf, upper_conf = stats.t.interval(confidence, len(data)-1, loc=np.mean(data), scale=stats.sem(data))
+    return low_conf, upper_conf
+
