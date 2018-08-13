@@ -4,11 +4,11 @@
 from distutils.core import setup
 
 setup(name='ATT',
-      version='1.0',
-      description='Toolbox for nifti data analysis',
+      version='0.5',
+      description='Toolbox for neuroimaging data analysis',
       author='Taicheng Huang',
-      author_email='taicheng_huang@sina.cn',
+      author_email='taicheng_huang@mail.bnu.edu.cn',
       url='https://github.com/helloTC/ATT',
-      packages=['algorithm', 'graph', 'iofunc', 'surface', 'util', 'volume'],
+      packages=['ATT.algorithm', 'ATT.iofunc', 'ATT.util'],
       install_requires=['numpy', 'scipy', 'nibabel', 'six', 'sklearn', 'pandas', 'matplotlib', 'seaborn']
       )

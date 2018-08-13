@@ -1,11 +1,12 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode:nil -*-
 # vi: set ft=python sts=4 sw=4 et:
 
+import copy
 import numpy as np
+import pandas as pd
+
 from scipy import stats, special
 from scipy.spatial import distance
-import copy
-import pandas as pd
 
 
 def _overlap(c1, c2, index='dice'):
@@ -38,7 +39,8 @@ def _overlap(c1, c2, index='dice'):
         overlap = np.nan
     return overlap
 
-def calc_overlap(data1, data2, label1=None, label2=None, index='dice', controlsize = False, actdata = None):
+
+def calc_overlap(data1, data2, label1=None, label2=None, index='dice', controlsize=False, actdata=None):
     """
     Calculate overlap between two sets.
     The sets are acquired from data1 and data2 respectively.
@@ -99,7 +101,7 @@ def calc_overlap(data1, data2, label1=None, label2=None, index='dice', controlsi
     return overlap
 
 
-def calcdist(u, v, metric = 'euclidean', p = 1):
+def calcdist(u, v, metric='euclidean', p=1):
     """
     Compute distance between u and v
     ----------------------------------
@@ -122,6 +124,7 @@ def calcdist(u, v, metric = 'euclidean', p = 1):
     else:
         dist = distance.pdist(vec, metric)
     return dist
+
 
 def eta2(a, b):
     """
@@ -157,6 +160,7 @@ def eta2(a, b):
     sumtotal = np.sum((a-M)**2+(b-M)**2)
     return 1-1.0*(sumwithin)/sumtotal
 
+
 def convert_listvalue_to_ordinal(listdata):
     """
     Convert list elements to ordinal values
@@ -179,25 +183,32 @@ def convert_listvalue_to_ordinal(listdata):
     ordinals = [ordinal_map[val] for val in listdata]
     return ordinals
 
-def regressoutvariable(rawdata, covariate):
+
+def regressoutvariable(rawdata, covariate, fit_intercept=False):
     """
     Regress out covariate variables from raw data
     -------------------------------------------------
     Parameters:
-        rawdata: rawdata
-        covariate: covariate to be regressed out
+        rawdata: rawdata, as Nx1 series.
+        covariate: covariate to be regressed out, as Nxn series.
+        fit_intercept: whether to fit intercept or not.
+                       By default is False
     Return:
         residue
     """
+    try:
+        from sklearn import linear_model
+    except ImportError:
+        raise Exception('Please install sklearn first')
     if isinstance(rawdata, list):
         rawdata = np.array(rawdata)
     if isinstance(covariate, list):
         covariate = np.array(covariate)
-    samp = ~np.isnan(rawdata * covariate)
-    zfunc = lambda x: (x - np.nanmean(x))/np.nanstd(x)
-    slope, intercept, r_value, p_value, std_err = stats.linregress(stats.zscore(rawdata[samp]), stats.zscore(covariate[samp]))
-    residue = zfunc(rawdata) - slope*zfunc(covariate)
+    clf = linear_model.LinearRegression(fit_intercept=fit_intercept, normalize=True)
+    clf.fit(covariate, rawdata)
+    residue = rawdata - np.dot(covariate, clf.coef_.T)
     return residue
+
 
 def pearsonr(A, B):
     """
@@ -231,6 +242,7 @@ def pearsonr(A, B):
     t_squared = rcorr.T**2*(df/((1.0-rcorr.T)*(1.0+rcorr.T)))
     pcorr = special.betainc(0.5*df, 0.5, df/(df+t_squared))
     return rcorr.T, pcorr
+
 
 def r2z(r):
     """
@@ -278,7 +290,8 @@ def z2r(z):
         r = r_flat.reshape(z.shape)
     return r
 
-def hemi_merge(left_region, right_region, meth = 'single', weight = None):
+
+def hemi_merge(left_region, right_region, meth='single', weight=None):
     """
     Merge hemisphere data
     -------------------------------------
@@ -317,7 +330,8 @@ def hemi_merge(left_region, right_region, meth = 'single', weight = None):
     merge_region[merge_region == 0] = np.nan
     return merge_region
 
-def removeoutlier(data, meth = None, thr = [-2,2]):
+
+def removeoutlier(data, meth=None, thr=[-2, 2]):
     """
     Remove data as outliers by indices you set
     -----------------------------
@@ -331,6 +345,8 @@ def removeoutlier(data, meth = None, thr = [-2,2]):
         residue_data: outlier values will be set as nan
         n_removed: outlier numbers
     """
+    data = np.array(data)
+    data = data.astype('float')
     residue_data = copy.copy(data)   
     if meth is None:
         residue_data = data
@@ -353,6 +369,7 @@ def removeoutlier(data, meth = None, thr = [-2,2]):
     n_removed = sum(i for i in outlier_bool if i) 
     return n_removed, residue_data
 
+
 def listwise_clean(data):
     """
     Clean missing data by listwise method
@@ -365,6 +382,7 @@ def listwise_clean(data):
         data = np.array(data)
     clean_data = pd.DataFrame(data).dropna().values
     return clean_data    
+
 
 def ste(data, axis=None):
     """
@@ -387,6 +405,7 @@ def ste(data, axis=None):
             ste[np.isinf(ste)] = np.nan
         return ste
 
+
 def get_specificroi(image, labellist):
     """
     Get specific roi from nifti image indiced by its label
@@ -405,7 +424,8 @@ def get_specificroi(image, labellist):
     specific_data = image*logic_array
     return specific_data
 
-def make_lblmask_by_loc(mask, loclist, label = 1):
+
+def make_lblmask_by_loc(mask, loclist, label=1):
     """
     Generate a mask by loclist
 
@@ -430,7 +450,8 @@ def make_lblmask_by_loc(mask, loclist, label = 1):
         mask = mask[:,0]
     return mask
 
-def list_reshape_bywindow(longlist, windowlen, step = 1):
+
+def list_reshape_bywindow(longlist, windowlen, step=1):
     """
     A function to use window cut longlist into several pieces
 
@@ -465,7 +486,8 @@ def list_reshape_bywindow(longlist, windowlen, step = 1):
         i+=1
     return ic_list
 
-def lin_betafit(estimator, X, y, c, tail = 'both'):
+
+def lin_betafit(estimator, X, y, c, tail='both'):
     """
     Linear estimation using linear models
     -----------------------------------------
@@ -516,7 +538,8 @@ def lin_betafit(estimator, X, y, c, tail = 'both'):
         raise Exception('wrong pointed tail.')
     return r2, beta[:,0], t, tpval, f, fpval
 
-def permutation_cross_validation(estimator, X, y, n_fold=3, isshuffle = True, cvmeth = 'shufflesplit', score_type = 'r2', n_perm = 1000):
+
+def permutation_cross_validation(estimator, X, y, n_fold=3, isshuffle=True, cvmeth='shufflesplit', score_type='r2', n_perm=1000):
     """
     An easy way to evaluate the significance of a cross-validated score by permutations
     -------------------------------------------------
@@ -535,7 +558,7 @@ def permutation_cross_validation(estimator, X, y, n_fold=3, isshuffle = True, cv
         pvalues: p value of permutation scores
     """
     try:
-        from sklearn import cross_validation
+        from sklearn import cross_validation, preprocessing
     except ImportError:
         raise Exception('To call this function, please install sklearn')
     if X.ndim == 1:
@@ -551,6 +574,7 @@ def permutation_cross_validation(estimator, X, y, n_fold=3, isshuffle = True, cv
         cvmethod = cross_validation.ShuffleSplit(y.shape[0], n_iter = 100, test_size = testsize, random_state = 0)
     score, permutation_scores, pvalues = cross_validation.permutation_test_score(estimator, X, y, scoring = score_type, cv = cvmethod, n_permutations = n_perm)
     return score, permutation_scores, pvalues
+
 
 class PCorrection(object):
     """
@@ -640,6 +664,7 @@ class PCorrection(object):
         else:
             return self._parray[np.argmax(bool_array)]
 
+
 class NonUniformity(object):
     """
     Indices for non-uniformity
@@ -692,7 +717,8 @@ class NonUniformity(object):
         """
         return (np.linalg.norm(self._array)*np.sqrt(self._len)-1)/(np.sqrt(self._len)-1)
 
-def threshold_by_number(imgdata, thr, threshold_type = 'number', option = 'descend'):
+
+def threshold_by_number(imgdata, thr, threshold_type='number', option='descend'):
     """
     Threshold imgdata by a given number
     parameter option is 'descend', filter from the highest values
@@ -736,7 +762,7 @@ def threshold_by_number(imgdata, thr, threshold_type = 'number', option = 'desce
     outdata = np.reshape(outdata_flat, imgdata.shape)
     return outdata
 
-def threshold_by_value(imgdata, thr, threshold_type = 'value', option = 'descend'):
+def threshold_by_value(imgdata, thr, threshold_type='value', option='descend'):
     """
     Threshold image data by values
     
@@ -776,7 +802,8 @@ def threshold_by_value(imgdata, thr, threshold_type = 'value', option = 'descend
         raise Exception('No such parameter in option')
     return imgdata_thr
 
-def control_lbl_size(labeldata, actdata, thr, label = None,  option = 'num'):
+
+def control_lbl_size(labeldata, actdata, thr, label=None,  option='num'):
     """
     Threshold label data using activation mask (threshold activation data then binarized it to get mask to restrained raw label data range)
     
@@ -815,7 +842,8 @@ def control_lbl_size(labeldata, actdata, thr, label = None,  option = 'num'):
     out_lbldata = labeldata*(outactdata!=0)
     return out_lbldata
 
-def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, methods = 'pearson', tail = 'both'):
+
+def permutation_corr_diff(r1_data, r2_data, n_permutation=5000, methods='pearson', tail='both'):
     """
     Do permutation test between r1_data and r2_data to check whether the difference between r1 (correlation coefficient) calculated from r1data and r2 calculated from r2data will be significant
 
@@ -885,7 +913,8 @@ def permutation_corr_diff(r1_data, r2_data, n_permutation = 5000, methods = 'pea
         raise Exception('Wrong parameters')
     return r_dif, permutation_scores, pvalue
 
-def permutation_diff(list1, list2, dist_methods = 'mean', n_permutation = 1000, tail = 'both'):
+
+def permutation_diff(list1, list2, dist_methods='mean', n_permutation=1000, tail='both'):
     """
     Make permutation test for the difference of mean values between list1 and list2
 
@@ -938,7 +967,8 @@ def permutation_diff(list1, list2, dist_methods = 'mean', n_permutation = 1000, 
         raise Exception('Wrong paramters')
     return list_diff, diff_scores, pvalue
 
-def _dist_func(list1, list2, dist_methods = 'mean'):
+
+def _dist_func(list1, list2, dist_methods='mean'):
     """
     An distance function for effect size of difference between list1 and list2
     """
@@ -958,7 +988,7 @@ def _dist_func(list1, list2, dist_methods = 'mean'):
     return diff_list
 
 
-def genroi_bytmp(raw_roi, template, thr, thr_idx = 'values', threshold_type = 'value', option = 'descend'):
+def genroi_bytmp(raw_roi, template, thr, thr_idx='values', threshold_type='value', option='descend'):
     """
     Generate ROI map with different threshold by using a template with values
 
@@ -997,7 +1027,8 @@ def genroi_bytmp(raw_roi, template, thr, thr_idx = 'values', threshold_type = 'v
     new_roi = raw_roi * thr_template
     return new_roi
 
-def autocorr(x, t = 0, mode = 'point'):
+
+def autocorr(x, t=0, mode='point'):
     """
     Calculate the statistical correlation for a lag of t
 
@@ -1040,6 +1071,7 @@ def autocorr(x, t = 0, mode = 'point'):
         raise Exception('No such a mode name')
     return r, p
 
+
 def template_overlap(roimask, template, index='percent'):
     """
     Find the subregion of roimask that defined from template
@@ -1074,6 +1106,7 @@ def template_overlap(roimask, template, index='percent'):
         label_dict[i] = column[row==i]
 
     return label_dict, overlap_array
+
 
 def rearrange_matrix(matrix_data, index_list):
     """
@@ -1110,6 +1143,7 @@ def rearrange_matrix(matrix_data, index_list):
     tmp_data = matrix_data[index_list,:]
     rag_matrix = tmp_data[:,index_list]
     return rag_matrix
+
 
 def anova_decomposition(Y):
     """
@@ -1158,7 +1192,8 @@ def anova_decomposition(Y):
      
     return Output
 
-def icc(Y, methods = '(1,1)'):    
+
+def icc(Y, methods='(1,1)'):
     """
     Intra-correlation coefficient.
     The data Y are entered as a 'table' with subjects (targets) are in rows,
@@ -1173,6 +1208,8 @@ def icc(Y, methods = '(1,1)'):
              (1,1), One-random effects
                     Each target is rated by a different set of k judges, 
                     randomly selected from a larger population of judges.
+             ML, Calculate ICC by ML estimation.
+             ReML, Calculate ICC by ReML estimation.
              (2,1), Two-way random effects
                     A random sample of k judges is selected from a larger 
                     population, and each judge rates each target, that is,
@@ -1191,6 +1228,36 @@ def icc(Y, methods = '(1,1)'):
         r = (decomp_var['BMS'] - decomp_var['WMS'])/(decomp_var['BMS']+(n_judges-1)*decomp_var['WMS'])
         F = decomp_var['BMS']/decomp_var['WMS']
         p = stats.f.sf(F, n_targs-1, n_targs*(n_judges-1))
+    elif methods == 'ML':
+        N = n_targs * n_judges
+        # Design matrix
+        X = np.ones((N,1))
+        Z = np.kron(np.eye(n_targs), np.ones((n_judges,1)))
+        y = Y.reshape((N,1))
+        # Estimate variance components using ReML
+        s20 = [0.001, 0.1]
+        dim = [1*n_targs]
+        s2, b, u, Is2, C, loglik, loops = _mixed_model(y, X, Z, dim, s20, method=1)
+        r = s2[0]/np.sum(s2)
+        WMS = s2[1]/n_judges
+        BMS = s2[0]+s2[1]/n_judges
+        F = 1.0*BMS/WMS
+        p = stats.f.sf(F, n_targs-1, n_targs*(n_judges-1))
+    elif methods == 'ReML':
+        N = n_targs * n_judges
+        # Design matrix
+        X = np.ones((N,1))
+        Z = np.kron(np.eye(n_targs), np.ones((n_judges,1)))
+        y = Y.reshape((N,1))
+        # Estimate variance components using ReML
+        s20 = [0.001, 0.1]
+        dim = [1*n_targs]
+        s2, b, u, Is2, C, loglik, loops = _mixed_model(y, X, Z, dim, s20, method=2)
+        r = s2[0]/np.sum(s2)
+        WMS = s2[1]/n_judges
+        BMS = s2[0]+s2[1]/n_judges
+        F = 1.0*BMS/WMS
+        p = stats.f.sf(F, n_targs-1, n_targs*(n_judges-1))
     elif methods == '(2,1)':
         r = (decomp_var['BMS'] - decomp_var['EMS'])/(decomp_var['BMS']+(n_judges-1)*decomp_var['EMS']+n_judges*(decomp_var['BJMS']-decomp_var['EMS'])/n_targs)
         F = decomp_var['BMS']/decomp_var['EMS']
@@ -1203,21 +1270,170 @@ def icc(Y, methods = '(1,1)'):
         raise Exception('Not support this method.')
     return r, p
 
-def confidence_interval(data, confidence = 0.95):
+
+def _mixed_model(y, X, Z, dim, s20, method=2):
     """
-    Calculate confidence interval from sample data
-    You can estimate confidence interval of a permutation test
+    Computes ML, REML by Henderson's Mixed Model Equations Algorithm.
+    Code was migrated from DPABI_V3.0/ICC/mixed.m
+    Thanks for it!
+    
+    Model: Y = X*b + Z*u + e,
+           b=[b_1', ..., b_f']' and u = [u_1', ..., u_r]',
+           E(u)=0, Var(u)=diag(sigma^2_i*I_{m_i}), i = 1,...,r
+           E(e)=0, Var(e)=sigma^2_{r+1}*I_n
+           Var(y)=Sig=sum_{i=1}^{r+1} sigma^2_i*Sig_i.
+           We assume normality and independence of u and e.
 
     Parameters:
-    -----------
-    data: sample data
-    confidence: confidence
+    ------------
+    y: n-dimensional vector of observations.
+    X: (n*k)-design matrix for fixed effects b = [b_1;...;b_f],
+       typically X = [X_1,...,X_f] for some X_i.
+    Z: (n*m)-design matrix for random effects u = [u_1;...;u_r],
+       typically Z=[Z_1;...;Z_r] for some Z_i.
+    dim: Vector of dimensions of u_i, i = 1,...,r,
+         dim=[m_1;...;m_r], m=sum(dim)
+    s20: A prior choice of the variance components.
+         SHOULD BE POSITIVE
+    method: Method of estimation of variance components
+         1: ML, 2:REML
 
     Returns:
-    --------
-    low_conf: low confidence range
-    upper_conf: upper confidence range
+    ---------
+    s2: Estimated Vector of variance components.
+        A warning message appears if some of the estimated
+        variance components is negative or equal to zero.
+        In such cases the calculated Fisher information 
+        matrices are inadequate.
+    b: k-dimensional vector of estimated fixed effects beta.
+    u: m-dimensional vector of estimated random effects U.
+    Is2: Fisher information matrix for variance components.
+    C: g-inverse of Henderson's MME matrix
+    loglik: Log-likelihood evaluated at the estimated parameters.
+    loops: Number of loops
+
     """
-    low_conf, upper_conf = stats.t.interval(confidence, len(data)-1, loc=np.mean(data), scale=stats.sem(data))
-    return low_conf, upper_conf
+    yy = np.dot(y.T, y)
+    Xy = np.dot(X.T, y)
+    Zy = np.dot(Z.T, y)
+    XX = np.dot(X.T, X)
+    XZ = np.dot(X.T, Z)
+    ZZ = np.dot(Z.T, Z)
+    a = np.vstack((Xy, Zy)) 
+    # End of required input parameters
+    n = len(y)
+    k, m = XZ.shape
+    rx = np.linalg.matrix_rank(XX)
+    r = len(s20) - 1   
+    Im = np.eye(m)
+    loops = 0
+
+    fk = np.where(s20 <= 0)[0]
+    if any(fk):
+        s20[fk] = 100*2.2204e-16*np.ones((fk.shape))
+        print('Priors in s20 are negative or zeros !CHANGED!')
+    sig0 = 1 * s20
+    s21 = 1 * s20
+    ZMZ = ZZ - np.dot(np.dot(XZ.T, np.linalg.pinv(XX)), XZ)
+    q = np.zeros((r+1, ))
+    # loop starting
+    epss = 1e-9
+    crit = 1
+    while crit > epss:
+        loops += 1
+        sigaux = 1*s20
+        s0 = s20[r]
+        d = s20[0]*np.ones((dim[0],))
+        for i in np.arange(2, r+1, 1):
+            d = np.vstack((d, s20[i-1]*np.ones(dim[i-1],)))
+        D = np.diag(d.flatten())
+        V = s0*Im + np.dot(ZZ, D)
+        W = s0*np.linalg.inv(V)
+        T = np.linalg.inv(Im+1.0*np.dot(ZMZ, D)/s0)
+        A = np.vstack((np.hstack((XX, np.dot(XZ, D))), np.hstack((XZ.T, V))))
+        bb = np.dot(np.linalg.pinv(A), a)
+        b = bb[:k]
+        v = bb[k:k+m]
+        u = np.dot(D, v)
+        # ESTIMATION OF ML AND REML OF VARIANCE COMPONENTS
+        iupp = 0
+        for i in range(r):
+            ilow = iupp + 1
+            iupp = iupp + dim[i]
+            Wii = W[ilow-1:iupp, ilow-1:iupp]
+            Tii = T[ilow-1:iupp, ilow-1:iupp]
+            w = u[ilow-1:iupp]
+            ww = np.dot(w.T, w).flatten()[0]
+            q[i] = (1.0*ww/(s20[i]*s20[i]))
+            s20[i] = (1.0*ww/(dim[i] - np.trace(Wii))).flatten()[0]
+            s21[i] = (1.0*ww/(dim[i] - np.trace(Tii))).flatten()[0]
+        Aux = (yy-np.dot(b.T,Xy)-np.dot(u.T, Zy)).flatten()[0]
+        Aux1 = (Aux-np.dot(np.dot(u.T, v), s20[r])).flatten()[0]
+        q[r] = 1.0*Aux1/(s20[r]*s20[r])
+        s20[r] = 1.0*Aux/n
+        s21[r] = 1.0*Aux/(n-rx)
+        if method == 1:
+            # ML
+            crit = np.linalg.norm(np.array(sigaux)-np.array(s20))
+            q = np.zeros((r+1,))
+        elif method == 2:
+            # REML
+            s20 = 1 * s21
+            crit = np.linalg.norm(np.array(sigaux)-np.array(s20))
+            q = np.zeros((r+1,))
+        else:
+            crit = 0
+    s2 = 1 * s20
+    fk = np.where(s2 < 0)[0]
+    if any(fk):
+        print('Estimated variance components are negative!')
+    s0 = s2[r]
+    d = s2[0]*np.ones((dim[0],))
+    for i in np.arange(2, r+1, 1):
+        d = np.vstack((d, s2[i]*np.ones((dim[i],))))
+    D = np.diag(d.flatten())
+    V = s0*Im+np.dot(ZZ, D)
+    W = 1.0*V/s0
+    T = np.linalg.inv(Im+1.0*np.dot(ZMZ, D)/s0)
+    A = np.vstack((np.hstack((XX, np.dot(XZ, D))), np.hstack((XZ.T, V))))
+    A = np.linalg.pinv(A)
+    C = np.dot(s0, np.vstack((np.hstack((A[0:k, 0:k], A[0:k, k:k+m])),
+                              np.hstack((np.dot(D, A[k:k+m, 0:k]),
+                                         np.dot(D, A[k:k+m, k:k+m]))))))
+    bb = np.dot(A, a)
+    b = bb[0:k]
+    v = bb[k:k+m]
+    u = np.dot(D, v)
+    if method == 1:
+        loglik = -0.5*(n*np.log(2*np.pi*s0) - np.log(np.linalg.det(W)+n))
+    elif method == 2:
+        loglik = -0.5*((n-rx)*np.log(2*np.pi*s0) - np.log(np.linalg.det(T))+(n-rx))
+    else:
+        raise Exception('Assign method using 1 or 2 for ML or ReML')
+
+    # Fisher information matrix for variance components
+    Is2 = np.eye(r+1)
+    if method == 2:
+        W = 1*T
+        Is2[r, r] = (n-rx-m+np.trace(np.dot(W,W)))/(s2[r]*s2[r])
+    else:
+        Is2[r, r] = (n-m+np.trace(np.dot(W,W)))/(s2[r]*s2[r])
+    iupp = 0
+    for i in range(r):
+        ilow = iupp+1
+        iupp = iupp+dim[i]
+        trii = np.trace(W[ilow-1:iupp, ilow-1:iupp])
+        trsum = 0
+        jupp = 0
+        for j in range(r):
+            jlow = jupp+1
+            jupp = jupp+dim[j]
+            tr = np.trace(np.dot(W[ilow-1:iupp, jlow-1:jupp], 
+                                 W[jlow-1:jupp, ilow-1:iupp]))
+            trsum = trsum + tr
+            Is2[i, j] = ((i == j)*(dim[i]-2*trii)+tr)/(s2[i]*s2[j])
+        Is2[r, i] = (trii-trsum)/(s2[r]*s2[i])
+        Is2[i, r] = Is2[r, i]
+    Is2 = Is2/2
+    return s2, b, u, Is2, C, loglik, loops  
 
