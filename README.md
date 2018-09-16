@@ -17,7 +17,7 @@ $ gedit ~/.bashrc
 
 In .bashrc, edit it and add:
 
-```
+```bash
 export PYTHONPATH=$PYTHONPATH:<your_directory>
 ```
 

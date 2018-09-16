@@ -58,9 +58,7 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
     if atlas.ndim == 3:
         atlas = atlas[:,0,0]
     if mask.ndim == 3:
-        mask = mask[:,0,0]
-    
-    
+        mask = mask[:,0,0]        
     labels = np.unique(mask)[1:]
     if labelnum is None:
         try:
@@ -1126,6 +1124,52 @@ def get_local_extrema(scalar_data, faces, surf_dist, n_extrema = None, mask = No
         ringlist = get_n_ring_neighbor(temp_extre_point, faces, n=surf_dist)
         temp_scalar[list(ringlist[0])] = 0
     return extre_points    
+
+def threshold_by_rggrow(seedvx, vxnum, faces, scalarmap, option='descend'):
+    """
+    Threshold scalarmap with specific vertex number (vxnum) by region growing algorithm.
+
+    Parameters:
+    ------------
+        seedvx: seed vertex
+        vxnum: number of vertices to generate
+        faces: relationship of geometry connection
+        scalarmap: scalar map, e.g. activation map.
+        option: 'descend', selected vertices with value smaller than seedvx.
+                'ascend', selected vertices with value larger than seedvx.
+
+    Returns:
+    --------
+    rg_scalar: a new scalar map generated from the region growing algorithm
+
+    Example:
+    --------
+    >>> rg_scalar = threshold_by_rggrow(24, 300, faces, scalarmap)
+    """
+    if option == 'ascend':
+        actdata = -1.0*scalarmap
+    else:
+        actdata = 1.0*scalarmap
+    
+    vxpack = set()
+    vxpack.add(seedvx)
+    backupvx = set()
+    seed_neighbor = get_n_ring_neighbor(seedvx, faces, 1, ordinal=True)[0]
+    backupvx.update(seed_neighbor.difference(vxpack))
+    while len(vxpack)<vxnum:
+        print('{} vertices contained'.format(len(vxpack)))
+        backupvx = backupvx.difference(vxpack)
+        array_backupvx = np.array(list(backupvx))
+        array_vxpack = np.array(list(vxpack))
+        seed_bp = int(array_backupvx[np.argmax(actdata[array_backupvx])])
+        vxpack.add(seed_bp)
+        seed_bp_neigh = get_n_ring_neighbor(seed_bp, faces, 1, ordinal=True)[0]
+        backupvx.update(seed_bp_neigh)
+    rg_scalar = np.zeros_like(scalarmap)
+    rg_scalar[np.array(list(vxpack))] = 1
+    rg_scalar = rg_scalar*scalarmap
+    return rg_scalar
+
 
 
 
