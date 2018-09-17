@@ -383,7 +383,7 @@ class _FigureFactory(object):
             if self._isshow is True:
                 plt.show()
 
-        def _radar_plotting(self, data, xlabel = '', ylabel = '', grp_label = '', fontsize = 12):
+        def _radar_plotting(self, data, xlabel = '', ylabel = '', grp_label = '', fill_color = True, fontsize = 12):
             """
             Show radar chart
         
@@ -393,6 +393,7 @@ class _FigureFactory(object):
             xlabel: label in x-axis
             ylabel: label in y-axis
             grp_label: group label
+            fill_color: whether fill radar with color (light blue)
             fontsize: fontsize
             """
             if isinstance(data, list) is True:
@@ -428,10 +429,11 @@ class _FigureFactory(object):
                 tmp_data = data[:,i].tolist()
                 tmp_data += tmp_data[:1]
                 ax.plot(angles, tmp_data, linewidth=1, linestyle='solid', label=grp_label[i])
-                ax.fill(angles, tmp_data, 'b', alpha=0.1)
+                if fill_color is True:
+                    ax.fill(angles, tmp_data, 'b', alpha=0.1)
 
             # Add legend
-            if grp_N > 1:
+            if grp_N > 1 & len(grp_label)>0:
                 ax.legend(grp_label, loc=[0.9,0.9])
             
             if self._isshow is True: 
