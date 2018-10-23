@@ -241,7 +241,10 @@ class _NIFTI(object):
 
 
 class _CIFTI(object):
-
+    try:
+        import cifti
+    except ImportError:
+        raise Exception('Please install package cifti first!')
     def __init__(self, _comp_file):
         self._comp_file = _comp_file
     
@@ -257,48 +260,29 @@ class _CIFTI(object):
         -------
         brain_structure[list]: brain_structure
         """
-        img = cifti2.load(self._comp_file)
-
-        header = img.header
-        index_map = header.get_index_map(1)
-        brain_models = [i for i in index_map.brain_models]
-        brain_structure = [i.brain_structure for i in brain_models]
+        data, header = self.cifti.read(self._comp_file)
+        brain_structure = header[1].nvertices.keys()
 
         return brain_structure                
 
-    def load_raw_data(self, structure=None):
+    def load_raw_data(self):
         """
         Read cifti data. If your cifti data contains multiple contrast, you can input your contrast number and get value of this contrast.
  
         Parameters:
         --------------
-        structure[string]: brain structure name
 
         Return:
         -------
         data[array]: cifti data
         vxidx[object]: vertex indices table
-                       For matching vertex indices in surface, use vxidx.index(NUM) to get index in data. e.g. vxidx.index(32491) = 29695 in left cortex.
+                       For matching vertex indices in surface, use vxidx[index] to get vertex index in data. e.g. vxidx(29695) = 32491 in left cortex.
 
         """
 
-        img = cifti2.load(self._comp_file)
-        data = img.get_data()
+        data, header = self.cifti.read(self._comp_file)
 
-        if structure is None:
-            vxidx = None
-        else:
-            try:
-                brain_model = [i for i in img.header.get_index_map(1).brain_models
-                               if i.brain_structure == structure][0]
-            except IndexError:
-                raise Exception('No such a structure in brain model')
-
-            offset = brain_model.index_offset
-            count = brain_model.index_count
-            data = data[:, offset:offset+count]
-            vxidx = brain_model.vertex_indices
-
+        vxidx = header[1].get_element
         return data, vxidx
 
     def load_zeroized_data(self, structure=None):
@@ -311,15 +295,14 @@ class _CIFTI(object):
         _data, vxidx = self.load(structure)
         n_vtx = max(list(vxidx)) + 1
         data = np.zeros((_data.shape[0], n_vtx), _data.dtype)
-        data[:, list(vxidx)] = _data
+        data[:, list(vxidx)] = _data2
         return data
   
     def get_header(self):
         """
         Get header
         """
-        img = cifti2.load(self._comp_file)
-        header = img.get_header()
+        _, header = self.cifti.read(self._comp_file)
         return header
 
     def save_from_existed_header(self, header, data, map_name=None):
@@ -337,28 +320,9 @@ class _CIFTI(object):
         if map_name is None:
             map_name = ['']*data.shape[0]
         assert data.shape[0] == len(map_name), "Map_name and data mismatched."
-        index_map0 = header.get_index_map(0)
-        mimcls0 = cifti2.Cifti2MatrixIndicesMap([0], 'CIFTI_INDEX_TYPE_SCALARS')
-        for mn in map_name:
-            name_mapcls = cifti2.Cifti2NamedMap(mn)
-            mimcls0.append(name_mapcls)
 
-        index_map1 = header.get_index_map(1)
-        brain_models = [i for i in index_map1.brain_models]
-        
-        mimcls1 = cifti2.Cifti2MatrixIndicesMap([1], 'CIFTI_INDEX_TYPE_BRAIN_MODELS')
-        for bm in brain_models:
-            mimcls1.append(bm)
-        mimcls1.append(index_map1.volume)
-        
-        matrix = cifti2.Cifti2Matrix()
-        matrix.append(mimcls0)
-        matrix.append(mimcls1)
-
-        header_new = cifti2.Cifti2Header(matrix)
-        img = nib.Cifti2Image(data, header_new)
-        img.to_filename(self._comp_file)
-
+        bm_full = header[1]
+        self.cifti.write(self._comp_file, data, (self.cifti.Scalar.from_names(map_name),bm_full))
 
 class _GIFTI(object):
     def __init__(self, _comp_file):
