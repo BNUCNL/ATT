@@ -487,56 +487,57 @@ def list_reshape_bywindow(longlist, windowlen, step=1):
     return ic_list
 
 
-def lin_betafit(estimator, X, y, c, tail='both'):
+def glmfit(X, y, c=None, tail='both'):
     """
-    Linear estimation using linear models
-    -----------------------------------------
-    Parameters:
-        estimator: linear model estimator
-        X: Independent matrix
-        y: Dependent matrix
-        c: contrast
-        tail: significance tails
-    Return:
-        r2: determined values
-        beta: slopes (scaled beta)
-        t: tvals
-        tpval: significance of beta
-        f: f values of model test
-        fpval: p values of f test 
+    Linear estimation using GLM models
+    -----------------------------------
+    Paramters:
+    X: sample*feature. Independent matrix
+    y: sample*yfeature. Dependent matrix
+    c: contrast matrix
+    tail: tails for significance   
+
+    Returns:
+    --------
+    cope: contrast of parameter estimation (contrast of betas) 
+    varcope: variance of cope
+    glm_stats: t, p, dof, sigma_sq, residue
     """
-    try:
-        from sklearn import preprocessing
-    except ImportError:
-        raise Exception('To call this function, please install sklearn')
-    if isinstance(c, list):
-        c = np.array(c)
-    if c.ndim == 1:
-        c = np.expand_dims(c, axis = 1)
-    if X.ndim == 1:
-        X = np.expand_dims(X, axis = 1)
-    if y.ndim == 1:
-        y = np.expand_dims(y, axis = 1)
-    X = preprocessing.scale(X)
-    y = preprocessing.scale(y)
-    nsubj = X.shape[0]
-    estimator.fit(X,y)
-    beta = estimator.coef_.T
-    y_est = estimator.predict(X)
-    err = y - y_est
-    errvar = (np.dot(err.T, err))/(nsubj - X.shape[1])
-    t = np.dot(c.T, beta)/np.sqrt(np.dot(np.dot(c.T, np.linalg.inv(np.dot(X.T, X))),np.dot(c,errvar)))
-    r2 = estimator.score(X,y)
-    f = (r2/(X.shape[1]-1))/((1-r2)/(nsubj-X.shape[1]))
+    assert np.ndim(X) == np.ndim(y), "X and y need to have the same dimension."
+    assert X.shape[0] == y.shape[0], "Different samples."
+    nsample = X.shape[0]
+    nfeature = X.shape[1]
+    if c is None:
+        c = np.eye(X.shape[1])
+    glm_stats = {}
+    beta = np.dot(np.linalg.pinv(X),y)
+    cope = np.dot(c, beta).T
+    residue = y-np.dot(X,beta)
+    dof = residue.shape[0] - np.linalg.matrix_rank(X)
+    y_mean = np.tile(np.mean(y,axis=0),(nsample,1))
+    ss_tot = np.sum((y-y_mean)**2,axis=0)/dof
+    ss_res = np.sum(residue**2,axis=0)/dof
+    r2 = 1-ss_res/ss_tot
+    sigma_sq = np.sum(residue**2,axis=0)/dof
+   
+    ctrmatrix = np.diag(np.dot(np.dot(c.T, np.linalg.inv(np.dot(X.T, X))), c)) 
+
+    varcope = np.array([ss*ctrmatrix for ss in sigma_sq])
+    t = cope/np.sqrt(varcope)
+    t[np.isnan(t)] = 0
     if tail == 'both':
-        tpval = stats.t.sf(np.abs(t), nsubj-X.shape[1])*2
-        fpval = stats.f.sf(np.abs(f), X.shape[1]-1, nsubj-X.shape[1])*2
+        p = stats.t.sf(np.abs(t), nsample-nfeature)*2
     elif tail == 'single':
-        tpval = stats.t.sf(np.abs(t), nsubj-X.shape[1])
-        fpval = stats.f.sf(np.abs(f), X.shape[1]-1, nsubj-X.shape[1])
+        p = stats.t.sf(np.abs(t), nsample-nfeature)
     else:
-        raise Exception('wrong pointed tail.')
-    return r2, beta[:,0], t, tpval, f, fpval
+        raise Exception('Unsupported option.')
+    glm_stats['t'] = t
+    glm_stats['dof'] = dof
+    glm_stats['p'] = p
+    glm_stats['ss'] = sigma_sq
+    glm_stats['r2'] = r2
+    glm_stats['residue'] = residue
+    return cope, varcope, glm_stats
 
 
 def permutation_cross_validation(estimator, X, y, n_fold=3, isshuffle=True, cvmeth='shufflesplit', score_type='r2', n_perm=1000):
