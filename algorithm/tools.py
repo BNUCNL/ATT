@@ -241,7 +241,7 @@ def pearsonr(A, B):
     r_forp[r_forp==1.0] = 0.0
     t_squared = rcorr.T**2*(df/((1.0-rcorr.T)*(1.0+rcorr.T)))
     pcorr = special.betainc(0.5*df, 0.5, df/(df+t_squared))
-    return rcorr.T, pcorr
+    return rcorr, pcorr
 
 
 def r2z(r):
