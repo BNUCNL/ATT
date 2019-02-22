@@ -1170,6 +1170,56 @@ def threshold_by_rggrow(seedvx, vxnum, faces, scalarmap, option='descend'):
     rg_scalar = rg_scalar*scalarmap
     return rg_scalar
 
+def randomize_ROI(rawdata, mask=None):
+    """
+    Randomize the averaged data in ROI that defined by the mask
+    if mask is None, randomized original data in global brain (but not cross the ROIs)
+
+    Parameters:
+    ------------
+    rawdata: original activation data
+    mask: mask to define ROIs
+
+    Return:
+    -------
+    rand_data: randomized data
+    """
+    masklabel = np.unique(mask[mask!=0])
+    rawshape = rawdata.shape
+    if mask is None:
+        rawdata_flatten = rawdata.flatten()
+        rddata_flatten = np.random.choice(rawdata_flatten, len(rawdata_flatten), replace=False)
+        rand_data = rddata_flatten.reshape(rawshape)
+    else:
+        rawdata = rawdata[:,np.newaxis,:]
+        rand_data = np.zeros_like(rawdata)
+        randomized_masklabel = np.random.choice(masklabel, len(masklabel), replace=False)
+        for i, masklbl in enumerate(masklabel):
+            avg_rdroi = np.mean(rawdata[:,(mask==randomized_masklabel[i])],axis=1)
+            rand_data[:,(mask==masklbl)] = np.tile(avg_rdroi[:,np.newaxis],(len(mask[mask==masklbl])))
+        rand_data = rand_data[:,0,:]
+    return rand_data 
+
+def simple_surface_by_ROI(rawdata, mask):
+    """
+    Simple surface using ROI, extract the averaged value of each ROI
+
+    Parameters:
+    -----------
+    rawdata: the original data, [contrasts]*[spatial vertex]
+    mask: mask to define ROIs
+
+    Returns:
+    --------
+    sim_mat: the simplified matrix from rawdata
+    """
+    masklabel = np.unique(mask[mask!=0])
+    rawdata = rawdata[:,np.newaxis,:]
+    sim_mat = np.zeros((rawdata.shape[0], len(masklabel)))
+    for i, masklbl in enumerate(masklabel):
+        for j in range(rawdata.shape[0]):
+            sim_mat[j,i] = np.mean(rawdata[j,(mask==masklbl)])
+    return sim_mat
 
 
 
