@@ -140,7 +140,7 @@ class _FigureFactory(object):
             if self._isshow is True:
                 plt.show()
 
-        def _mat_plotting(self, data, xlabel='', ylabel=''):
+        def _mat_plotting(self, data, xlabel='', ylabel='', cmap = 'jet'):
             """
             Plot matrix using heatmap
             ------------------------------------
@@ -151,7 +151,7 @@ class _FigureFactory(object):
             Example:
                 >>> plotmat(data, xlabel = xlabellist, ylabel = ylabellist)
             """
-            sns.heatmap(data, xticklabels = xlabel, yticklabels = ylabel)
+            sns.heatmap(data, xticklabels = xlabel, yticklabels = ylabel, cmap=cmap)
             if self._isshow is True:
                 plt.show()
 
