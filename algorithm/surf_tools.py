@@ -1141,10 +1141,11 @@ def threshold_by_rggrow(seedvx, vxnum, faces, scalarmap, option='descend'):
     Returns:
     --------
     rg_scalar: a new scalar map generated from the region growing algorithm
+    vxpack: packed vertices
 
     Example:
     --------
-    >>> rg_scalar = threshold_by_rggrow(24, 300, faces, scalarmap)
+    >>> rg_scalar, vxpack = threshold_by_rggrow(24, 300, faces, scalarmap)
     """
     if option == 'ascend':
         actdata = -1.0*scalarmap
@@ -1156,8 +1157,8 @@ def threshold_by_rggrow(seedvx, vxnum, faces, scalarmap, option='descend'):
     backupvx = set()
     seed_neighbor = get_n_ring_neighbor(seedvx, faces, 1, ordinal=True)[0]
     backupvx.update(seed_neighbor.difference(vxpack))
-    while len(vxpack)<vxnum:
-        print('{} vertices contained'.format(len(vxpack)))
+    while len(vxpack)<vxnum+1:
+        # print('{} vertices contained'.format(len(vxpack)))
         backupvx = backupvx.difference(vxpack)
         array_backupvx = np.array(list(backupvx))
         array_vxpack = np.array(list(vxpack))
@@ -1168,7 +1169,7 @@ def threshold_by_rggrow(seedvx, vxnum, faces, scalarmap, option='descend'):
     rg_scalar = np.zeros_like(scalarmap)
     rg_scalar[np.array(list(vxpack))] = 1
     rg_scalar = rg_scalar*scalarmap
-    return rg_scalar
+    return rg_scalar, array_vxpack
 
 def randomize_ROI(rawdata, mask=None):
     """
@@ -1220,8 +1221,4 @@ def simple_surface_by_ROI(rawdata, mask):
         for j in range(rawdata.shape[0]):
             sim_mat[j,i] = np.mean(rawdata[j,(mask==masklbl)])
     return sim_mat
-
-
-
-
 
