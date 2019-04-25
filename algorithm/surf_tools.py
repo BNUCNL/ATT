@@ -513,9 +513,9 @@ def cutrg2parcels(orig_mask, faces, label = 1, label_rules = 'random'):
         print('parcel number: {0}'.format(parcel_num))
     return parcel_mask
 
-def make_apm(act_merge, thr):
+def make_pam(act_merge, thr, restrict_act = None):
     """
-    Compute activation probabilistic map
+    Compute probabilistic activation map
 
     Parameters:
     -----------
@@ -524,18 +524,20 @@ def make_apm(act_merge, thr):
 
     Return:
     -------
-    apm: activation probabilistic map
+    pam: probabilistic activation map
 
     Example:
     --------
-    >>> apm = make_apm(act_merge, thr = 5.0)
+    >>> pam = make_pam(act_merge, thr = 5.0)
     """
-    import copy
-    act_tmp = copy.deepcopy(act_merge)
-    act_tmp[act_tmp<thr] = 0
+    act_tmp = 1.0*act_merge
+    if restrict_act is None:
+        act_tmp[act_tmp<thr] = 0
+    else:
+        act_tmp[(act_tmp<thr)|(restrict_act<thr)] = 0
     act_tmp[act_tmp!=0] = 1
-    apm = np.mean(act_tmp,axis=-1)
-    return apm
+    pam = np.mean(act_tmp,axis=-1)
+    return pam
 
 def make_pm(mask, meth = 'all', labelnum = None):
     """
