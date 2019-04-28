@@ -36,7 +36,7 @@ def get_masksize(mask, labelnum = None):
         masksize.append(0)
     return np.array(masksize)
     
-def get_signals(atlas, mask, method = 'mean', labelnum = None):
+def get_signals(atlas, mask, thr = None, method = 'mean', labelnum = None):
     """
     Extract roi signals of atlas from mask
     
@@ -44,6 +44,7 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
     -----------
     atlas: atlas
     mask: mask, a label image
+	thr: extract values which over the threshold. If set thr as None, no threshold was used.
     method: 'mean', 'std', 'ste', 'max', 'vertex', etc.
     labelnum: mask's label numbers, add this parameters for group analysis
 
@@ -81,7 +82,11 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
     signals = []
     for i in range(labelnum):
         if np.any(mask==i+1):
-            signals.append(atlas[mask==i+1])
+            tmp_signals = atlas[mask==i+1]
+            if thr is not None:
+                signals.append(tmp_signals[tmp_signals>thr])
+            else:
+                signals.append(tmp_signals.flatten())
         else:
             signals.append(np.array([np.nan]))
     if atlas.ndim == mask.ndim+1:
