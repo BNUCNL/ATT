@@ -44,7 +44,7 @@ def get_signals(atlas, mask, thr = None, method = 'mean', labelnum = None):
     -----------
     atlas: atlas
     mask: mask, a label image
-	thr: extract values which over the threshold. If set thr as None, no threshold was used.
+    thr: extract values over the threshold. If set thr as None, no threshold was used.
     method: 'mean', 'std', 'ste', 'max', 'vertex', etc.
     labelnum: mask's label numbers, add this parameters for group analysis
 
@@ -1238,4 +1238,39 @@ def simple_surface_by_ROI(rawdata, mask):
         for j in range(rawdata.shape[0]):
             sim_mat[j,i] = np.mean(rawdata[j,(mask==masklbl)])
     return sim_mat
+
+def mask_localmax(data, mask):
+    """
+    Get vertex number of the point with maximum values.
+
+    Parameters:
+    -----------
+    data [array, vertex*nsubj]: source data, it could be activation map, structural maps, etc. Note that the spatial dimension is in shape 0.
+    mask [array, vertex*1]: mask with several ROIs.
+    
+    Returns:
+    --------
+    locmax_vx [array, nsubj*masklabel]: vertex number of the point with maximum values. 
+             
+    Examples:
+    ---------
+    >>> locmax_vx = mask_localmax(actdata, mask)
+    """
+    assert data.shape[0] == mask.shape[0], "Maps are unmatched."
+    masklabel = np.unique(mask[mask!=0])
+    nsubj = data.shape[1]
+    locmax_vx = np.zeros((nsubj, len(masklabel)))
+    for i, masklbl in enumerate(masklabel):
+        mask_tmp = (mask==masklbl)
+        mask_tmp = np.tile(mask_tmp, (1,nsubj))
+        data_mask = data*mask_tmp
+        # If all values in this label are smaller than 0, assign np.nan as the peak vertex number.
+        nonoverlap_idx = np.where(np.max(data_mask, axis=0)==0)[0]
+        locmax_vx_rg = np.argmax(data_mask,axis=0)
+        locmax_vx[:,i] = locmax_vx_rg
+        locmax_vx[nonoverlap_idx,i] = np.nan
+    return locmax_vx
+
+
+
 
