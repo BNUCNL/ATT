@@ -400,7 +400,9 @@ def ste(data, axis=None):
     if isinstance(data, float) | isinstance(data, int):
         return np.nanstd(data,axis)/np.sqrt(1)
     else:
-        ste = stats.sem(data,axis)
+        ste = stats.sem(data,axis=axis,nan_policy='omit')
+        if type(ste) == np.ma.core.MaskedArray:
+            ste = ste.data
         if isinstance(ste, np.ndarray):
             ste[np.isinf(ste)] = np.nan
         return ste

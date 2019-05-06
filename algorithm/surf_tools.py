@@ -36,7 +36,7 @@ def get_masksize(mask, labelnum = None):
         masksize.append(0)
     return np.array(masksize)
     
-def get_signals(atlas, mask, method = 'mean', labelnum = None):
+def get_signals(atlas, mask, thr = None, method = 'mean', labelnum = None):
     """
     Extract roi signals of atlas from mask
     
@@ -44,6 +44,7 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
     -----------
     atlas: atlas
     mask: mask, a label image
+    thr: extract values over the threshold. If set thr as None, no threshold was used.
     method: 'mean', 'std', 'ste', 'max', 'vertex', etc.
     labelnum: mask's label numbers, add this parameters for group analysis
 
@@ -81,7 +82,11 @@ def get_signals(atlas, mask, method = 'mean', labelnum = None):
     signals = []
     for i in range(labelnum):
         if np.any(mask==i+1):
-            signals.append(atlas[mask==i+1])
+            tmp_signals = atlas[mask==i+1]
+            if thr is not None:
+                signals.append(tmp_signals[tmp_signals>thr])
+            else:
+                signals.append(tmp_signals.flatten())
         else:
             signals.append(np.array([np.nan]))
     if atlas.ndim == mask.ndim+1:
@@ -513,9 +518,9 @@ def cutrg2parcels(orig_mask, faces, label = 1, label_rules = 'random'):
         print('parcel number: {0}'.format(parcel_num))
     return parcel_mask
 
-def make_apm(act_merge, thr):
+def make_pam(act_merge, thr, restrict_act = None):
     """
-    Compute activation probabilistic map
+    Compute probabilistic activation map
 
     Parameters:
     -----------
@@ -524,18 +529,20 @@ def make_apm(act_merge, thr):
 
     Return:
     -------
-    apm: activation probabilistic map
+    pam: probabilistic activation map
 
     Example:
     --------
-    >>> apm = make_apm(act_merge, thr = 5.0)
+    >>> pam = make_pam(act_merge, thr = 5.0)
     """
-    import copy
-    act_tmp = copy.deepcopy(act_merge)
-    act_tmp[act_tmp<thr] = 0
+    act_tmp = 1.0*act_merge
+    if restrict_act is None:
+        act_tmp[act_tmp<thr] = 0
+    else:
+        act_tmp[(act_tmp<thr)|(restrict_act<thr)] = 0
     act_tmp[act_tmp!=0] = 1
-    apm = np.mean(act_tmp,axis=-1)
-    return apm
+    pam = np.mean(act_tmp,axis=-1)
+    return pam
 
 def make_pm(mask, meth = 'all', labelnum = None):
     """
@@ -1125,7 +1132,7 @@ def get_local_extrema(scalar_data, faces, surf_dist, n_extrema = None, mask = No
         temp_scalar[list(ringlist[0])] = 0
     return extre_points    
 
-def threshold_by_rggrow(seedvx, vxnum, faces, scalarmap, option='descend'):
+def threshold_by_rggrow(seedvx, vxnum, faces, scalarmap, option='descend', restrictedROI=None):
     """
     Threshold scalarmap with specific vertex number (vxnum) by region growing algorithm.
 
@@ -1137,6 +1144,7 @@ def threshold_by_rggrow(seedvx, vxnum, faces, scalarmap, option='descend'):
         scalarmap: scalar map, e.g. activation map.
         option: 'descend', selected vertices with value smaller than seedvx.
                 'ascend', selected vertices with value larger than seedvx.
+        restrictedROI: ROI to limit range of region growing.
 
     Returns:
     --------
@@ -1147,25 +1155,34 @@ def threshold_by_rggrow(seedvx, vxnum, faces, scalarmap, option='descend'):
     --------
     >>> rg_scalar, vxpack = threshold_by_rggrow(24, 300, faces, scalarmap)
     """
+    assert np.ndim(scalarmap) == 1, "Please flatten scalarmap first."
     if option == 'ascend':
         actdata = -1.0*scalarmap
     else:
-        actdata = 1.0*scalarmap
-    
+        actdata = 1.0*scalarmap 
+    if restrictedROI is None:
+        restrictedROI = np.ones_like(actdata)
     vxpack = set()
     vxpack.add(seedvx)
     backupvx = set()
     seed_neighbor = get_n_ring_neighbor(seedvx, faces, 1, ordinal=True)[0]
     backupvx.update(seed_neighbor.difference(vxpack))
-    while len(vxpack)<vxnum+1:
+    while (len(vxpack)<vxnum+1):
         # print('{} vertices contained'.format(len(vxpack)))
         backupvx = backupvx.difference(vxpack)
+        if len(backupvx)==0:
+            break
         array_backupvx = np.array(list(backupvx))
         array_vxpack = np.array(list(vxpack))
         seed_bp = int(array_backupvx[np.argmax(actdata[array_backupvx])])
-        vxpack.add(seed_bp)
-        seed_bp_neigh = get_n_ring_neighbor(seed_bp, faces, 1, ordinal=True)[0]
-        backupvx.update(seed_bp_neigh)
+        if restrictedROI[seed_bp] != 0:
+            vxpack.add(seed_bp)
+            seed_bp_neigh = get_n_ring_neighbor(seed_bp, faces, 1, ordinal=True)[0]
+            backupvx.update(seed_bp_neigh)
+        else:
+            # Outside to restrictedROI 
+            backupvx.discard(seed_bp)
+            continue
     rg_scalar = np.zeros_like(scalarmap)
     rg_scalar[np.array(list(vxpack))] = 1
     rg_scalar = rg_scalar*scalarmap
@@ -1221,4 +1238,39 @@ def simple_surface_by_ROI(rawdata, mask):
         for j in range(rawdata.shape[0]):
             sim_mat[j,i] = np.mean(rawdata[j,(mask==masklbl)])
     return sim_mat
+
+def mask_localmax(data, mask):
+    """
+    Get vertex number of the point with maximum values.
+
+    Parameters:
+    -----------
+    data [array, vertex*nsubj]: source data, it could be activation map, structural maps, etc. Note that the spatial dimension is in shape 0.
+    mask [array, vertex*1]: mask with several ROIs.
+    
+    Returns:
+    --------
+    locmax_vx [array, nsubj*masklabel]: vertex number of the point with maximum values. 
+             
+    Examples:
+    ---------
+    >>> locmax_vx = mask_localmax(actdata, mask)
+    """
+    assert data.shape[0] == mask.shape[0], "Maps are unmatched."
+    masklabel = np.unique(mask[mask!=0])
+    nsubj = data.shape[1]
+    locmax_vx = np.zeros((nsubj, len(masklabel)))
+    for i, masklbl in enumerate(masklabel):
+        mask_tmp = (mask==masklbl)
+        mask_tmp = np.tile(mask_tmp, (1,nsubj))
+        data_mask = data*mask_tmp
+        # If all values in this label are smaller than 0, assign np.nan as the peak vertex number.
+        nonoverlap_idx = np.where(np.max(data_mask, axis=0)==0)[0]
+        locmax_vx_rg = np.argmax(data_mask,axis=0)
+        locmax_vx[:,i] = locmax_vx_rg
+        locmax_vx[nonoverlap_idx,i] = np.nan
+    return locmax_vx
+
+
+
 
