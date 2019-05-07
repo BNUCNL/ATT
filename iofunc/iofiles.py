@@ -300,12 +300,12 @@ class _CIFTI(object):
         """
         data, vxidx = self.load_raw_data()
         assert (data.shape[1] == 59412) | (data.shape[1] == 91282), "The present cifti data is not in fsLR_32k space."
-        vxid_left = [vxidx(i)[1] for i in range(29696)]
-        vxid_right = [vxidx(i)[1] for i in range(29716)]
+        vxid_left = [vxidx(i)[1] for i in np.arange(29696)]
+        vxid_right = [vxidx(i)[1] for i in np.arange(29696,59412)]
         data_left = np.zeros((data.shape[0], 32492))
         data_right = np.zeros((data.shape[0], 32492))
         data_left[:,vxid_left] = data[:,:29696]
-        data_right[:,vxid_right] = data[:,:29716]        
+        data_right[:,vxid_right] = data[:,29696:59412]        
         return data_left, data_right
   
     def get_header(self):
