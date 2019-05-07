@@ -1264,11 +1264,9 @@ def mask_localmax(data, mask):
         mask_tmp = (mask==masklbl)
         mask_tmp = np.tile(mask_tmp, (1,nsubj))
         data_mask = data*mask_tmp
-        # If all values in this label are smaller than 0, assign np.nan as the peak vertex number.
-        nonoverlap_idx = np.where(np.max(data_mask, axis=0)==0)[0]
+        data_mask[~mask_tmp] = np.min(data)
         locmax_vx_rg = np.argmax(data_mask,axis=0)
         locmax_vx[:,i] = locmax_vx_rg
-        locmax_vx[nonoverlap_idx,i] = np.nan
     return locmax_vx
 
 
