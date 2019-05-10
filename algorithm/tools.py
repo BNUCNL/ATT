@@ -184,7 +184,7 @@ def convert_listvalue_to_ordinal(listdata):
     return ordinals
 
 
-def regressoutvariable(rawdata, covariate, fit_intercept=False):
+def regressoutvariable(rawdata, covariate, fit_intercept=True):
     """
     Regress out covariate variables from raw data
     -------------------------------------------------
@@ -206,7 +206,7 @@ def regressoutvariable(rawdata, covariate, fit_intercept=False):
         covariate = np.array(covariate)
     clf = linear_model.LinearRegression(fit_intercept=fit_intercept, normalize=True)
     clf.fit(covariate, rawdata)
-    residue = rawdata - np.dot(covariate, clf.coef_.T)
+    residue = rawdata - clf.predict(covariate)
     return residue
 
 
