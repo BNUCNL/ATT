@@ -213,14 +213,13 @@ def regressoutvariable(rawdata, covariate, fit_intercept=True):
 def pearsonr(A, B):
     """
     A broadcasting method to compute pearson r and p
-    Code reprint from stackflow
     -----------------------------------------------
     Parameters:
-        A: matrix A, i*k
-        B: matrix B, j*k
+        A: matrix A, (i*k)
+        B: matrix B, (j*k)
     Return:
-        rcorr: matrix correlation, i*j
-        pcorr: matrix correlation p, i*j
+        rcorr: matrix correlation, (i*j)
+        pcorr: matrix correlation p, (i*j)
     Example:
         >>> rcorr, pcorr = pearsonr(A, B)
     """
@@ -229,20 +228,51 @@ def pearsonr(A, B):
     if isinstance(B,list):
         B = np.array(B)
     if np.ndim(A) == 1:
-        A = np.expand_dims(A, axis=1).T
+        A = A[None,:]
     if np.ndim(B) == 1:
-        B = np.expand_dims(B, axis=1).T
-
-    rcorr = 1.0 - distance.cdist(A, B, 'correlation')
-
-    df = A.T.shape[1] - 2
-    
+        B = B[None,:]
+    A_mA = A - A.mean(1)[:, None]
+    B_mB = B - B.mean(1)[:, None]
+    ssA = (A_mA**2).sum(1)
+    ssB = (B_mB**2).sum(1)
+    rcorr = np.dot(A_mA, B_mB.T)/np.sqrt(np.dot(ssA[:,None], ssB[None]))
+    df = A.T.shape[1] - 2   
     r_forp = rcorr*1.0
     r_forp[r_forp==1.0] = 0.0
     t_squared = rcorr.T**2*(df/((1.0-rcorr.T)*(1.0+rcorr.T)))
     pcorr = special.betainc(0.5*df, 0.5, df/(df+t_squared))
     return rcorr, pcorr
 
+
+def pairpearsonr(A, B):
+    """
+    Pair-wise correlation.
+    Array A and Array B must have identical shape,
+    a correlation calculated for each pair of vector.
+    ---------------------------------------------------
+    Parameters:
+        A: matrix A, (i*k)
+        B: matrix B, (i*k)
+    Returns:
+        rcorr: correlation array, (i,)
+    Example:
+        >>> rcorr = pairpearsonr(A, B)
+    """
+    if isinstance(A,list):
+        A = np.array(A)
+    if isinstance(B,list):
+        B = np.array(B)
+    if np.ndim(A) == 1:
+        A = A[None,:]
+    if np.ndim(B) == 1:
+        B = B[None,:]
+    assert A.shape == B.shape, "Array A and Array B must have identical shape."
+    norm_A = (A - A.mean(1)[:, None]) / A.std(1)[:, None]
+    norm_B = (B - B.mean(1)[:, None]) / B.std(1)[:, None]
+    norm_A = np.nan_to_num(norm_A)
+    norm_B = np.nan_to_num(norm_B)
+    return np.einsum('ij, ij->i', norm_A, norm_B)/A.shape[1]
+    
 
 def r2z(r):
     """
