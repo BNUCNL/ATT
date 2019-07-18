@@ -173,9 +173,8 @@ class _PKL(object):
         Return:
             data
         """
-        pkl_file = open(self._comp_file, 'rb')
-        data = pickle.load(pkl_file)
-        pkl_file.close()
+        with open(self._comp_file, 'rb') as pkl_file:
+            data = pickle.load(pkl_file, encoding = 'iso-8859-1')
         return data
 
 
