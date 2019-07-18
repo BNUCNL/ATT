@@ -173,9 +173,8 @@ class _PKL(object):
         Return:
             data
         """
-        pkl_file = open(self._comp_file, 'rb')
-        data = pickle.load(pkl_file)
-        pkl_file.close()
+        with open(self._comp_file, 'rb') as pkl_file:
+            data = pickle.load(pkl_file, encoding = 'iso-8859-1')
         return data
 
 
@@ -285,18 +284,28 @@ class _CIFTI(object):
         vxidx = header[1].get_element
         return data, vxidx
 
-    def load_zeroized_data(self, structure=None):
+    def load_surface_data(self):
         """
-        load data after filling zeros for the missing vertices
-        :param structure: str
-            specify a brain structure, or get all structures by default
-        :return: data: numpy array
+        Load cifti files and fill zeros to match vertex id with geometry faces.
+        Note that the original cifti file (fsLR_32k) in left hemisphere contains 29696 vertices and in right hemisphere contains 29716 vertices. We only consider transformation in fsLR_32k space now.
+
+        Parameters:
+        -----------
+
+        Returns:
+        ---------
+        data_left: data in left hemisphere
+        data_right: data in right hemisphere
         """
-        _data, vxidx = self.load(structure)
-        n_vtx = max(list(vxidx)) + 1
-        data = np.zeros((_data.shape[0], n_vtx), _data.dtype)
-        data[:, list(vxidx)] = _data2
-        return data
+        data, vxidx = self.load_raw_data()
+        assert (data.shape[1] == 59412) | (data.shape[1] == 91282), "The present cifti data is not in fsLR_32k space."
+        vxid_left = [vxidx(i)[1] for i in np.arange(29696)]
+        vxid_right = [vxidx(i)[1] for i in np.arange(29696,59412)]
+        data_left = np.zeros((data.shape[0], 32492))
+        data_right = np.zeros((data.shape[0], 32492))
+        data_left[:,vxid_left] = data[:,:29696]
+        data_right[:,vxid_right] = data[:,29696:59412]        
+        return data_left, data_right
   
     def get_header(self):
         """
